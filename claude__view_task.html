@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بيانات المهمة - بصمة الأعمال</title>
+    <!-- استدعاء خط Cairo للأنظمة العربية -->
+    <link rel="preconnect" href="https://googleapis.com">
+    <link rel="preconnect" href="https://gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- استدعاء حزمة سوبابيس الرسمية عبر خادم unpkg المباشر والمستقر -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="icons.js"></script>
+
+    <!-- ملفات التنسيق الموديلار المفصولة والمنظمة -->
+    <link rel="stylesheet" href="global-layout.css">
+    <link rel="stylesheet" href="sidebar.css?v=2">
+    <link rel="stylesheet" href="navbar.css">
+    <!-- إعادة استخدام نفس تنسيقات شاشة "إضافة موظف" (بطاقة/شبكة الحقول) وشاشة
+         "إدارة المهام" (شارات النوع/الحالة) حتى تظهر شاشة العرض بنفس الطراز تماماً -->
+    <link rel="stylesheet" href="add_employee.css">
+    <link rel="stylesheet" href="view_employee.css">
+    <link rel="stylesheet" href="tasks.css">
+</head>
+<body>
+    <div class="app-container">
+
+        <!-- اللوحة الجانبية للنظام -->
+        <div id="sidebar-container"></div>
+
+        <!-- منطقة المحتوى وشريط التنقل العلوي -->
+        <main class="main-content">
+
+            <div id="navbar-container"></div>
+
+            <div class="page-container">
+                <div class="add-employee-container">
+
+                    <div class="page-header">
+                        <div class="header-title">
+                            <nav class="breadcrumb-nav" aria-label="breadcrumb">
+                                <span class="title-icon">🗒️</span>
+                                <span class="breadcrumb-current">بيانات المهمة</span>
+                            </nav>
+                            <p class="view-subtitle">عرض تفاصيل المهمة الكاملة (للعرض فقط)</p>
+                        </div>
+                    </div>
+
+                    <!-- بطاقة عرض بيانات المهمة — للقراءة فقط -->
+                    <div class="form-card">
+
+                        <!-- شريط تنبيه عام لعرض رسائل الخطأ (مثل عدم العثور على المهمة أو عدم التصريح) -->
+                        <div id="viewTaskAlert" class="form-alert" style="display:none;"></div>
+
+                        <div id="viewTaskContent" style="display:none;">
+
+                            <h3 class="form-section-title">📋 بيانات المهمة</h3>
+                            <div class="form-grid">
+
+                                <div class="form-group full-width" id="group-view-title">
+                                    <label>عنوان المهمة</label>
+                                    <div class="view-static-value" id="viewTaskTitle" style="font-weight:700; font-size:16px; color:#1e293b; padding:10px 0;">—</div>
+                                </div>
+
+                                <div class="form-group" id="group-view-type">
+                                    <label>نوع المهمة</label>
+                                    <div style="padding:6px 0;"><span class="badge-task-type" id="viewTaskTypeBadge">—</span></div>
+                                </div>
+
+                                <div class="form-group" id="group-view-status">
+                                    <label>الحالة</label>
+                                    <div style="padding:6px 0;"><span class="badge-task-status" id="viewTaskStatusBadge">—</span></div>
+                                </div>
+
+                                <div class="form-group" id="group-view-company">
+                                    <label>الشركة</label>
+                                    <input type="text" id="viewTaskCompany" disabled>
+                                </div>
+
+                                <div class="form-group" id="group-view-assignee">
+                                    <label>الموظف المُسند إليه</label>
+                                    <input type="text" id="viewTaskAssignee" disabled>
+                                </div>
+
+                                <div class="form-group" id="group-view-start_date">
+                                    <label>تاريخ البداية</label>
+                                    <input type="text" id="viewTaskStartDate" disabled>
+                                </div>
+
+                                <div class="form-group" id="group-view-due_date">
+                                    <label>تاريخ الاستحقاق</label>
+                                    <input type="text" id="viewTaskDueDate" disabled>
+                                </div>
+
+                                <div class="form-group" id="group-view-created_at">
+                                    <label>تاريخ الإنشاء</label>
+                                    <input type="text" id="viewTaskCreatedAt" disabled>
+                                </div>
+
+                                <div class="form-group full-width" id="group-view-notes">
+                                    <label>الملاحظات</label>
+                                    <div class="view-static-value" id="viewTaskNotes" style="white-space:pre-wrap; line-height:1.9; color:#334155; padding:10px 0;">—</div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <!-- أزرار الإجراءات -->
+                        <div class="form-actions">
+                            <button type="button" id="btnBackFromTask" class="btn btn-cancel">→ رجوع</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <!-- استدعاء ملفات تشغيل المنطق البرمجي والمحاكاة بالتوالي -->
+    <script src="permissions.js?v=3"></script>
+    <script src="app-core.js"></script>
+    <script src="sidebar.js?v=2"></script>
+    <script src="navbar.js"></script>
+    <!-- ربط ملف العمليات الخارجي الخاص بشاشة عرض بيانات المهمة -->
+    <script src="view_task.js"></script>
+
+</body>
+</html>

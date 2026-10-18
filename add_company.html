@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إضافة شركة جديدة - بصمة الأعمال</title>
+
+    <link rel="preconnect" href="https://googleapis.com">
+    <link rel="preconnect" href="https://gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="icons.js"></script>
+
+    <link rel="stylesheet" href="global-layout.css?v=2">
+    <link rel="stylesheet" href="sidebar.css?v=2">
+    <link rel="stylesheet" href="navbar.css">
+    <!-- إعادة استخدام نفس تنسيقات صفحة "إضافة موظف" (form-card/form-grid/file-drop-input...) لتطابق بصري تام -->
+    <link rel="stylesheet" href="add_employee.css">
+    <!-- تنسيقات إضافية خاصة بحقل شعار الشركة فقط -->
+    <link rel="stylesheet" href="add_company.css">
+</head>
+<body>
+    <div class="app-container">
+
+        <div id="sidebar-container"></div>
+
+        <main class="main-content">
+
+            <div id="navbar-container"></div>
+
+            <div class="page-container">
+                <div class="add-employee-container">
+
+                    <div class="page-header">
+                        <div class="header-title">
+                            <nav class="breadcrumb-nav" aria-label="breadcrumb">
+                                <span class="title-icon" data-icon="building"></span>
+                                <a href="companies.html" class="breadcrumb-link">الشركات</a>
+                                <span class="breadcrumb-separator" aria-hidden="true">/</span>
+                                <span class="breadcrumb-current">إضافة شركة جديدة</span>
+                            </nav>
+                            <p class="view-subtitle">أدخل بيانات الشركة ومستنداتها الرسمية</p>
+                        </div>
+                    </div>
+
+                    <!-- نموذج بيانات الشركة الجديدة -->
+                    <form id="addCompanyForm" class="form-card" novalidate>
+
+                        <!-- شريط تنبيه عام لعرض رسائل النجاح/الفشل بدل alert() -->
+                        <div id="formAlert" class="form-alert" style="display:none;"></div>
+
+                        <!-- حقل الشعار الدائري -->
+                        <div class="logo-upload-wrapper" id="group-logo_file">
+                            <div class="circle-avatar-placeholder" id="avatarPreview"></div>
+                            <label for="companyLogoFile" class="btn-upload-label">
+                                <span><span data-icon="upload" class="icon-inline"></span> رفع الشعار</span>
+                                <input type="file" id="companyLogoFile" name="logo_file" accept="image/*" onchange="previewCompanyLogo(event)" style="display: none;">
+                            </label>
+                            <span class="field-error" id="error-logo_file"></span>
+                        </div>
+
+                        <h3 class="form-section-title"><span data-icon="clipboard" class="icon-inline"></span> البيانات الأساسية</h3>
+                        <div class="form-grid">
+
+                            <!-- اسم الشركة -->
+                            <div class="form-group full-width" id="group-name">
+                                <label for="companyName">اسم المنشأة / الشركة</label>
+                                <input type="text" id="companyName" name="name" placeholder="أدخل اسم الشركة">
+                                <span class="field-error" id="error-name"></span>
+                            </div>
+
+                            <!-- خيار ربط الشركة بحساب دخول موجود بدل إنشاء حساب جديد
+                                 (يسمح لنفس الشخص بإدارة عدة شركات ببريد وكلمة مرور واحدة) -->
+                            <div class="form-group full-width" id="group-link_existing_account">
+                                <label class="vat-checkbox-label" for="companyLinkExistingAccount" style="margin-top:0;">
+                                    <input type="checkbox" id="companyLinkExistingAccount">
+                                    <span><span data-icon="link" class="icon-inline"></span> ربط هذه الشركة بحساب دخول موجود (بدلاً من إنشاء حساب جديد)</span>
+                                </label>
+                                <span class="field-hint">فعّل هذا الخيار ليتمكن مسؤول شركة لديه حساب دخول بالفعل من إدارة هذه الشركة أيضاً بنفس البريد وكلمة المرور.</span>
+                            </div>
+
+                            <!-- البريد الإلكتروني للمسؤول: يظهر فقط عند عدم تفعيل "ربط بحساب موجود" -->
+                            <div class="form-group" id="group-email">
+                                <label for="companyEmail">البريد الإلكتروني للمسؤول</label>
+                                <input type="email" id="companyEmail" name="email" placeholder="example@company.com" style="direction: ltr; text-align: right;">
+                                <span class="field-error" id="error-email"></span>
+                                <span class="field-hint"><span data-icon="key" class="icon-inline"></span> سيُنشأ لمسؤول الشركة حساب دخول بكلمة مرور افتراضية موحّدة، وسيُطلب منه تغييرها عند أول تسجيل دخول.</span>
+                            </div>
+
+                            <!-- اختيار الحساب الموجود: يظهر فقط عند تفعيل "ربط بحساب موجود" -->
+                            <div class="form-group full-width" id="group-existing_account" style="display:none;">
+                                <label for="companyExistingAccountSearch">اختر الحساب المطلوب الربط به</label>
+                                <div class="combo-box" id="comboExistingAccount">
+                                    <input type="text" id="companyExistingAccountSearch" class="combo-input" placeholder="جاري تحميل الحسابات..." autocomplete="off" disabled>
+                                    <input type="hidden" id="companyExistingAccountId" name="existing_user_id">
+                                    <span class="combo-arrow">▾</span>
+                                    <div class="combo-dropdown" id="companyExistingAccountDropdown"></div>
+                                </div>
+                                <span class="field-error" id="error-existing_account"></span>
+                                <span class="field-hint"><span data-icon="link" class="icon-inline"></span> سيُستخدم بريد وكلمة مرور هذا الحساب لتسجيل الدخول لإدارة هذه الشركة أيضاً؛ لن يُنشأ حساب أو كلمة مرور جديدة.</span>
+                            </div>
+
+                            <!-- رقم الجوال -->
+                            <div class="form-group" id="group-phone">
+                                <label for="companyPhone">رقم الجوال</label>
+                                <input type="tel" id="companyPhone" name="phone" placeholder="05XXXXXXXX">
+                                <span class="field-error" id="error-phone"></span>
+                            </div>
+
+                            <!-- رقم السجل التجاري -->
+                            <div class="form-group" id="group-cr_number">
+                                <label for="companyCR">رقم السجل التجاري</label>
+                                <input type="text" id="companyCR" name="cr_number" class="id-input">
+                                <span class="field-error" id="error-cr_number"></span>
+                            </div>
+
+                            <!-- الرقم الضريبي -->
+                            <div class="form-group" id="group-tax_number">
+                                <label for="companyTax">الرقم الضريبي</label>
+                                <input type="text" id="companyTax" name="tax_number" class="id-input">
+                                <span class="field-error" id="error-tax_number"></span>
+                            </div>
+
+                            <!-- المدينة -->
+                            <div class="form-group" id="group-city">
+                                <label for="companyCity">المدينة</label>
+                                <input type="text" id="companyCity" name="city">
+                                <span class="field-error" id="error-city"></span>
+                            </div>
+
+                            <!-- قطاع العمل: مقفل على "خاص" فقط في شاشة إضافة شركة جديدة -->
+                            <div class="form-group" id="group-sector">
+                                <label for="companySector">قطاع العمل</label>
+                                <select id="companySector" name="sector" disabled>
+                                    <option value="خاص" selected>خاص</option>
+                                </select>
+                                <span class="field-error" id="error-sector"></span>
+                            </div>
+
+                            <!-- حالة الشركة: نشط/غير نشط — تُحفظ "نشط" افتراضياً لكل شركة جديدة -->
+                            <div class="form-group" id="group-status">
+                                <label for="companyStatus">الحالة</label>
+                                <select id="companyStatus" name="status">
+                                    <option value="active" selected>نشط</option>
+                                    <option value="inactive">غير نشط</option>
+                                </select>
+                                <span class="field-error" id="error-status"></span>
+                            </div>
+
+                            <!-- العنوان الوطني بالكامل (نصي) -->
+                            <div class="form-group full-width" id="group-address">
+                                <label for="companyAddress">العنوان الوطني بالكامل</label>
+                                <input type="text" id="companyAddress" name="address">
+                                <span class="field-error" id="error-address"></span>
+                            </div>
+
+                            <!-- ملاحظة الحالة: تظهر فقط عند اختيار "غير نشط" أعلاه -->
+                            <div class="form-group full-width" id="group-status_note" style="display:none;">
+                                <label for="companyStatusNote">ملاحظة الحالة <span class="optional-tag">(اختياري)</span></label>
+                                <textarea id="companyStatusNote" name="status_note" placeholder="اكتب سبب عدم النشاط أو أي ملاحظة إضافية (اختياري)"></textarea>
+                                <span class="field-error" id="error-status_note"></span>
+                            </div>
+
+                        </div>
+
+                        <h3 class="form-section-title"><span data-icon="document" class="icon-inline"></span> بيانات العقد والاشتراك <span class="optional-tag">(اختياري)</span></h3>
+                        <div class="form-grid">
+
+                            <!-- نوع العقد -->
+                            <div class="form-group" id="group-contract_type">
+                                <label for="companyContractType">نوع العقد</label>
+                                <select id="companyContractType" name="contract_type">
+                                    <option value="إضافة">إضافة</option>
+                                    <option value="إستضافة" selected>إستضافة</option>
+                                    <option value="إستضافة/إضافة">إستضافة/إضافة</option>
+                                </select>
+                                <span class="field-error" id="error-contract_type"></span>
+                            </div>
+
+                            <!-- تاريخ العقد -->
+                            <div class="form-group" id="group-contract_date">
+                                <label for="companyContractDate">تاريخ العقد <span class="optional-tag">(اختياري)</span></label>
+                                <input type="date" id="companyContractDate" name="contract_date">
+                                <span class="field-error" id="error-contract_date"></span>
+                            </div>
+
+                            <!-- قيمة الاشتراك + خانة "شامل الضريبة" ملتصقة بنفس الحقل -->
+                            <div class="form-group" id="group-subscription_value">
+                                <label for="companySubscriptionValue">قيمة الاشتراك <span class="optional-tag">(اختياري)</span></label>
+                                <input type="number" id="companySubscriptionValue" name="subscription_value" min="0" step="0.01" placeholder="0.00">
+                                <span class="field-error" id="error-subscription_value"></span>
+                                <label class="vat-checkbox-label" for="companyVatIncluded">
+                                    <input type="checkbox" id="companyVatIncluded" name="vat_included">
+                                    <span>شامل قيمة الضريبة المضافة</span>
+                                </label>
+                            </div>
+
+                            <!-- رقم المنشأة -->
+                            <div class="form-group" id="group-establishment_number">
+                                <label for="companyEstablishmentNumber">رقم المنشأة <span class="optional-tag">(اختياري)</span></label>
+                                <input type="text" id="companyEstablishmentNumber" name="establishment_number" class="id-input">
+                                <span class="field-error" id="error-establishment_number"></span>
+                            </div>
+
+                            <!-- رقم هوية المنشأة -->
+                            <div class="form-group" id="group-establishment_national_id">
+                                <label for="companyEstablishmentId">رقم هوية المنشأة <span class="optional-tag">(اختياري)</span></label>
+                                <input type="text" id="companyEstablishmentId" name="establishment_national_id" class="id-input">
+                                <span class="field-error" id="error-establishment_national_id"></span>
+                            </div>
+
+                            <!-- الشخص المفوض -->
+                            <div class="form-group" id="group-authorized_person">
+                                <label for="companyAuthorizedPerson">الشخص المفوض <span class="optional-tag">(اختياري)</span></label>
+                                <input type="text" id="companyAuthorizedPerson" name="authorized_person" placeholder="اسم الشخص المفوض">
+                                <span class="field-error" id="error-authorized_person"></span>
+                            </div>
+
+                            <!-- رقم جوال الشخص المفوض -->
+                            <div class="form-group" id="group-authorized_person_phone">
+                                <label for="companyAuthorizedPersonPhone">رقم جوال الشخص المفوض <span class="optional-tag">(اختياري)</span></label>
+                                <input type="tel" id="companyAuthorizedPersonPhone" name="authorized_person_phone" placeholder="05XXXXXXXX">
+                                <span class="field-error" id="error-authorized_person_phone"></span>
+                            </div>
+
+                            <!-- 🆕 اسم المندوب -->
+                            <div class="form-group" id="group-representative_name">
+                                <label for="companyRepresentativeName">اسم المندوب <span class="optional-tag">(اختياري)</span></label>
+                                <input type="text" id="companyRepresentativeName" name="representative_name" placeholder="اسم المندوب">
+                                <span class="field-error" id="error-representative_name"></span>
+                            </div>
+
+                        </div>
+
+                        <h3 class="form-section-title"><span data-icon="paperclip" class="icon-inline"></span> المستندات الرسمية</h3>
+                        <div class="form-grid">
+
+                            <!-- تحميل العقد -->
+                            <div class="form-group file-group" id="group-contract_file">
+                                <label for="companyContractFile">العقد</label>
+                                <div class="file-drop-input">
+                                    <input type="file" id="companyContractFile" name="contract_file" accept="image/*,.pdf,.doc,.docx">
+                                    <span class="file-drop-text" id="fileNameContract">اضغط لاختيار ملف (حد أقصى 5MB)</span>
+                                </div>
+                                <span class="field-error" id="error-contract_file"></span>
+                            </div>
+
+                            <!-- تحميل العنوان الوطني -->
+                            <div class="form-group file-group" id="group-national_address_file">
+                                <label for="companyAddressFile">العنوان الوطني (مستند)</label>
+                                <div class="file-drop-input">
+                                    <input type="file" id="companyAddressFile" name="national_address_file" accept="image/*,.pdf">
+                                    <span class="file-drop-text" id="fileNameAddressDoc">اضغط لاختيار ملف (حد أقصى 5MB)</span>
+                                </div>
+                                <span class="field-error" id="error-national_address_file"></span>
+                            </div>
+
+                            <!-- الشهادة الضريبية -->
+                            <div class="form-group file-group" id="group-tax_certificate_file">
+                                <label for="companyTaxCertFile">الشهادة الضريبية</label>
+                                <div class="file-drop-input">
+                                    <input type="file" id="companyTaxCertFile" name="tax_certificate_file" accept="image/*,.pdf">
+                                    <span class="file-drop-text" id="fileNameTaxCert">اضغط لاختيار ملف (حد أقصى 5MB)</span>
+                                </div>
+                                <span class="field-error" id="error-tax_certificate_file"></span>
+                            </div>
+
+                            <!-- شهادة السجل التجاري -->
+                            <div class="form-group file-group" id="group-cr_certificate_file">
+                                <label for="companyCrCertFile">شهادة السجل التجاري</label>
+                                <div class="file-drop-input">
+                                    <input type="file" id="companyCrCertFile" name="cr_certificate_file" accept="image/*,.pdf">
+                                    <span class="file-drop-text" id="fileNameCrCert">اضغط لاختيار ملف (حد أقصى 5MB)</span>
+                                </div>
+                                <span class="field-error" id="error-cr_certificate_file"></span>
+                            </div>
+
+                        </div>
+
+                        <!-- أزرار الإجراءات -->
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-submit" data-perm="add:companies">حفظ الشركة الجديدة</button>
+                            <button type="button" id="btnCancel" class="btn btn-cancel">إلغاء</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="permissions.js?v=8"></script>
+    <script src="app-core.js"></script>
+    <script src="sidebar.js?v=3"></script>
+    <script src="navbar.js"></script>
+    <script src="add_company.js?v=3"></script>
+</body>
+</html>

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ربط الموظفين - بصمة الأعمال</title>
+
+    <link rel="preconnect" href="https://googleapis.com">
+    <link rel="preconnect" href="https://gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="icons.js"></script>
+
+    <link rel="stylesheet" href="global-layout.css?v=2">
+    <link rel="stylesheet" href="sidebar.css?v=2">
+    <link rel="stylesheet" href="navbar.css">
+    <link rel="stylesheet" href="add_employee.css">
+</head>
+<body>
+    <div class="app-container">
+        <div id="sidebar-container"></div>
+
+        <main class="main-content">
+            <div id="navbar-container"></div>
+
+            <div class="page-container">
+                <div class="add-employee-container">
+
+                    <div class="page-header">
+                        <div class="header-title">
+                            <nav class="breadcrumb-nav" aria-label="breadcrumb">
+                                <span class="title-icon" data-icon="link"></span>
+                                <a href="employee_links.html" class="breadcrumb-link" data-i18n="menuEmployeeLinks">ربط الموظفين</a>
+                                <span class="breadcrumb-separator" aria-hidden="true">/</span>
+                                <span class="breadcrumb-current" data-i18n="addEmployeeLinkTitle">ربط موظف جديد</span>
+                            </nav>
+                            <p class="view-subtitle" data-i18n="employeeLinkSubtitle">اربط موظفاً بشركة، وحدد نوع الربط وقيمة الاشتراك</p>
+                        </div>
+                    </div>
+
+                    <form id="linkEmployeeForm" class="form-card" novalidate>
+                        <div id="formAlert" class="form-alert" style="display:none;"></div>
+
+                        <h3 class="form-section-title">🔗 بيانات الربط</h3>
+                        <div class="form-grid">
+
+                            <!-- الموظف (قائمة قابلة للبحث) -->
+                            <div class="form-group full-width" id="group-employee_id">
+                                <label for="linkEmployeeSearch">الموظف</label>
+                                <div class="combo-box" id="comboLinkEmployee">
+                                    <input type="text" id="linkEmployeeSearch" class="combo-input" placeholder="جاري تحميل الموظفين..." autocomplete="off" disabled>
+                                    <input type="hidden" id="linkEmployeeId" name="employee_id">
+                                    <span class="combo-arrow">▾</span>
+                                    <div class="combo-dropdown" id="linkEmployeeDropdown"></div>
+                                </div>
+                                <span class="field-error" id="error-employee_id"></span>
+                            </div>
+
+                            <!-- المسمى الوظيفي (يُحمّل من جدول professions) — قائمة قابلة للبحث -->
+                            <div class="form-group full-width" id="group-job_title">
+                                <label for="linkJobTitleSearch">المسمى الوظيفي</label>
+                                <div class="combo-box" id="comboLinkJobTitle">
+                                    <input type="text" id="linkJobTitleSearch" class="combo-input" placeholder="جاري تحميل المسميات الوظيفية..." autocomplete="off" disabled>
+                                    <input type="hidden" id="linkJobTitle" name="job_title">
+                                    <span class="combo-arrow">▾</span>
+                                    <div class="combo-dropdown" id="linkJobTitleDropdown"></div>
+                                </div>
+                                <span class="field-error" id="error-job_title"></span>
+                            </div>
+
+                            <!-- الشركة (قائمة قابلة للبحث) -->
+                            <div class="form-group full-width" id="group-company_id">
+                                <label for="linkCompanySearch">الشركة</label>
+                                <div class="combo-box" id="comboLinkCompany">
+                                    <input type="text" id="linkCompanySearch" class="combo-input" placeholder="جاري تحميل الشركات..." autocomplete="off" disabled>
+                                    <input type="hidden" id="linkCompanyId" name="company_id">
+                                    <span class="combo-arrow">▾</span>
+                                    <div class="combo-dropdown" id="linkCompanyDropdown"></div>
+                                </div>
+                                <span class="field-error" id="error-company_id"></span>
+                            </div>
+
+                            <!-- نوع الربط -->
+                            <div class="form-group" id="group-link_type">
+                                <label for="linkType">نوع الربط</label>
+                                <select id="linkType" name="link_type">
+                                    <option value="" selected disabled>اختر نوع الربط</option>
+                                    <option value="اضافة">اضافة</option>
+                                    <option value="استضافة">استضافة</option>
+                                </select>
+                                <span class="field-error" id="error-link_type"></span>
+                            </div>
+
+                            <!-- 🆕 حالة الربط: تم التعيين (مكتمل)، أو قيد المعالجة (لا يزال إجراء
+                                 الربط الفعلي جارياً) — عند اختيار "قيد المعالجة" يظهر حقل ملاحظة
+                                 إلزامي لتوضيح سبب/تفاصيل التعليق. -->
+                            <div class="form-group" id="group-link_status">
+                                <label for="linkStatus">حالة الربط</label>
+                                <select id="linkStatus" name="link_status">
+                                    <option value="تم التعيين" selected>تم التعيين</option>
+                                    <option value="قيد المعالجة">قيد المعالجة</option>
+                                </select>
+                                <span class="field-error" id="error-link_status"></span>
+                            </div>
+
+                            <!-- ملاحظة حالة "قيد المعالجة" — مخفية افتراضياً، تظهر فقط عند اختيار هذه الحالة -->
+                            <div class="form-group full-width" id="group-link_status_note" style="display:none;">
+                                <label for="linkStatusNote">ملاحظة حالة "قيد المعالجة"</label>
+                                <textarea id="linkStatusNote" name="link_status_note" placeholder="اذكر سبب أو تفاصيل كون هذا الربط قيد المعالجة..."></textarea>
+                                <span class="field-error" id="error-link_status_note"></span>
+                            </div>
+
+                            <!-- تاريخ الربط: يُملأ تلقائياً بتاريخ اليوم، ويمكن تعديله يدوياً -->
+                            <div class="form-group" id="group-link_date">
+                                <label for="linkDate">تاريخ الربط</label>
+                                <input type="date" id="linkDate" name="link_date">
+                                <span class="field-error" id="error-link_date"></span>
+                            </div>
+
+                            <!-- تاريخ انتهاء الربط: للعرض فقط — يُحسب تلقائياً كسنة كاملة بعد تاريخ الربط -->
+                            <div class="form-group" id="group-link_end_date">
+                                <label for="linkEndDate">تاريخ انتهاء الربط</label>
+                                <input type="date" id="linkEndDate" name="link_end_date" readonly style="background-color:#f8fafc; cursor:not-allowed;">
+                                <span class="field-hint">📌 يُحسب تلقائياً: سنة كاملة بعد تاريخ الربط.</span>
+                            </div>
+
+                            <!-- قيمة اشتراك الربط -->
+                            <div class="form-group" id="group-subscription_value">
+                                <label for="linkSubscriptionValue">قيمة اشتراك الربط</label>
+                                <input type="number" id="linkSubscriptionValue" name="subscription_value" min="0" step="0.01" placeholder="0.00">
+                                <span class="field-error" id="error-subscription_value"></span>
+                            </div>
+
+                            <!-- إجمالي الراتب (تظهر فقط عند اختيار نوع الربط "اضافة") -->
+                            <div class="form-group" id="group-salary_value" style="display:none;">
+                                <label for="linkSalaryValue">إجمالي الراتب</label>
+                                <input type="number" id="linkSalaryValue" name="salary_value" min="0" step="0.01" placeholder="0.00">
+                                <span class="field-error" id="error-salary_value"></span>
+                            </div>
+
+                            <!-- الراتب الأساسي: يُعبَّأ تلقائياً بنصف إجمالي الراتب عند إدخاله، ويبقى قابلاً للتعديل يدوياً -->
+                            <div class="form-group" id="group-basic_salary_value" style="display:none;">
+                                <label for="linkBasicSalaryValue">الراتب الأساسي</label>
+                                <input type="number" id="linkBasicSalaryValue" name="basic_salary_value" min="0" step="0.01" placeholder="0.00">
+                                <span class="field-error" id="error-basic_salary_value"></span>
+                                <span class="field-hint">📌 يُعبَّأ تلقائياً بنصف إجمالي الراتب، ويمكن تعديله يدوياً.</span>
+                            </div>
+
+                            <!-- الصافي -->
+                            <div class="form-group" id="group-net_salary_value" style="display:none;">
+                                <label for="linkNetSalaryValue">الصافي</label>
+                                <input type="number" id="linkNetSalaryValue" name="net_salary_value" min="0" step="0.01" placeholder="0.00">
+                                <span class="field-error" id="error-net_salary_value"></span>
+                            </div>
+
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-submit" data-perm="add:employee_links">حفظ الربط</button>
+                            <button type="button" id="btnCancel" class="btn btn-cancel">إلغاء</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="permissions.js?v=8"></script>
+    <script src="app-core.js"></script>
+    <script src="sidebar.js?v=3"></script>
+    <script src="navbar.js"></script>
+    <script src="link_employee.js?v=4"></script>
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بيانات الربط - بصمة الأعمال</title>
+
+    <link rel="preconnect" href="https://googleapis.com">
+    <link rel="preconnect" href="https://gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- استدعاء حزمة سوبابيس الرسمية عبر خادم unpkg المباشر والمستقر -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="icons.js"></script>
+
+    <link rel="stylesheet" href="global-layout.css?v=2">
+    <link rel="stylesheet" href="sidebar.css?v=2">
+    <link rel="stylesheet" href="navbar.css">
+    <!-- إعادة استخدام نفس تنسيقات شاشة "ربط موظف" حتى تظهر شاشة العرض بنفس الطراز تماماً -->
+    <link rel="stylesheet" href="add_employee.css">
+</head>
+<body>
+    <div class="app-container">
+        <div id="sidebar-container"></div>
+
+        <main class="main-content">
+            <div id="navbar-container"></div>
+
+            <div class="page-container">
+                <div class="add-employee-container">
+
+                    <div class="page-header">
+                        <div class="header-title">
+                            <nav class="breadcrumb-nav" aria-label="breadcrumb">
+                                <span class="title-icon">👁️</span>
+                                <a href="employee_links.html" class="breadcrumb-link" data-i18n="menuEmployeeLinks">ربط الموظفين</a>
+                                <span class="breadcrumb-separator" aria-hidden="true">/</span>
+                                <span class="breadcrumb-current">بيانات الربط</span>
+                            </nav>
+                            <p class="view-subtitle">عرض تفاصيل ربط الموظف بالشركة (للعرض فقط)</p>
+                        </div>
+                    </div>
+
+                    <!-- بطاقة عرض بيانات الربط — للقراءة فقط -->
+                    <div class="form-card">
+
+                        <!-- شريط تنبيه عام لعرض رسائل الخطأ (مثل عدم العثور على الربط) -->
+                        <div id="viewAlert" class="form-alert" style="display:none;"></div>
+
+                        <div id="viewLinkContent" style="display:none;">
+
+                            <h3 class="form-section-title">🔗 بيانات الربط</h3>
+                            <div class="form-grid">
+
+                                <div class="form-group full-width" id="group-view-employee">
+                                    <label>الموظف</label>
+                                    <input type="text" id="viewLinkEmployeeName" disabled>
+                                </div>
+
+                                <div class="form-group" id="group-view-national_id">
+                                    <label>رقم الهوية / الإقامة</label>
+                                    <input type="text" id="viewLinkNationalId" disabled>
+                                </div>
+
+                                <div class="form-group" id="group-view-company">
+                                    <label>الشركة</label>
+                                    <input type="text" id="viewLinkCompany" disabled>
+                                </div>
+
+                                <div class="form-group" id="group-view-job_title">
+                                    <label>المسمى الوظيفي</label>
+                                    <input type="text" id="viewLinkJobTitle" disabled>
+                                </div>
+
+                                <div class="form-group" id="group-view-link_type">
+                                    <label>نوع الربط</label>
+                                    <input type="text" id="viewLinkType" disabled>
+                                </div>
+
+                                <!-- 🆕 حالة الربط -->
+                                <div class="form-group" id="group-view-link_status">
+                                    <label>حالة الربط</label>
+                                    <input type="text" id="viewLinkStatus" disabled>
+                                </div>
+
+                                <!-- ملاحظة حالة "قيد المعالجة" — تظهر فقط عندما تحمل الحالة هذه القيمة ولها ملاحظة مسجّلة -->
+                                <div class="form-group full-width" id="group-view-link_status_note" style="display:none;">
+                                    <label>ملاحظة حالة "قيد المعالجة"</label>
+                                    <textarea id="viewLinkStatusNote" disabled></textarea>
+                                </div>
+
+                                <div class="form-group" id="group-view-link_date">
+                                    <label>تاريخ الربط</label>
+                                    <input type="text" id="viewLinkDate" disabled>
+                                </div>
+
+                                <div class="form-group" id="group-view-link_end_date">
+                                    <label>تاريخ انتهاء الربط</label>
+                                    <input type="text" id="viewLinkEndDate" disabled>
+                                </div>
+
+                                <div class="form-group" id="group-view-subscription_value">
+                                    <label>قيمة اشتراك الربط</label>
+                                    <input type="text" id="viewLinkSubscriptionValue" disabled>
+                                </div>
+
+                                <div class="form-group" id="group-view-salary_value">
+                                    <label>إجمالي الراتب</label>
+                                    <input type="text" id="viewLinkSalaryValue" disabled>
+                                </div>
+
+                                <div class="form-group" id="group-view-basic_salary_value">
+                                    <label>الراتب الأساسي</label>
+                                    <input type="text" id="viewLinkBasicSalaryValue" disabled>
+                                </div>
+
+                                <div class="form-group" id="group-view-net_salary_value">
+                                    <label>الصافي</label>
+                                    <input type="text" id="viewLinkNetSalaryValue" disabled>
+                                </div>
+
+                                <div class="form-group" id="group-view-created_at">
+                                    <label>تاريخ إضافة السجل</label>
+                                    <input type="text" id="viewLinkCreatedAt" disabled>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <!-- أزرار الإجراءات -->
+                        <div class="form-actions">
+                            <button type="button" id="btnEditThisLink" class="btn btn-submit" data-perm="edit:employee_links" style="display:none;">✏️ تعديل الربط</button>
+                            <button type="button" id="btnBackToLinks" class="btn btn-cancel">→ رجوع لقائمة ربط الموظفين</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="permissions.js?v=8"></script>
+    <script src="app-core.js"></script>
+    <script src="sidebar.js?v=3"></script>
+    <script src="navbar.js"></script>
+    <script src="view_employee_link.js?v=5"></script>
+</body>
+</html>

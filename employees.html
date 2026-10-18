@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="employeesTitle"> الموظفين</title>
+
+    <!-- خط القاهرة الرسمي المعتمد في واجهات المنصة -->
+    <link rel="preconnect" href="https://googleapis.com">
+    <link rel="preconnect" href="https://gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- استدعاء حزمة سوبابيس الرسمية عبر خادم unpkg المباشر والمستقر -->
+     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+     <script src="icons.js"></script>
+
+    <!-- ملفات التنسيق الموديلار المفصولة والمنظمة -->
+    <link rel="stylesheet" href="global-layout.css?v=2">
+    <link rel="stylesheet" href="sidebar.css?v=2">
+    <link rel="stylesheet" href="navbar.css">
+    <link rel="stylesheet" href="employees.css">
+</head>
+<body>
+
+    <!-- 🔄 شاشة التحميل بشعار الشركة — تُخفى تلقائياً بعد اكتمال تحميل السايدبار وشريط التنقل (app-core.js) -->
+    <div id="pageLoader" class="page-loader">
+        <div class="loader-ring"></div>
+        <img src="logo.png" alt="شعار شركة بصمة الأعمال" class="loader-logo">
+    </div>
+
+
+    <div class="app-container">
+        <!-- 1. القائمة الجانبية المظلمة الاحترافية (Sidebar) -->
+        <div id="sidebar-container"></div>
+
+        <!-- مساحة العمل الرئيسية -->
+        <main class="main-content">
+            <!-- الشريط العلوي المستقر مع حسابات المستخدم واللغات -->
+            <div id="navbar-container"></div>
+
+            <!-- Main Interactive Component Workspace View -->
+            <div class="dashboard-container">
+                <div class="page-header">
+                    <div class="header-title">
+                        <h1 class="view-main-title">
+                            <span class="title-icon" data-icon="person"></span>
+                            <span data-i18n="employeesTitle">الموظفين</span>
+                        </h1>
+                        <p class="view-subtitle" data-i18n="employeesSubtitle">قائمة الموظفين</p>
+                    </div>
+
+              <div class="header-actions">
+              <button class="btn-add-employee" data-perm="add:employees" data-i18n="btnAddEmployee">+ إضافة موظف جديد</button>
+             </div>
+                </div>
+
+                <!-- شريط البحث والتصفية الموضح بالصورة -->
+                <section class="companies-filter-bar">
+                    <div class="search-box-wrapper">
+                        <span class="search-icon" data-icon="search"></span>
+                        <input type="text" id="employeeSearchInput" autocomplete="off" placeholder="بحث بالاسم أو رقم الهوية..." data-i18n="searchEmployeePlaceholder">
+                        <!-- قائمة اقتراحات منسدلة بأسماء الموظفين المطابقة أثناء الكتابة -->
+                        <div class="combo-dropdown" id="employeeSearchDropdown"></div>
+                    </div>
+                    <div class="filter-dropdown-wrapper">
+                        <select id="statusFilter" onchange="applyEmployeeFilters()">
+                            <option value="all" data-i18n="allFilter">الكل</option>
+                            <option value="active" data-i18n="statusActive">نشط</option>
+                            <option value="inactive" data-i18n="statusInactive">غير نشط</option>
+                        </select>
+                    </div>
+                </section>
+
+                <!-- قسم إدارة الموظفين المتطابق بصرياً مع التصميم المرفق -->
+                <section class="table-container">
+                    <table class="companies-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 25%;" data-i18n="thEmpName">الاسم</th>
+                                <th style="width: 15%;" data-i18n="thEmpId">رقم الهوية</th>
+                                <th style="width: 20%;" data-i18n="thEmpEmail">البريد الإلكتروني</th>
+                                <th style="width: 15%;" data-i18n="thEmpJobTitle">المسمى الوظيفي</th>
+                                <th style="width: 10%; text-align: center;" data-i18n="thEmpStatus">الحالة</th>
+                                <th style="width: 15%; text-align: center;" data-i18n="thEmpActions">الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="employeesTableBody">
+                            <tr>
+                                <td colspan="6" class="table-loading-state">
+                                    جاري جلب قائمة الموظفين والمزامنة الحية...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <!-- 📄 أزرار التنقل بين صفحات الموظفين بالأسفل -->
+                <div id="employeesPagination" class="pagination-container"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- حاوية النافذة المنبثقة الخلفية المظلمة (Modal Overlay) -->
+    <div class="modal-overlay" id="addCompanyModal">
+        <div class="modal-content-box">
+            <!-- ترويسة النافذة المنبثقة -->
+            <div class="modal-header-section">
+                <h2 class="modal-title" data-i18n="addNewCompany">إضافة منشأة جديدة</h2>
+                <button type="button" class="btn-close-x" onclick="closeCompanyModal()">×</button>
+            </div>
+
+            <!-- حقل رفع الشعار الدائري العلوي -->
+            <div class="logo-upload-wrapper">
+                <div class="circle-avatar-placeholder" id="avatarPreview"></div>
+                <label for="companyLogoFile" class="btn-upload-label">
+                    <span data-icon="upload" class="icon-inline"></span><span data-i18n="upload">رفع الشعار</span>
+                    <input type="file" id="companyLogoFile" accept="image/*" onchange="previewCompanyLogo(event)" style="display: none;">
+                </label>
+            </div>
+
+            <!-- نموذج الحقول الشبكي المزدوج (Form Fields Grid) -->
+            <form id="addCompanyForm" onsubmit="handleCompanySubmission(event)">
+                <div class="form-fields-grid">
+                    <!-- 1. اسم الشركة -->
+                    <div class="input-field-group">
+                        <label data-i18n="companyName">اسم المنشأة / الشركة</label>
+                        <input type="text" id="modalCompanyName" required>
+                    </div>
+                    <!-- 2. البريد الإلكتروني للمسؤول -->
+                    <div class="input-field-group">
+                        <label data-i18n="companyUserEmail">البريد الإلكتروني للمسؤول</label>
+                        <input type="email" id="modalCompanyEmail" required>
+                    </div>
+                    <!-- 3. كلمة المرور -->
+                    <div class="input-field-group">
+                        <label data-i18n="password">كلمة المرور</label>
+                        <input type="password" id="modalCompanyPassword" required>
+                    </div>
+                    <!-- 4. رقم الهاتف -->
+                    <div class="input-field-group">
+                        <label data-i18n="phoneNumber">رقم الجوال</label>
+                        <input type="tel" id="modalCompanyPhone">
+                    </div>
+                    <!-- 5. السجل التجاري -->
+                    <div class="input-field-group">
+                        <label data-i18n="commercialRegistrationNumber">رقم السجل التجاري</label>
+                        <input type="text" id="modalCompanyCR">
+                    </div>
+                    <!-- 6. الرقم الضريبي -->
+                    <div class="input-field-group">
+                        <label data-i18n="taxNumber">الرقم الضريبي</label>
+                        <input type="text" id="modalCompanyTax">
+                    </div>
+                    <!-- 7. المدينة -->
+                    <div class="input-field-group">
+                        <label data-i18n="city">المدينة</label>
+                        <input type="text" id="modalCompanyCity">
+                    </div>
+                    <!-- 8. قطاع العمل -->
+                    <div class="input-field-group">
+                        <label data-i18n="businessSector">قطاع العمل</label>
+                        <input type="text" id="modalCompanySector">
+                    </div>
+                </div>
+
+                <!-- حقل العنوان العريض الممتد بالأسفل بالكامل -->
+                <div class="input-field-group width-full-row">
+                    <label data-i18n="address">العنوان الوطني بالكامل</label>
+                    <input type="text" id="modalCompanyAddress">
+                </div>
+
+                <!-- أزرار التحكم السفلية المتطابقة بالألوان -->
+                <div class="modal-footer-buttons">
+                    <button type="button" class="btn-modal-cancel" onclick="closeCompanyModal()" data-i18n="cancelBtn">إلغاء</button>
+                    <button type="submit" class="btn-modal-save" data-i18n="saveBtn">حفظ المنشأة</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- استدعاء ملفات تشغيل المنطق البرمجي والمحاكاة بالتوالي -->
+    <script src="permissions.js?v=8"></script>
+    <script src="app-core.js"></script>
+    <script src="sidebar.js?v=3"></script>
+    <script src="navbar.js"></script>
+    <!-- 🔄 v=5: منع حذف موظف له بيانات مرتبطة مع رسالة واضحة -->
+    <script src="employees.js?v=5"></script>
+</body>
+</html>

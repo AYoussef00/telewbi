@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="menuEndEmployeeLink">إنهاء ربط موظف - بصمة الأعمال</title>
+
+    <link rel="preconnect" href="https://googleapis.com">
+    <link rel="preconnect" href="https://gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="icons.js"></script>
+
+    <!-- employees.css أساس مشترك (جدول/بحث/نافذة منبثقة) — نفس نهج شاشة "ربط الموظفين" و"الدعم الفني" -->
+    <link rel="stylesheet" href="global-layout.css?v=2">
+    <link rel="stylesheet" href="sidebar.css?v=2">
+    <link rel="stylesheet" href="navbar.css">
+    <link rel="stylesheet" href="employees.css">
+    <link rel="stylesheet" href="end_employee_link.css?v=3">
+</head>
+<body>
+
+    <div class="app-container">
+        <div id="sidebar-container"></div>
+
+        <main class="main-content">
+            <div id="navbar-container"></div>
+
+            <div class="dashboard-container">
+                <div class="page-header">
+                    <div class="header-title">
+                        <h1 class="view-main-title">
+                            <span class="title-icon" data-icon="unlink"></span>
+                            <span data-i18n="menuEndEmployeeLink">إنهاء ربط موظف</span>
+                        </h1>
+                        <p class="view-subtitle" data-i18n="endEmployeeLinkSubtitle">أنهِ ربط الموظف بشركته الحالية، لتصبح حالته غير نشط وغير مرتبط بأي شركة</p>
+                    </div>
+                </div>
+
+                <!-- شريط التصفية: بحث باسم الموظف واسم الشركة (نفس نمط شاشة "ربط الموظفين") -->
+                <section class="companies-filter-bar">
+                    <div class="search-box-wrapper">
+                        <span class="search-icon" data-icon="search"></span>
+                        <input type="text" id="endLinkEmployeeNameSearch" autocomplete="off" placeholder="بحث باسم الموظف أو رقم الهوية...">
+                        <div class="combo-dropdown" id="endLinkEmployeeNameDropdown"></div>
+                    </div>
+                    <div class="search-box-wrapper">
+                        <span class="search-icon" data-icon="search"></span>
+                        <input type="text" id="endLinkCompanySearch" autocomplete="off" placeholder="بحث باسم الشركة...">
+                        <div class="combo-dropdown" id="endLinkCompanyDropdown"></div>
+                    </div>
+                </section>
+
+                <!-- جدول الموظفين المرتبطين حالياً، مع زر "إنهاء الربط" بكل صف -->
+                <section class="table-container">
+                    <table class="companies-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 18%;">الموظف</th>
+                                <th style="width: 16%;">الشركة</th>
+                                <th style="width: 14%;">المسمى الوظيفي</th>
+                                <th style="width: 9%; text-align: center;">نوع الربط</th>
+                                <th style="width: 12%; text-align: center;">تاريخ الربط</th>
+                                <th style="width: 12%; text-align: center;">تاريخ الانتهاء المتوقع</th>
+                                <th style="width: 19%; text-align: center;">الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="endLinkTableBody">
+                            <tr>
+                                <td colspan="7" class="table-loading-state">جاري تحميل الموظفين المرتبطين...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <div id="endLinkPagination" class="pagination-container"></div>
+
+                <!-- 🆕 "العقود المنتهية": روابط تجاوز تاريخها المتوقع (link_end_date،
+                     المحسوب افتراضياً كسنة كاملة من تاريخ الربط) دون أن يُنهيها أحد
+                     يدوياً عبر زر "إنهاء الربط" أعلاه — كانت هذه الحالة تجعل الموظف
+                     يختفي بصمت من جدول "المرتبطين حالياً" (لأن استعلامه يستبعد أي
+                     تاريخ انتهاء ماضٍ) دون أن يظهر أيضاً بأرشيف "الإنهاءات السابقة"
+                     أسفله (لأن ذلك الأرشيف لا يُنشأ إلا عبر زر "إنهاء الربط" صراحة).
+                     من هنا يمكن "تجديد العقد" مباشرة (تمديد تاريخ الانتهاء بمدة
+                     يختارها المستخدم، سنة واحدة افتراضياً) دون المرور بإنهاء ثم استعادة -->
+                <div class="page-header" style="margin-top: 34px;">
+                    <div class="header-title">
+                        <h1 class="view-main-title" style="font-size: 18px;">
+                            <span>العقود المنتهية</span>
+                        </h1>
+                        <p class="view-subtitle">موظفون تجاوز ربطهم تاريخ الانتهاء المتوقع دون تجديد أو إنهاء رسمي — يمكن تجديد عقودهم مباشرة من هنا بدل إنهاء ثم إعادة ربط</p>
+                    </div>
+                </div>
+
+                <section class="table-container">
+                    <table class="companies-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 18%;">الموظف</th>
+                                <th style="width: 16%;">الشركة</th>
+                                <th style="width: 14%;">المسمى الوظيفي</th>
+                                <th style="width: 9%; text-align: center;">نوع الربط</th>
+                                <th style="width: 12%; text-align: center;">تاريخ الربط</th>
+                                <th style="width: 12%; text-align: center;">تاريخ انتهاء العقد</th>
+                                <th style="width: 19%; text-align: center;">الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expiredContractsTableBody">
+                            <tr>
+                                <td colspan="7" class="table-loading-state">جاري تحميل العقود المنتهية...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <div id="expiredContractsPagination" class="pagination-container"></div>
+
+                <!-- 📜 سجل الموظفين الذين تم إنهاء ربطهم سابقاً (أرشيف دائم)
+                     🆕 نقطة ملوّنة قبل اسم كل موظف تعكس حالة إجراءات الإنهاء:
+                     خضراء = مكتمل، صفراء = غير مكتمل (مع عرض السبب تحت الاسم)،
+                     ويمكن تغيير الحالة لاحقاً بزر "حالة الإجراءات" عند اكتمالها.
+                     🆕 حقل بحث (اسم الموظف / رقم الهوية / الشركة / المسمى الوظيفي) -->
+                <div class="page-header" style="margin-top: 34px;">
+                    <div class="header-title">
+                        <h1 class="view-main-title" style="font-size: 18px;">
+                            <span class="title-icon" data-icon="clipboard"></span>
+                            <span>سجل الموظفين الذين تم إنهاء ربطهم</span>
+                        </h1>
+                        <p class="view-subtitle">أرشيف بكل الموظفين الذين أُنهي ربطهم سابقاً، مع الشركة والمسمى الوظيفي وفترة العمل وحالة إجراءات الإنهاء (🟢 مكتمل / 🟡 غير مكتمل) — ويمكن استعادة الموظف لشركته السابقة من هنا</p>
+                    </div>
+                </div>
+
+                <section class="companies-filter-bar" style="margin-bottom: 14px;">
+                    <div class="search-box-wrapper">
+                        <span class="search-icon" data-icon="search"></span>
+                        <input type="text" id="endLinkHistorySearch" autocomplete="off" placeholder="بحث باسم الموظف أو رقم الهوية أو الشركة أو المسمى الوظيفي أو نوع الربط...">
+                    </div>
+                </section>
+
+                <section class="table-container">
+                    <table class="companies-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 20%;">الموظف</th>
+                                <th style="width: 15%;">الشركة التي كان يعمل بها</th>
+                                <th style="width: 12%;">المسمى الوظيفي</th>
+                                <th style="width: 9%; text-align: center;">نوع الربط</th>
+                                <th style="width: 10%; text-align: center;">من تاريخ</th>
+                                <th style="width: 10%; text-align: center;">إلى تاريخ انتهاء الربط</th>
+                                <th style="width: 24%; text-align: center;">الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="endLinkHistoryTableBody">
+                            <tr>
+                                <td colspan="7" class="table-loading-state">جاري تحميل سجل الإنهاءات السابقة...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <div id="endLinkHistoryPagination" class="pagination-container"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- نافذة تأكيد إنهاء الربط -->
+    <div class="modal-overlay" id="endLinkModal">
+        <div class="modal-content-box">
+            <div class="modal-header-section">
+                <h2 class="modal-title">إنهاء ربط الموظف</h2>
+                <button type="button" class="btn-close-x" id="btnCloseEndLinkModal">×</button>
+            </div>
+
+            <input type="hidden" id="endLinkModalEmployeeId">
+
+            <div class="end-link-meta-grid">
+                <div class="end-link-meta-item">
+                    <span class="end-link-meta-label">الموظف</span>
+                    <span class="end-link-meta-value" id="endLinkModalEmployeeName">—</span>
+                </div>
+                <div class="end-link-meta-item">
+                    <span class="end-link-meta-label">الشركة الحالية</span>
+                    <span class="end-link-meta-value" id="endLinkModalCompany">—</span>
+                </div>
+                <div class="end-link-meta-item">
+                    <span class="end-link-meta-label">المسمى الوظيفي</span>
+                    <span class="end-link-meta-value" id="endLinkModalJobTitle">—</span>
+                </div>
+                <div class="end-link-meta-item">
+                    <span class="end-link-meta-label">تاريخ الربط</span>
+                    <span class="end-link-meta-value" id="endLinkModalLinkDate">—</span>
+                </div>
+            </div>
+
+            <div class="end-link-warning-box">
+                <span>⚠️</span>
+                <span>عند التأكيد، سيُسجَّل تاريخ انتهاء لربط هذا الموظف بالشركة أعلاه (دون حذف بيانات ربطه أو سجل تحصيله السابق)، وستصبح حالته "غير نشط" ولن يظهر مرتبطاً بأي شركة بعد الآن. كما سيُضاف سجل بهذه البيانات إلى أرشيف "الموظفين الذين تم إنهاء ربطهم" أسفل الجدول، وإن كان نوع ربطه "اضافة" فسيتم تلقائياً إنشاء سجلات تحصيل لأي أشهر لم تُسجَّل بعد حتى تاريخ الإنهاء.</span>
+            </div>
+
+            <div class="input-field-group full-width" id="group-end_date">
+                <label for="endLinkModalDate">تاريخ انتهاء الربط</label>
+                <input type="date" id="endLinkModalDate">
+                <span class="field-error" id="error-end_date"></span>
+            </div>
+
+            <!-- 🆕 حالة إجراءات الإنهاء: مكتمل (نقطة خضراء) / غير مكتمل (نقطة صفراء) + سبب إلزامي -->
+            <div class="input-field-group full-width" id="group-end_procedure">
+                <label>حالة إجراءات الإنهاء</label>
+                <div class="procedure-status-options">
+                    <label class="procedure-status-option" data-status="complete">
+                        <input type="radio" name="endProcedureStatus" value="complete" checked>
+                        <span class="procedure-dot complete" style="margin:0;"></span>
+                        <span>مكتمل</span>
+                    </label>
+                    <label class="procedure-status-option" data-status="incomplete">
+                        <input type="radio" name="endProcedureStatus" value="incomplete">
+                        <span class="procedure-dot incomplete" style="margin:0;"></span>
+                        <span>غير مكتمل</span>
+                    </label>
+                </div>
+                <div class="procedure-reason-group" id="endProcedureReasonGroup" style="display:none;">
+                    <label for="endProcedureReason">سبب عدم اكتمال الإجراءات <span style="color:#ef4444;">*</span></label>
+                    <textarea id="endProcedureReason" placeholder="اكتب سبب عدم اكتمال إجراءات الإنهاء (مثال: بانتظار تسليم العهدة / تصفية المستحقات...)"></textarea>
+                </div>
+                <span class="field-error" id="error-end_procedure"></span>
+            </div>
+
+            <div class="form-alert" id="endLinkModalAlert" style="display:none;"></div>
+
+            <div class="modal-footer-buttons">
+                <button type="button" class="btn-modal-cancel" id="btnCancelEndLinkModal">إلغاء</button>
+                <button type="button" class="btn-modal-save btn-modal-danger" id="btnConfirmEndLink" data-perm="delete:end_employee_link">إنهاء الربط</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🆕 نافذة تغيير حالة إجراءات إنهاء الربط لسجل بالأرشيف (مثلاً تحويل "غير مكتمل" إلى "مكتمل" عند اكتمال الإجراءات) -->
+    <div class="modal-overlay" id="procedureStatusModal">
+        <div class="modal-content-box">
+            <div class="modal-header-section">
+                <h2 class="modal-title">حالة إجراءات إنهاء الربط</h2>
+                <button type="button" class="btn-close-x" id="btnCloseProcedureModal">×</button>
+            </div>
+
+            <input type="hidden" id="procedureModalHistoryId">
+
+            <div class="end-link-meta-grid">
+                <div class="end-link-meta-item">
+                    <span class="end-link-meta-label">الموظف</span>
+                    <span class="end-link-meta-value" id="procedureModalEmployeeName">—</span>
+                </div>
+                <div class="end-link-meta-item">
+                    <span class="end-link-meta-label">الشركة</span>
+                    <span class="end-link-meta-value" id="procedureModalCompany">—</span>
+                </div>
+            </div>
+
+            <div class="input-field-group full-width" id="group-procedure_modal">
+                <label>حالة الإجراءات</label>
+                <div class="procedure-status-options">
+                    <label class="procedure-status-option" data-status="complete">
+                        <input type="radio" name="procedureModalStatus" value="complete">
+                        <span class="procedure-dot complete" style="margin:0;"></span>
+                        <span>مكتمل</span>
+                    </label>
+                    <label class="procedure-status-option" data-status="incomplete">
+                        <input type="radio" name="procedureModalStatus" value="incomplete">
+                        <span class="procedure-dot incomplete" style="margin:0;"></span>
+                        <span>غير مكتمل</span>
+                    </label>
+                </div>
+                <div class="procedure-reason-group" id="procedureModalReasonGroup" style="display:none;">
+                    <label for="procedureModalReason">سبب عدم اكتمال الإجراءات <span style="color:#ef4444;">*</span></label>
+                    <textarea id="procedureModalReason" placeholder="اكتب سبب عدم اكتمال إجراءات الإنهاء..."></textarea>
+                </div>
+                <span class="field-error" id="error-procedure_modal"></span>
+            </div>
+
+            <div class="form-alert" id="procedureModalAlert" style="display:none;"></div>
+
+            <div class="modal-footer-buttons">
+                <button type="button" class="btn-modal-cancel" id="btnCancelProcedureModal">إلغاء</button>
+                <button type="button" class="btn-modal-save" id="btnSaveProcedureStatus" data-perm="edit:end_employee_link">حفظ الحالة</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="permissions.js?v=8"></script>
+    <script src="app-core.js"></script>
+    <script src="sidebar.js?v=3"></script>
+    <script src="navbar.js"></script>
+    <script src="end_employee_link.js?v=6"></script>
+</body>
+</html>

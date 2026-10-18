@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="menuSettings">الإعدادات - بصمة الأعمال</title>
+
+    <link rel="preconnect" href="https://googleapis.com">
+    <link rel="preconnect" href="https://gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="icons.js"></script>
+
+    <link rel="stylesheet" href="global-layout.css?v=2">
+    <link rel="stylesheet" href="sidebar.css?v=2">
+    <link rel="stylesheet" href="navbar.css">
+    <link rel="stylesheet" href="profile.css">
+    <link rel="stylesheet" href="settings.css">
+</head>
+<body>
+    <div class="app-container">
+
+        <div id="sidebar-container"></div>
+
+        <main class="main-content">
+            <div id="navbar-container"></div>
+
+            <div class="page-container">
+                <div class="profile-container">
+
+                    <div class="page-header">
+                        <div class="header-title">
+                            <nav class="breadcrumb-nav" aria-label="breadcrumb">
+                                <span class="title-icon">⚙️</span>
+                                <span class="breadcrumb-current" data-i18n="menuSettings">الإعدادات</span>
+                            </nav>
+                            <p class="view-subtitle">تفضيلات حسابك الشخصية داخل النظام</p>
+                        </div>
+                    </div>
+
+                    <div class="settings-grid">
+
+                        <!-- بطاقة اللغة -->
+                        <div class="form-card">
+                            <h3 class="card-title">🌐 لغة الواجهة</h3>
+                            <p class="settings-desc">اختر لغة عرض جميع صفحات النظام. يُطبَّق التغيير فوراً على كامل المنصة.</p>
+                            <div class="lang-segmented">
+                                <button type="button" id="btnLangAr">العربية</button>
+                                <button type="button" id="btnLangEn">English</button>
+                            </div>
+                        </div>
+
+                        <!-- بطاقة الأمان -->
+                        <div class="form-card security-card">
+                            <h3 class="card-title">🔒 الأمان</h3>
+                            <p class="settings-desc">لحمايتك، ننصح بتغيير كلمة المرور بشكل دوري وعدم مشاركتها مع أي شخص.</p>
+                            <button type="button" class="btn-change-password" onclick="window.location.href='change-password.html'">
+                                تغيير كلمة المرور
+                            </button>
+                        </div>
+
+                        <!-- بطاقة عن حسابك -->
+                        <div class="form-card">
+                            <h3 class="card-title">👤 عن حسابك</h3>
+                            <div class="account-summary-row">
+                                <span class="account-summary-label">الاسم</span>
+                                <span class="account-summary-value" id="settingsAccountName">—</span>
+                            </div>
+                            <div class="account-summary-row">
+                                <span class="account-summary-label">البريد الإلكتروني</span>
+                                <span class="account-summary-value" id="settingsAccountEmail">—</span>
+                            </div>
+                            <div class="account-summary-row">
+                                <span class="account-summary-label">نوع الحساب</span>
+                                <span class="account-summary-value" id="settingsAccountRole">—</span>
+                            </div>
+                            <a href="profile.html" class="btn-goto-profile">تعديل الاسم / رقم الجوال من الملف الشخصي</a>
+                        </div>
+
+                        <!-- بطاقة الإشعارات -->
+                        <div class="form-card">
+                            <h3 class="card-title">🔔 الإشعارات</h3>
+                            <p class="settings-desc">تحكّم في نوع الإشعارات التي تصلك داخل النظام (المهام، الحضور، الدعم الفني، وإشعارات النظام العامة).</p>
+                            <a href="notifications.html" class="btn-goto-profile">إدارة تفضيلات الإشعارات</a>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="permissions.js?v=8"></script>
+    <script src="app-core.js"></script>
+    <script src="sidebar.js?v=3"></script>
+    <script src="navbar.js"></script>
+    <script src="settings.js?v=3"></script>
+</body>
+</html>

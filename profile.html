@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الملف الشخصي - بصمة الأعمال</title>
+
+    <link rel="preconnect" href="https://googleapis.com">
+    <link rel="preconnect" href="https://gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="icons.js"></script>
+
+    <link rel="stylesheet" href="global-layout.css?v=2">
+    <link rel="stylesheet" href="sidebar.css?v=2">
+    <link rel="stylesheet" href="navbar.css">
+    <link rel="stylesheet" href="profile.css">
+</head>
+<body>
+    <div class="app-container">
+
+        <div id="sidebar-container"></div>
+
+        <main class="main-content">
+            <div id="navbar-container"></div>
+
+            <div class="page-container">
+                <div class="profile-container">
+
+                    <div class="page-header">
+                        <div class="header-title">
+                            <nav class="breadcrumb-nav" aria-label="breadcrumb">
+                                <span class="title-icon" data-icon="person"></span>
+                                <span class="breadcrumb-current">الملف الشخصي</span>
+                            </nav>
+                            <p class="view-subtitle">بيانات حسابك الشخصي وإعدادات الأمان</p>
+                        </div>
+                    </div>
+
+                    <!-- بطاقة رأس الملف الشخصي: الأفتار + الاسم + الدور -->
+                    <div class="profile-hero-card">
+                        <div class="profile-hero-avatar" id="profileAvatar">?</div>
+                        <div class="profile-hero-info">
+                            <h2 id="profileHeroName">—</h2>
+                            <span class="profile-hero-email" id="profileHeroEmail">—</span>
+                            <div class="profile-hero-badges">
+                                <span class="profile-badge role-badge" id="profileRoleBadge">—</span>
+                                <span class="profile-badge status-badge" id="profileStatusBadge">—</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-grid">
+
+                        <!-- بطاقة تعديل البيانات الأساسية -->
+                        <div class="form-card">
+                            <h3 class="card-title"><span data-icon="clipboard" class="icon-inline"></span> البيانات الأساسية</h3>
+
+                            <div id="profileFormAlert" class="form-alert" style="display:none;"></div>
+
+                            <form id="profileForm" novalidate>
+                                <div class="form-group" id="group-name">
+                                    <label for="profileName">الاسم الكامل</label>
+                                    <input type="text" id="profileName" placeholder="اسمك الكامل">
+                                    <span class="field-error" id="error-name"></span>
+                                </div>
+
+                                <div class="form-group" id="group-phone">
+                                    <label for="profilePhone">رقم الجوال</label>
+                                    <input type="tel" id="profilePhone" class="id-input" placeholder="05XXXXXXXX">
+                                    <span class="field-error" id="error-phone"></span>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="profileEmail">البريد الإلكتروني</label>
+                                    <input type="email" id="profileEmail" readonly>
+                                    <span class="field-hint"><span data-icon="lock" class="icon-inline"></span> لا يمكن تغيير البريد الإلكتروني من هنا لأنه مرتبط بحساب الدخول.</span>
+                                </div>
+
+                                <button type="submit" class="btn-profile-save" id="btnSaveProfile">حفظ التغييرات</button>
+                            </form>
+                        </div>
+
+                        <!-- بطاقة الأمان: تغيير كلمة المرور -->
+                        <div class="form-card security-card">
+                            <h3 class="card-title"><span data-icon="lock" class="icon-inline"></span> الأمان</h3>
+                            <p class="security-desc">لحمايتك، ننصح بتغيير كلمة المرور بشكل دوري وعدم مشاركتها مع أي شخص.</p>
+                            <button type="button" class="btn-change-password" onclick="window.location.href='change-password.html'">
+                                تغيير كلمة المرور
+                            </button>
+
+                            <div class="account-meta">
+                                <div class="meta-row">
+                                    <span class="meta-label">عضو منذ</span>
+                                    <span class="meta-value" id="profileCreatedAt">—</span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="permissions.js?v=8"></script>
+    <script src="app-core.js"></script>
+    <script src="sidebar.js?v=3"></script>
+    <script src="navbar.js"></script>
+    <script src="profile.js?v=3"></script>
+</body>
+</html>

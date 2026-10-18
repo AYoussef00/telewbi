@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أنواع التحصيل - بصمة الأعمال</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="icons.js"></script>
+
+    <link rel="stylesheet" href="global-layout.css?v=2">
+    <link rel="stylesheet" href="companies.css">
+    <link rel="stylesheet" href="collection_types.css">
+    <link rel="stylesheet" href="sidebar.css?v=2">
+    <link rel="stylesheet" href="navbar.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <div id="sidebar-container"></div>
+
+        <main class="main-content">
+            <div id="navbar-container"></div>
+
+            <div class="dashboard-container">
+                <div class="page-header">
+                    <div class="header-title">
+                        <h1 class="view-main-title">
+                            <span class="title-icon" data-icon="bank"></span>
+                            <span>أنواع التحصيل</span>
+                        </h1>
+                        <p class="view-subtitle">إدارة طرق التحصيل (كاش، بنك، أو أي طريقة أخرى) التي تظهر كخيار عند تعليم تحصيل موظف كمدفوع بشاشة "تحصيل الموظفين"</p>
+                    </div>
+                    <div class="header-actions">
+                        <button type="button" class="btn-add-job" id="btnAddCollectionType" data-perm="add:collection_types">+ إضافة طريقة تحصيل</button>
+                    </div>
+                </div>
+
+                <section class="companies-filter-bar">
+                    <div class="search-box-wrapper">
+                        <span class="search-icon" data-icon="search"></span>
+                        <input type="text" id="collectionTypeSearchInput" placeholder="بحث باسم طريقة التحصيل...">
+                    </div>
+                </section>
+
+                <section class="table-container">
+                    <table class="companies-table">
+                        <thead>
+                            <tr>
+                                <th>اسم طريقة التحصيل</th>
+                                <th style="text-align:center;">الحالة</th>
+                                <th style="text-align:center;">تاريخ الإضافة</th>
+                                <th style="text-align:center;">الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="collectionTypesTableBody">
+                            <tr>
+                                <td colspan="4" class="table-loading-state">جاري تحميل أنواع التحصيل...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <div id="collectionTypesPagination" class="pagination-container"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- نافذة إضافة/تعديل طريقة تحصيل -->
+    <div class="modal-overlay" id="collectionTypeModal">
+        <div class="modal-content-box">
+            <div class="modal-header-section">
+                <h2 class="modal-title" id="collectionTypeModalTitle">إضافة طريقة تحصيل</h2>
+                <button type="button" class="btn-close-x" id="btnCloseCollectionTypeModal">×</button>
+            </div>
+
+            <form id="collectionTypeForm">
+                <input type="hidden" id="collectionTypeId">
+                <div class="input-field-group full-width">
+                    <label for="collectionTypeName">اسم طريقة التحصيل</label>
+                    <input type="text" id="collectionTypeName" placeholder="مثال: كاش، بنك، تحويل بنكي...">
+                    <span class="field-error" id="error-collection_type_name"></span>
+                </div>
+
+                <div class="form-alert" id="collectionTypeModalAlert" style="display:none;"></div>
+
+                <div class="modal-footer-buttons">
+                    <button type="button" class="btn-modal-cancel" id="btnCancelCollectionTypeModal">إلغاء</button>
+                    <button type="submit" class="btn-modal-save" data-perm="add:collection_types">حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="permissions.js?v=8"></script>
+    <script src="app-core.js"></script>
+    <script src="sidebar.js?v=3"></script>
+    <script src="navbar.js"></script>
+    <script src="row-actions.js?v=1"></script>
+    <script src="collection_types.js?v=2"></script>
+</body>
+</html>

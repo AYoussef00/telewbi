@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تعديل بيانات الموظف - بصمة الأعمال</title>
+    <!-- استدعاء خط Cairo للأنظمة العربية -->
+    <link rel="preconnect" href="https://googleapis.com">
+    <link rel="preconnect" href="https://gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- استدعاء حزمة سوبابيس الرسمية عبر خادم unpkg المباشر والمستقر -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="icons.js"></script>
+
+    <!-- ملفات التنسيق الموديلار المفصولة والمنظمة -->
+    <link rel="stylesheet" href="global-layout.css?v=2">
+    <link rel="stylesheet" href="sidebar.css?v=2">
+    <link rel="stylesheet" href="navbar.css">
+    <!-- إعادة استخدام نفس تنسيقات شاشة "إضافة موظف" حتى تظهر شاشة التعديل بنفس الطراز تماماً -->
+    <link rel="stylesheet" href="add_employee.css">
+    <!-- تنسيقات إضافية خاصة بشاشة التعديل (ملاحظة الملف الحالي) -->
+    <link rel="stylesheet" href="edit_employee.css">
+</head>
+<body>
+    <div class="app-container">
+
+        <!-- اللوحة الجانبية للنظام -->
+        <div id="sidebar-container"></div>
+
+        <!-- منطقة المحتوى وشريط التنقل العلوي -->
+        <main class="main-content">
+
+            <div id="navbar-container"></div>
+
+            <div class="page-container">
+                <div class="add-employee-container">
+
+                    <div class="page-header">
+                        <div class="header-title">
+                            <nav class="breadcrumb-nav" aria-label="breadcrumb">
+                                <span class="title-icon">✏️</span>
+                                <a href="employees.html" class="breadcrumb-link" data-i18n="menuEmployees">الموظفين</a>
+                                <span class="breadcrumb-separator" aria-hidden="true">/</span>
+                                <span class="breadcrumb-current">تعديل بيانات الموظف</span>
+                            </nav>
+                            <p class="view-subtitle">عدّل بيانات الموظف الحالية ومستنداته الرسمية</p>
+                        </div>
+                    </div>
+
+                    <!-- نموذج تعديل بيانات الموظف -->
+                    <form id="editEmployeeForm" class="form-card" novalidate>
+
+                        <!-- شريط تنبيه عام لعرض رسائل النجاح/الفشل بدل alert() -->
+                        <div id="formAlert" class="form-alert" style="display:none;"></div>
+
+                        <!-- تُظهر هذه الحاوية بعد نجاح تحميل بيانات الموظف من قاعدة البيانات فقط -->
+                        <div id="editEmployeeFields" style="display:none;">
+
+                            <h3 class="form-section-title">📋 البيانات الأساسية</h3>
+                            <div class="form-grid">
+
+                                <!-- حقل الاسم -->
+                                <div class="form-group full-width" id="group-name">
+                                    <label for="empName">الاسم الكامل</label>
+                                    <input type="text" id="empName" name="name" placeholder="أدخل اسم الموظف">
+                                    <span class="field-error" id="error-name"></span>
+                                </div>
+
+                                <!-- حقل رقم الهوية -->
+                                <div class="form-group" id="group-national_id">
+                                    <label for="empId">رقم الهوية / الإقامة</label>
+                                    <input type="text" id="empId" name="national_id" class="id-input" placeholder="1XXXXXXXXX" maxlength="10">
+                                    <span class="field-error" id="error-national_id"></span>
+                                </div>
+
+                                <!-- حقل رقم الجوال -->
+                                <div class="form-group" id="group-mobile_number">
+                                    <label for="empMobile">رقم الجوال <span class="optional-tag">(اختياري)</span></label>
+                                    <input type="tel" id="empMobile" name="mobile_number" class="id-input" placeholder="05XXXXXXXX" maxlength="10">
+                                    <span class="field-error" id="error-mobile_number"></span>
+                                </div>
+
+                                <!-- حقل تاريخ الميلاد -->
+                                <div class="form-group" id="group-birth_date">
+                                    <label for="empBirthDate">تاريخ الميلاد</label>
+                                    <input type="date" id="empBirthDate" name="birth_date">
+                                    <span class="field-error" id="error-birth_date"></span>
+                                </div>
+
+                                <!-- حقل رقم الآيبان -->
+                                <div class="form-group" id="group-iban_number">
+                                    <label for="empIban">رقم الآيبان (IBAN) <span class="optional-tag">(اختياري)</span></label>
+                                    <input type="text" id="empIban" name="iban_number" class="id-input" placeholder="SA0000000000000000000000">
+                                    <span class="field-error" id="error-iban_number"></span>
+                                </div>
+
+                                <!-- حقل تفعيل إنشاء حساب دخول للموظف: يظهر فقط لو الموظف ما عنده حساب
+                                     دخول حالياً (لا يوجد user_id بسجله) — يُظهره/يُخفيه edit_employee.js -->
+                                <div class="form-group full-width checkbox-field-group" id="group-create_account" style="display:none;">
+                                    <label class="checkbox-inline-label" for="empCreateAccount">
+                                        <input type="checkbox" id="empCreateAccount" name="create_account">
+                                        <span>إنشاء حساب دخول للموظف بالنظام</span>
+                                    </label>
+                                    <span class="field-hint"><span data-icon="key" class="icon-inline"></span> عند التفعيل، سيُنشأ للموظف حساب دخول بكلمة مرور افتراضية موحّدة يُطلب تغييرها عند أول تسجيل دخول، ويصبح البريد الإلكتروني حقلاً مطلوباً. عند إلغاء التفعيل، سيُحفظ البريد كبيانات عرض فقط دون إنشاء أي حساب.</span>
+                                </div>
+
+                                <!-- حقل البريد الإلكتروني: قابل للتعديل الآن (اختياري إلا عند تفعيل إنشاء حساب) -->
+                                <div class="form-group" id="group-email">
+                                    <label for="empEmail">البريد الإلكتروني <span class="optional-tag" id="emailOptionalTag">(اختياري)</span></label>
+                                    <input type="email" id="empEmail" name="email" placeholder="example@company.com">
+                                    <span class="field-error" id="error-email"></span>
+                                    <!-- تُظهر هذه الملاحظة فقط لو الموظف مرتبط بحساب دخول فعلي (user_id موجود)، وتُخفى تلقائياً غير ذلك عبر edit_employee.js -->
+                                    <span class="field-hint" id="emailAccountHint" style="display:none;">
+                                        <span data-icon="lock" class="icon-inline"></span>
+                                        هذا الموظف مرتبط بحساب دخول فعلي؛ تعديل هذا الحقل يُحدّث البريد المعروض بسجله فقط، ولن يُغيّر بريد تسجيل الدخول الفعلي المسجَّل بنظام المصادقة (Supabase Auth). لتغيير بريد الدخول نفسه، يلزم تحديثه يدوياً من لوحة تحكم سوبابيس.
+                                    </span>
+                                </div>
+
+                                <!-- حقل المسمى الوظيفي: يُعرض من سجل الربط الفعلي بجدول employee_links (إن وُجد) — للعرض فقط -->
+                                <div class="form-group" id="group-job_title">
+                                    <label for="empJobTitleSearch">المسمى الوظيفي</label>
+                                    <div class="combo-box" id="comboJobTitle">
+                                        <input type="text" id="empJobTitleSearch" class="combo-input" placeholder="جاري تحميل المسميات الوظيفية..." autocomplete="off" disabled>
+                                        <input type="hidden" id="empJobTitle" name="job_title">
+                                        <span class="combo-arrow">▾</span>
+                                        <div class="combo-dropdown" id="empJobTitleDropdown"></div>
+                                    </div>
+                                    <span class="field-error" id="error-job_title"></span>
+                                    <span class="field-hint">🔒 يُعرض هنا المسمى الوظيفي من ربط الموظف الحالي بشركة (إن وُجد)، ولا يمكن تعديله من هذه الشاشة — يُحدَّد عبر شاشة "ربط الموظفين".</span>
+                                </div>
+
+                                <!-- حقل اسم الشركة: يُعرض من سجل الربط الفعلي بجدول employee_links (إن وُجد) — للعرض فقط -->
+                                <div class="form-group" id="group-company_id">
+                                    <label for="empCompanySearch">اسم الشركة</label>
+                                    <div class="combo-box" id="comboCompany">
+                                        <input type="text" id="empCompanySearch" class="combo-input" placeholder="جاري تحميل الشركات..." autocomplete="off" disabled>
+                                        <input type="hidden" id="empCompany" name="company_id">
+                                        <span class="combo-arrow">▾</span>
+                                        <div class="combo-dropdown" id="empCompanyDropdown"></div>
+                                    </div>
+                                    <span class="field-error" id="error-company_id"></span>
+                                    <span class="field-hint">🔒 تُعرض هنا الشركة التي يرتبط بها الموظف حالياً (إن وُجدت)، ولا يمكن تعديلها من هذه الشاشة — تُدار عبر شاشة "ربط الموظفين".</span>
+                                </div>
+
+                                <!-- حقل الحالة: للعرض فقط، تُدار تلقائياً عبر الربط بشركة أو الإضافة للقائمة السوداء -->
+                                <div class="form-group" id="group-status">
+                                    <label for="empStatus">الحالة</label>
+                                    <select id="empStatus" name="status" disabled>
+                                        <option value="" disabled>اختر الحالة</option>
+                                        <option value="active">نشط</option>
+                                        <option value="inactive">غير نشط</option>
+                                    </select>
+                                    <span class="field-error" id="error-status"></span>
+                                    <span class="field-hint">🔒 تُحدَّث الحالة تلقائياً: "نشط" عند ربط الموظف بشركة، و"غير نشط" عند إضافته للقائمة السوداء.</span>
+                                </div>
+
+                                <!-- حقل الدور / الصلاحية: للعرض فقط، لا يمكن تعديله من هذه الشاشة -->
+                                <div class="form-group" id="group-role">
+                                    <label for="empRole">الدور / الصلاحية</label>
+                                    <select id="empRole" name="role" disabled>
+                                        <option value="" disabled>اختر الصلاحية</option>
+                                        <option value="employee">موظف</option>
+                                        <option value="admin">مسؤول</option>
+                                        <option value="company">مسؤول شركة</option>
+                                        <option value="super_admin">مدير عام النظام</option>
+                                    </select>
+                                    <span class="field-error" id="error-role"></span>
+                                    <span class="field-hint">🔒 لا يمكن تعديل الدور / الصلاحية من صفحة تعديل بيانات الموظف.</span>
+                                </div>
+
+                            </div>
+
+                            <h3 class="form-section-title">📎 المستندات الرسمية</h3>
+                            <div class="form-grid">
+
+                                <!-- رفع السيرة الذاتية -->
+                                <div class="form-group file-group" id="group-cv_file">
+                                    <label for="empCvFile">السيرة الذاتية (PDF أو Word)</label>
+                                    <div class="current-file-note" id="currentFileCv" style="display:none;"></div>
+                                    <div class="file-drop-input">
+                                        <input type="file" id="empCvFile" name="cv_file" accept=".pdf,.doc,.docx">
+                                        <span class="file-drop-text" id="fileNameCv">اختر ملفاً جديداً لاستبدال الحالي (حد أقصى 5MB)</span>
+                                    </div>
+                                    <span class="field-error" id="error-cv_file"></span>
+                                </div>
+
+                                <!-- رفع صورة الهوية -->
+                                <div class="form-group file-group" id="group-id_photo_file">
+                                    <label for="empIdPhotoFile">صورة الهوية / الإقامة</label>
+                                    <div class="current-file-note" id="currentFileIdPhoto" style="display:none;"></div>
+                                    <div class="file-drop-input">
+                                        <input type="file" id="empIdPhotoFile" name="id_photo_file" accept="image/*,.pdf">
+                                        <span class="file-drop-text" id="fileNameIdPhoto">اختر صورة جديدة لاستبدال الحالية (حد أقصى 5MB)</span>
+                                    </div>
+                                    <span class="field-error" id="error-id_photo_file"></span>
+                                </div>
+
+                                <!-- رفع شهادة الآيبان -->
+                                <div class="form-group file-group" id="group-iban_certificate_file">
+                                    <label for="empIbanCertFile">شهادة الآيبان</label>
+                                    <div class="current-file-note" id="currentFileIbanCert" style="display:none;"></div>
+                                    <div class="file-drop-input">
+                                        <input type="file" id="empIbanCertFile" name="iban_certificate_file" accept="image/*,.pdf">
+                                        <span class="file-drop-text" id="fileNameIbanCert">اختر ملفاً جديداً لاستبدال الحالي (حد أقصى 5MB)</span>
+                                    </div>
+                                    <span class="field-error" id="error-iban_certificate_file"></span>
+                                </div>
+
+                                <!-- رفع صورة العنوان الوطني -->
+                                <div class="form-group file-group" id="group-national_address_file">
+                                    <label for="empAddressFile">صورة العنوان الوطني</label>
+                                    <div class="current-file-note" id="currentFileAddress" style="display:none;"></div>
+                                    <div class="file-drop-input">
+                                        <input type="file" id="empAddressFile" name="national_address_file" accept="image/*,.pdf">
+                                        <span class="file-drop-text" id="fileNameAddress">اختر صورة جديدة لاستبدال الحالية (حد أقصى 5MB)</span>
+                                    </div>
+                                    <span class="field-error" id="error-national_address_file"></span>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <!-- أزرار الإجراءات -->
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-submit" id="btnSubmitEdit" data-perm="edit:employees" style="display:none;">حفظ التعديلات</button>
+                            <button type="button" id="btnCancel" class="btn btn-cancel">إلغاء</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+    <!-- استدعاء ملفات تشغيل المنطق البرمجي والمحاكاة بالتوالي -->
+    <script src="permissions.js?v=8"></script>
+    <script src="app-core.js"></script>
+    <script src="sidebar.js?v=3"></script>
+    <script src="navbar.js"></script>
+    <!-- ربط ملف العمليات الخارجي الخاص بشاشة تعديل الموظف -->
+    <script src="edit_employee.js?v=3"></script>
+
+</body>
+</html>
