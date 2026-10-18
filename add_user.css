@@ -1,0 +1,241 @@
+/* إعادة تعيين القيم الافتراضية للواجهة */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Cairo', sans-serif;
+}
+
+body {
+    background-color: #f8f9fa;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.add-user-container{ padding: 0px 0px; }
+.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+.header-title p { color: #64748b; font-size: 13px; margin-top: 2px; }
+
+/* ==========================================================================
+   شريط المسار (Breadcrumb): المستخدمين / إضافة مستخدم جديد
+   ========================================================================== */
+.breadcrumb-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.breadcrumb-nav .title-icon {
+    font-size: 20px;
+    line-height: 1;
+}
+
+.breadcrumb-link {
+    color: #64748b;
+    font-size: 18px;
+    font-weight: 600;
+    text-decoration: none;
+    padding-bottom: 2px;
+    border-bottom: 1.5px solid transparent;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.breadcrumb-link:hover {
+    color: #e65c00;
+    border-bottom-color: #e65c00;
+}
+
+.breadcrumb-separator {
+    color: #cbd5e1;
+    font-size: 16px;
+    font-weight: 400;
+}
+
+.breadcrumb-current {
+    color: #1e293b;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.view-subtitle {
+    color: #64748b;
+    font-size: 13px;
+    margin-top: 6px;
+}
+
+/* حاوية المحتوى الرئيسي */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+/* إعدادات الاستمارة */
+.page-container {
+    padding: 40px;
+    max-width: 1000%;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.page-header h1 {
+    font-size: 24px;
+    color: #333;
+    font-weight: 700;
+}
+
+.form-card {
+    background-color: #ffffff;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group.full-width {
+    grid-column: span 2;
+}
+
+.form-group label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #4a4a4a;
+    margin-bottom: 8px;
+}
+
+.form-group input, .form-group select {
+    width: 100%;
+    height: 48px;
+    padding: 0 16px;
+    border: 1px solid #dcdcdc;
+    border-radius: 8px;
+    font-size: 15px;
+    background-color: #fff;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.form-group input:focus, .form-group select:focus {
+    border-color: #e65c00;
+    box-shadow: 0 0 0 3px rgba(230, 92, 0, 0.1);
+}
+
+.id-input {
+    direction: ltr;
+    text-align: right;
+}
+
+/* رسالة الخطأ الخاصة بكل حقل */
+.field-error {
+    color: #ef4444;
+    font-size: 12px;
+    margin-top: 6px;
+    min-height: 16px;
+    display: block;
+}
+
+/* تمييز الحقل غير الصالح بحدود حمراء */
+.form-group.has-error input,
+.form-group.has-error select {
+    border-color: #ef4444;
+    background-color: #fef2f2;
+}
+.form-group.has-error input:focus,
+.form-group.has-error select:focus {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+}
+
+/* تمييز الحقل الصحيح (اختياري، لطمأنة المستخدم) */
+.form-group.is-valid input,
+.form-group.is-valid select {
+    border-color: #22c55e;
+}
+
+/* شريط التنبيه العام أعلى الفورم (بديل alert()) */
+.form-alert {
+    padding: 14px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.form-alert.alert-error {
+    background-color: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+.form-alert.alert-success {
+    background-color: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+}
+
+/* أزرار التحكم والسلوك */
+.form-actions {
+    margin-top: 40px;
+    display: flex;
+    gap: 16px;
+    justify-content: flex-start;
+}
+
+.btn {
+    height: 46px;
+    padding: 0 28px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+}
+
+.btn-submit {
+    background-color: #e65c00;
+    color: #ffffff;
+}
+
+.btn-submit:hover {
+    background-color: #cc5200;
+}
+
+.btn-cancel {
+    background-color: #f1f3f5;
+    color: #495057;
+}
+
+.btn-cancel:hover {
+    background-color: #e9ecef;
+}
+
+/* شاشات الجوال */
+@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    .form-group.full-width {
+        grid-column: span 1;
+    }
+    .sidebar {
+        display: none;
+    }
+    .page-container {
+        padding: 20px;
+    }
+}

@@ -1,0 +1,281 @@
+/* ==========================================================================
+   شاشة "إدارة المهام" — تعتمد على employees.css كأساس مشترك (شريط البحث،
+   الجدول، النافذة المنبثقة Modal)، وتضيف هنا فقط ما يخصها: بطاقات الإحصائيات
+   الأربع، شارات نوع/حالة المهمة، خلية "إسناد إلى"، وقائمة إجراءات كل صف.
+   ========================================================================== */
+
+.header-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+.btn-add-task, .btn-bulk-task, .btn-refresh-tasks {
+    border: none;
+    border-radius: 6px;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background-color 0.2s ease;
+}
+.btn-add-task { background-color: #f59e0b; color: #ffffff; }
+.btn-add-task:hover { background-color: #d97706; }
+.btn-bulk-task { background-color: #ffffff; color: #334155; border: 1.5px solid #e2e8f0; }
+.btn-bulk-task:hover { border-color: #f59e0b; color: #d97706; }
+.btn-refresh-tasks { background-color: #ffffff; color: #64748b; border: 1.5px solid #e2e8f0; padding: 10px 12px; }
+.btn-refresh-tasks:hover { color: #1e293b; border-color: #cbd5e1; }
+
+/* ==========================================================================
+   بطاقات الإحصائيات الأربع
+   ========================================================================== */
+.tasks-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    margin: 22px 0;
+}
+.task-stat-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 18px 20px;
+    text-align: center;
+}
+.task-stat-label { color: #64748b; font-size: 13.5px; font-weight: 600; margin-bottom: 8px; }
+.task-stat-value { font-size: 26px; font-weight: 700; color: #0f172a; }
+.task-stat-completed .task-stat-value { color: #059669; }
+.task-stat-inprogress .task-stat-value { color: #2563eb; }
+.task-stat-pending .task-stat-value { color: #d97706; }
+
+@media (max-width: 900px) {
+    .tasks-stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ==========================================================================
+   قائمة بحث مقترحات (Combobox) — الأساس المشترك لكل صناديق البحث في هذه
+   الشاشة (شريط الفلاتر + نافذة الشركة/الموظف)، إذ لا يوفّر employees.css
+   سوى تنسيق القائمة المنسدلة نفسها (.combo-dropdown/.combo-item) دون
+   تموضع صندوق الإدخال أو السهم — لذا تُعرَّف هنا محلياً كما في بقية الشاشات.
+   ========================================================================== */
+.combo-box { position: relative; }
+.combo-input { cursor: text; padding-inline-end: 38px !important; }
+.combo-input:disabled { background-color: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
+
+.combo-arrow {
+    position: absolute;
+    inset-inline-end: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px;
+    color: #94a3b8;
+    pointer-events: none;
+}
+
+/* ==========================================================================
+   شريط الفلاتر: بحث + شركة (قائمة قابلة للبحث) + حالة (قائمة قابلة للبحث)
+   + نطاق تاريخ الاستحقاق
+   ========================================================================== */
+.tasks-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 16px;
+}
+.tasks-filter-bar .search-box-wrapper,
+.tasks-filter-bar .task-filter-combo,
+.tasks-filter-bar .att-date-wrapper { min-height: 44px; }
+
+/* قوائم "الشركة" و"الحالة" القابلة للبحث (Searchable Combobox) داخل شريط الفلاتر */
+.tasks-filter-bar .task-filter-combo { position: relative; min-width: 190px; }
+.tasks-filter-bar .task-filter-combo .combo-input {
+    width: 100%;
+    height: 44px;
+    box-sizing: border-box;
+    padding: 0 38px 0 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #1e293b;
+    outline: none;
+    background: #ffffff;
+    font-family: 'Cairo', sans-serif;
+    cursor: text;
+    transition: border-color 0.15s ease;
+}
+.tasks-filter-bar .task-filter-combo .combo-input:focus { border-color: #f59e0b; }
+
+.att-date-wrapper { position: relative; min-width: 160px; }
+.att-date-label {
+    position: absolute;
+    inset-inline-start: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #94a3b8;
+    pointer-events: none;
+    z-index: 1;
+}
+.att-date-wrapper input[type="date"] {
+    width: 100%;
+    height: 44px;
+    box-sizing: border-box;
+    padding: 0 12px;
+    padding-inline-start: 66px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 14px;
+    outline: none;
+    background: #ffffff;
+    color: #1f2937;
+    font-family: 'Cairo', sans-serif;
+}
+.att-date-wrapper input[type="date"]:focus { border-color: #f59e0b; }
+
+/* ==========================================================================
+   شارات نوع المهمة
+   ========================================================================== */
+.badge-task-type {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    border: 1px solid transparent;
+    white-space: nowrap;
+}
+.badge-type-assigned { background-color: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+.badge-type-standalone { background-color: #f5f3ff; color: #6d28d9; border-color: #ddd6fe; }
+.badge-type-routine { background-color: #ecfeff; color: #0e7490; border-color: #a5f3fc; }
+
+/* ==========================================================================
+   شارات حالة المهمة
+   ========================================================================== */
+.badge-task-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    border: 1px solid transparent;
+    white-space: nowrap;
+}
+.badge-status-pending { background-color: #fffbeb; color: #b45309; border-color: #fde68a; }
+.badge-status-inprogress { background-color: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+.badge-status-done { background-color: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+
+/* عنوان المهمة: يظهر بخط يتوسطه شطب عند اكتمالها */
+.task-title-cell { font-weight: 700; color: #1e293b; }
+.task-title-cell.completed { text-decoration: line-through; color: #94a3b8; font-weight: 600; }
+
+/* 🔗 عنوان المهمة كرابط قابل للضغط (لوحة تحكم الموظف → فتح صفحة تفاصيل
+   المهمة view_task.html): نلغي تنسيق الرابط الافتراضي (اللون الأزرق والخط
+   السفلي) حتى يبقى شكله مطابقاً تماماً لـ .task-title-cell العادية، ونضيف
+   خطاً سفلياً فقط عند المرور بالماوس (hover) كإشارة بصرية خفيفة بأنه قابل
+   للضغط، مع الحفاظ على تنسيق "مكتملة" (شطب + لون باهت) كما هو */
+a.task-title-link {
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+}
+a.task-title-link:hover { text-decoration: underline; }
+a.task-title-link:visited { color: inherit; }
+
+/* ==========================================================================
+   خلية "إسناد إلى" — دائرة حرف أول + الاسم + المسمى الوظيفي أسفله
+   ========================================================================== */
+.assignee-cell { display: flex; align-items: center; gap: 10px; }
+.assignee-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: #fef3e2;
+    color: #b45309;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+.assignee-info { display: flex; flex-direction: column; line-height: 1.35; }
+.assignee-name { font-weight: 600; color: #1e293b; font-size: 13.5px; }
+.assignee-role { color: #94a3b8; font-size: 11.5px; }
+.assignee-none { color: #94a3b8; font-size: 13px; }
+
+.task-company-cell { display: flex; align-items: center; gap: 6px; color: #334155; }
+
+/* ==========================================================================
+   قائمة إجراءات كل صف (زر "..." + قائمة منسدلة صغيرة)
+   ========================================================================== */
+.task-actions-cell { position: relative; text-align: center; }
+.btn-task-actions {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #64748b;
+    font-size: 20px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 6px;
+    line-height: 1;
+}
+.btn-task-actions:hover { background-color: #f1f5f9; color: #1e293b; }
+
+.task-actions-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    inset-inline-end: 0;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.14);
+    min-width: 160px;
+    z-index: 60;
+    display: none;
+    overflow: hidden;
+}
+.task-actions-menu.open { display: block; }
+.task-actions-menu button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    text-align: start;
+    background: none;
+    border: none;
+    padding: 10px 14px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #334155;
+    cursor: pointer;
+    font-family: 'Cairo', sans-serif;
+}
+.task-actions-menu button:hover { background-color: #f8fafc; }
+.task-actions-menu button.action-danger { color: #dc2626; }
+.task-actions-menu button.action-danger:hover { background-color: #fef2f2; }
+
+/* ==========================================================================
+   نافذة إضافة/تعديل مهمة (تعتمد على أصناف .modal-overlay وغيرها من employees.css)
+   ========================================================================== */
+#taskModal .form-fields-grid { grid-template-columns: repeat(2, 1fr); }
+#taskModal textarea#taskNotes {
+    width: 100%;
+    min-height: 80px;
+    padding: 10px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: 'Cairo', sans-serif;
+    resize: vertical;
+    outline: none;
+}
+#taskModal textarea#taskNotes:focus { border-color: #f59e0b; }
+
+@media (max-width: 768px) {
+    #taskModal .form-fields-grid { grid-template-columns: 1fr; }
+}

@@ -1,0 +1,44 @@
+/* ==========================================================================
+   تقرير "تحصيل الموظفين" — يعيد استخدام:
+   - تنسيقات شريط البحث/التصدير/الطباعة من employee-report.css
+   - بطاقات الإحصائيات وخلايا الأرقام (الصافي/المتبقي...) من collections.css
+   هذا الملف يضيف فقط ما يخص هذه الصفحة تحديداً: حقل اختيار الشهر بترويسة
+   الصفحة، ومحاذاة عمود المستلم الجديد.
+   ========================================================================== */
+
+.collections-report-month-label {
+    font-size: 13px;
+    color: #475569;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.collections-report-month-input {
+    padding: 8px 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 13px;
+    height: 40px;
+    box-sizing: border-box;
+}
+
+/* عمود "المستلم" الجديد بالتقرير: نفس اتفاقية عرض الأرقام أحادية المسافة
+   المستخدمة أصلاً بخلايا الصافي/المتبقي في collections.css */
+.collection-received-cell {
+    font-family: monospace;
+    color: #334155;
+}
+
+@media (max-width: 900px) {
+    .page-header .report-actions-bar {
+        flex-wrap: wrap;
+    }
+    .collections-report-month-label,
+    .collections-report-month-input {
+        width: 100%;
+    }
+}

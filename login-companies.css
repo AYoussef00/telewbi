@@ -1,0 +1,350 @@
+/* Core Styling Rules */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Cairo', sans-serif;
+}
+
+body {
+    background-color: #FAFAFA;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+/* Top Navbar Style */
+.top-nav {
+    width: 100%;
+    padding: 20px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #FFFFFF;
+}
+
+/* شعار الشركة + الاسم (يعيد للصفحة الرئيسية عند الضغط) */
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: #1A1A1A;
+}
+
+.logo-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: #FDEDE9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.logo-circle img {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+}
+
+.logo strong {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1A1A1A;
+}
+
+.nav-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.btn-switch-lang {
+    background: transparent;
+    border: 1px solid #E05236;
+    color: #E05236;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.btn-switch-lang:hover {
+    background-color: #E05236;
+    color: #FFFFFF;
+}
+
+/* Main Centered Login Wrapper */
+.login-wrapper {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 20px;
+}
+
+.login-card {
+    background: #FFFFFF;
+    width: 100%;
+    max-width: 520px;
+    border-radius: 16px;
+    padding: 40px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.03);
+    text-align: center;
+}
+
+/* Headers inside Card */
+.card-header {
+    margin-bottom: 24px;
+}
+
+.brand-logo img {
+    height: 54px;
+    object-fit: contain;
+    margin-bottom: 16px;
+}
+
+.main-title {
+    font-size: 26px;
+    font-weight: 700;
+    color: #1A1A1A;
+    margin-bottom: 8px;
+}
+
+.card-subtitle {
+    font-size: 14px;
+    color: #757575;
+    margin-bottom: 8px;
+}
+
+.input-label {
+    font-size: 13px;
+    color: #757575;
+    text-align: right;
+    margin-bottom: 8px;
+    width: 100%;
+}
+
+/* Generic Form Groups (email/password) */
+.form-group {
+    text-align: right;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+/* عند التبديل للإنجليزية (LTR) نعكس محاذاة نصوص الحقول لليسار */
+html[dir="ltr"] .form-group {
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    font-size: 13px;
+    color: #757575;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.form-group input {
+    width: 100%;
+    border: 1px solid #E0E0E0;
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 15px;
+    color: #1A1A1A;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.form-group input:focus {
+    border-color: #E05236;
+}
+
+.form-group input::placeholder {
+    color: #C2C2C2;
+}
+
+/* حقول تُكتب دائماً من اليسار لليمين (مثل البريد الإلكتروني) بغض النظر عن لغة الواجهة،
+   لكن محاذاة النص داخلها تتبع لغة الواجهة */
+.form-group input.ltr-input {
+    direction: ltr;
+    text-align: right;
+}
+
+html[dir="ltr"] .form-group input.ltr-input {
+    text-align: left;
+}
+
+/* Password field with show/hide toggle */
+.password-container {
+    position: relative;
+}
+
+.password-toggle-btn {
+    position: absolute;
+    left: 12px;
+    top: 38px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #7f8c8d;
+}
+
+/* عند التبديل للإنجليزية (LTR) ينتقل زر إظهار/إخفاء كلمة المرور لليمين */
+html[dir="ltr"] .password-toggle-btn {
+    left: auto;
+    right: 12px;
+}
+
+.password-toggle-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.password-toggle-btn:hover {
+    color: #E05236;
+}
+
+/* Alert Bar (success / error messages) */
+.form-alert {
+    font-size: 13px;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 18px;
+    text-align: center;
+    font-weight: 600;
+}
+
+.form-alert.alert-error {
+    background-color: #FDECEA;
+    color: #C0392B;
+    border: 1px solid #F5C6C0;
+}
+
+.form-alert.alert-success {
+    background-color: #EAFAF1;
+    color: #1E8449;
+    border: 1px solid #C8ECD9;
+}
+
+/* Primary Action Buttons */
+.btn-submit {
+    width: 100%;
+    padding: 14px;
+    background-color: #E05236;
+    border: none;
+    border-radius: 25px;
+    color: #FFFFFF;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 24px;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-submit:hover {
+    background-color: #C7431F;
+}
+
+.btn-submit:disabled {
+    background-color: #FCD6CE;
+    cursor: not-allowed;
+}
+
+.btn-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-top-color: #FFFFFF;
+    border-radius: 50%;
+    display: inline-block;
+    animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Footnotes & Hyperlink Rules */
+.terms-text {
+    font-size: 12px;
+    color: #757575;
+    line-height: 1.8;
+    margin-bottom: 24px;
+}
+
+.terms-text a {
+    color: #E05236;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.card-footer {
+    font-size: 14px;
+    color: #4A4A4A;
+    padding-top: 4px;
+}
+
+.register-now-link {
+    color: #E05236;
+    text-decoration: none;
+    font-weight: 700;
+}
+
+/* Floating UI Widgets */
+.support-widget {
+    position: fixed;
+    bottom: 24px;
+    left: 24px; /* Placed cleanly on bottom left side */
+    z-index: 999;
+}
+
+/* عند التبديل للإنجليزية (LTR) ينتقل زر الدعم الفني لأسفل اليمين */
+html[dir="ltr"] .support-widget {
+    left: auto;
+    right: 24px;
+}
+
+.btn-support {
+    background-color: #FF5A1F;
+    border: none;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(255, 90, 31, 0.3);
+}
+
+.support-icon {
+    width: 26px;
+    height: 26px;
+    stroke: #FFFFFF;
+}
+
+/* Mobile Media Queries */
+@media (max-width: 600px) {
+    .top-nav {
+        padding: 15px 20px;
+    }
+    .login-card {
+        padding: 24px 16px;
+        box-shadow: none;
+        background: transparent;
+    }
+}

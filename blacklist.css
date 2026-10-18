@@ -1,0 +1,172 @@
+.view-main-title { color: #dc2626; font-size: 24px; font-weight: 700; display: flex; align-items: center; }
+.title-icon { margin-inline-end: 8px; }
+.view-subtitle { color: #64748b; font-size: 13px; margin-top: 4px; }
+
+.header-actions { display: flex; align-items: center; justify-content: flex-end; }
+
+.btn-add-blacklist {
+    background-color: #dc2626;
+    color: #ffffff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+.btn-add-blacklist:hover { background-color: #b91c1c; }
+
+.companies-filter-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; margin-top: 20px; margin-bottom: 15px; width: 100%; }
+.search-box-wrapper { position: relative; flex: 1; max-width: 360px; }
+.search-icon { position: absolute; inset-inline-start: 14px; top: 50%; transform: translateY(-50%); font-size: 14px; color: #94a3b8; pointer-events: none; }
+.search-box-wrapper input {
+    width: 100%; height: 44px; box-sizing: border-box; padding: 0 16px; padding-inline-start: 40px;
+    border: 1px solid #e2e8f0; border-radius: 6px; background-color: #ffffff;
+    font-size: 14px; outline: none; transition: border-color 0.15s ease;
+}
+.search-box-wrapper input:focus { border-color: #dc2626; }
+
+.table-container { background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto; width: 100%; margin-top: 15px; }
+.companies-table { width: 100%; border-collapse: collapse; text-align: start; }
+.companies-table th { background-color: #f8fafc; color: #475569; font-size: 13px; font-weight: 700; padding: 14px 18px; border-bottom: 1px solid #e2e8f0; }
+.companies-table td { padding: 14px 18px; font-size: 13.5px; color: #334155; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+.table-loading-state { text-align: center; padding: 50px !important; color: #94a3b8; font-weight: 600; }
+
+.pagination-container { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 20px; direction: ltr; }
+
+/* ==========================================================================
+   أيقونة الإجراء (إزالة) — بنفس شكل وتحجيم أيقونات صفحة الموظفين (SVG خام
+   من ICONS.* بلا width/height صريحين، فتحتاج تحجيماً صريحاً هنا). يبقى النص
+   المرافق "إزالة" كما هو، فقط الرمز يتحول من إيموجي إلى SVG موحّد.
+   ========================================================================== */
+.action-icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #64748b;
+    padding: 6px 10px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    vertical-align: middle;
+    font-size: 13px;
+    transition: color 0.15s ease, background-color 0.15s ease;
+}
+.action-icon-btn:hover { color: #0f172a; background-color: #f1f5f9; }
+.action-icon-btn svg {
+    width: 16px;
+    height: 16px;
+    display: block;
+    flex-shrink: 0;
+}
+
+/* المودال */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
+    z-index: 3000; display: none; justify-content: center; align-items: center; padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+
+.modal-content-box {
+    background-color: #ffffff; width: 100%; max-width: 560px; border-radius: 12px;
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+    padding: 30px; display: flex; flex-direction: column; max-height: 90vh; overflow-y: auto;
+}
+.modal-header-section { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 16px; margin-bottom: 24px; }
+.modal-title { font-size: 18px; font-weight: 700; color: #0f172a; }
+.btn-close-x { background: none; border: none; font-size: 26px; color: #94a3b8; cursor: pointer; line-height: 1; }
+.btn-close-x:hover { color: #475569; }
+
+.form-fields-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px; }
+.input-field-group { display: flex; flex-direction: column; gap: 6px; }
+.input-field-group.full-width { grid-column: span 2; }
+.input-field-group label { font-size: 13px; font-weight: 600; color: #475569; text-align: right; }
+.input-field-group input, .input-field-group textarea {
+    width: 100%; padding: 0 14px; border: 1px solid #cbd5e1; border-radius: 6px;
+    font-size: 14px; color: #1e293b; outline: none; background-color: #fff; transition: border-color 0.15s;
+    font-family: 'Cairo', sans-serif;
+}
+.input-field-group input { height: 44px; }
+.input-field-group textarea { padding: 10px 14px; resize: vertical; }
+.input-field-group input:focus, .input-field-group textarea:focus { border-color: #dc2626; }
+.id-input { direction: ltr; text-align: right; }
+
+/* قائمة بحث مقترحات (Combobox) — اختيار موظف حصراً */
+.combo-box { position: relative; }
+.combo-input { cursor: text; padding-inline-end: 34px !important; }
+.combo-input:disabled { background-color: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
+
+.combo-arrow {
+    position: absolute;
+    inset-inline-end: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px;
+    color: #94a3b8;
+    pointer-events: none;
+}
+
+.combo-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    inset-inline-start: 0;
+    inset-inline-end: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
+    z-index: 50;
+    display: none;
+}
+.combo-dropdown.open { display: block; }
+
+.combo-item {
+    padding: 10px 14px;
+    font-size: 13.5px;
+    color: #334155;
+    cursor: pointer;
+    transition: background-color 0.12s ease;
+}
+.combo-item:hover { background-color: #fef2f2; color: #dc2626; }
+.combo-item.selected { background-color: #fef2f2; color: #dc2626; font-weight: 700; }
+
+.combo-empty {
+    padding: 12px 14px;
+    font-size: 12.5px;
+    color: #94a3b8;
+    text-align: center;
+}
+
+.combo-hint {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: -6px;
+    margin-bottom: 16px;
+}
+
+.field-error { color: #ef4444; font-size: 12px; margin-top: 4px; min-height: 14px; display: block; }
+.input-field-group.has-error input, .input-field-group.has-error textarea { border-color: #ef4444; background-color: #fef2f2; }
+
+.form-alert { padding: 12px 16px; border-radius: 8px; font-size: 13.5px; font-weight: 600; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+.form-alert.alert-error { background-color: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+.form-alert.alert-success { background-color: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+
+.modal-footer-buttons { display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #f1f5f9; padding-top: 20px; }
+.btn-modal-cancel { background-color: #f1f5f9; color: #475569; border: none; padding: 10px 20px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.btn-modal-cancel:hover { background-color: #e2e8f0; }
+.btn-modal-save { background-color: #dc2626; color: #ffffff; border: none; padding: 10px 24px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.btn-modal-save:hover { background-color: #b91c1c; }
+
+@media (max-width: 768px) {
+    .companies-filter-bar { flex-direction: column; }
+    .search-box-wrapper { max-width: 100%; }
+    .form-fields-grid { grid-template-columns: 1fr; }
+    .input-field-group.full-width { grid-column: span 1; }
+    .modal-footer-buttons { flex-direction: column-reverse; }
+    .btn-modal-cancel, .btn-modal-save { width: 100%; padding: 12px; }
+}
