@@ -1,0 +1,159 @@
+<!-- 1. القائمة الجانبية المظلمة الاحترافية (Sidebar) -->
+    <aside class="sidebar">
+        <div class="brand-section">
+            <img src="../../resources/images/logo.png" alt="شعار بصمة الأعمال" class="brand-logo">
+            <div class="brand-text">
+                <div class="brand-name" data-i18n="brandName">بصمة الأعمال</div>
+                <div class="brand-subtitle" data-i18n="brandSubtitle">للخدمات والاستشارات الإدارية</div>
+            </div>
+        </div>
+
+        <!-- 🔘 زر طي/فتح القائمة الجانبية -->
+        <button type="button" id="sidebarCollapseToggle" class="sidebar-collapse-btn" onclick="toggleSidebarCollapse()" aria-label="طي أو فتح القائمة الجانبية" title="طي/فتح القائمة">
+            <span class="collapse-icon" data-icon="chevron-left"></span>
+        </button>
+
+      <ul class="menu-list">
+    <!-- كل عنصر رئيسي يحمل data-menu-key ثابت يُستخدم لفلترة القوائم حسب صلاحيات الدور -->
+    <li class="menu-item active" data-menu-key="dashboard">
+        <a href="dashboard.html" data-tooltip="لوحة التحكم">
+            <span class="menu-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                    <path d="M5 0.5L5.94 4.06L9.5 5L5.94 5.94L5 9.5L4.06 5.94L0.5 5L4.06 4.06Z"/>
+                    <rect x="13" y="0.5" width="10.5" height="10.5" rx="2.5"/>
+                    <rect x="2" y="15" width="8" height="8" rx="2.5"/>
+                    <rect x="13" y="15" width="8" height="8" rx="2.5"/>
+                </svg>
+            </span>
+            <span class="menu-label" data-i18n="menuDashboard">لوحة التحكم</span>
+        </a>
+</li>
+
+<li class="menu-item" data-menu-key="employees">
+    <a href="employees.html" data-tooltip="الموظفين">
+        <span class="menu-icon" data-icon="person"></span>
+        <span class="menu-label" data-i18n="menuEmployees">الموظفين</span>
+    </a>
+</li>
+
+<li class="menu-item" data-menu-key="employee_links">
+    <a href="employee_links.html" data-tooltip="ربط الموظفين">
+        <span class="menu-icon" data-icon="link"></span>
+        <span class="menu-label" data-i18n="menuEmployeeLinks">ربط الموظفين</span>
+    </a>
+</li>
+
+    <li class="menu-item" data-menu-key="end_employee_link">
+        <a href="end_employee_link.html" data-tooltip="إنهاء ربط موظف">
+            <span class="menu-icon" data-icon="unlink"></span>
+            <span class="menu-label" data-i18n="menuEndEmployeeLink">إنهاء ربط موظف</span>
+        </a>
+    </li>
+
+    <li class="menu-item" data-menu-key="blacklist">
+        <a href="blacklist.html" data-tooltip="حظر موظف">
+            <span class="menu-icon" data-icon="blocked"></span>
+            <span class="menu-label" data-i18n="menuBlacklist">حظر موظف</span>
+        </a>
+    </li>
+
+    <!-- 🆕 طلبات تسجيل الموظفين: مراجعة/موافقة/رفض طلبات إنشاء الحساب الذاتي
+         التي يرسلها الموظفون من شاشة "دخول الموظفين" (login-employee.html). -->
+    <li class="menu-item" data-menu-key="employee_signup_requests">
+        <a href="employee_signup_requests.html" data-tooltip="طلبات تسجيل الموظفين">
+            <span class="menu-icon" data-icon="id-card"></span>
+            <span class="menu-label" data-i18n="menuEmployeeSignupRequests">طلبات تسجيل الموظفين</span>
+        </a>
+    </li>
+
+            <li class="menu-item" data-menu-key="companies">
+    <a href="companies.html" data-tooltip="الشركات">
+        <span class="menu-icon" data-icon="building"></span>
+        <span class="menu-label" data-i18n="menuCompanies">الشركات</span>
+    </a>
+</li>
+<li class="menu-item" data-menu-key="job_titles">
+    <a href="job-titles.html" data-tooltip="المسميات الوظيفية">
+        <span class="menu-icon" data-icon="tag"></span>
+        <span class="menu-label" data-i18n="menuProfessions">المسميات الوظفية</span>
+    </a>
+</li>
+
+<li class="menu-item" data-menu-key="attendance">
+    <a href="attendance.html" data-tooltip="إدارة الحضور والانصراف">
+        <span class="menu-icon" data-icon="clock"></span>
+        <span class="menu-label" data-i18n="menuAttendance">إدارة الحضور والانصراف</span>
+    </a>
+</li>
+
+<li class="menu-item" data-menu-key="tasks">
+    <a href="tasks.html" data-tooltip="إدارة المهام">
+        <span class="menu-icon" data-icon="clipboard"></span>
+        <span class="menu-label" data-i18n="menuTasksManagement">إدارة المهام</span>
+    </a>
+</li>
+
+    <!-- 💰 قائمة "المالية" — تُدار رؤيتها بالكامل عبر نظام الأدوار والصلاحيات
+         القابل للتخصيص (شاشة "الأدوار والصلاحيات" ← roles.js/roles.html)،
+         تماماً كبقية عناصر القائمة، وليست مقفلة على دور معيّن بشكل ثابت هنا. -->
+    <li class="menu-item has-submenu" data-menu-key="finance">
+        <a href="#" onclick="toggleSubmenu(event)">
+            <span class="menu-icon" data-icon="bank"></span>
+            <span class="menu-label" data-i18n="menuFinance">المالية</span>
+            <span class="arrow">▼</span>
+        </a>
+        <ul class="submenu">
+
+            <li><a href="invoices.html"><span class="menu-icon" data-icon="receipt"></span><span class="menu-label" data-i18n="menuInvoices">الفواتير</span></a></li>
+            <li><a href="add_invoice.html"><span class="menu-icon" data-icon="document"></span><span class="menu-label" data-i18n="menuIssueInvoice">إصدار فاتورة</span></a></li>
+            <li><a href="collections.html"><span class="menu-icon" data-icon="people"></span><span class="menu-label" data-i18n="menuCollections">تحصيل الموظفين</span></a></li>
+            <!-- 🆕 أنواع التحصيل: إدارة طرق التحصيل (كاش/بنك/أي طريقة أخرى) التي
+                 تظهر كخيار عند تعليم تحصيل موظف كمدفوع بشاشة "تحصيل الموظفين" -->
+            <li><a href="collection_types.html"><span class="menu-icon" data-icon="bank"></span><span class="menu-label" data-i18n="menuCollectionTypes">أنواع التحصيل</span></a></li>
+
+        </ul>
+    </li>
+
+        <li class="menu-item has-submenu" data-menu-key="reports">
+        <a href="#" onclick="toggleSubmenu(event)">
+            <span class="menu-icon" data-icon="chart-bar"></span>
+            <span class="menu-label" data-i18n="menuReports">التقارير</span>
+            <span class="arrow">▼</span>
+        </a>
+        <ul class="submenu">
+
+
+            <li><a href="employee-report.html"><span class="menu-icon" data-icon="receipt"></span><span class="menu-label" data-i18n="menuEmployeesReport">تقرير الموظفين</span></a></li>
+            <li><a href="companies-report.html"><span class="menu-icon" data-icon="building"></span><span class="menu-label" data-i18n="menuCompaniesReport">تقرير الشركات</span></a></li>
+            <li><a href="companies-links-report.html"><span class="menu-icon" data-icon="link"></span><span class="menu-label" data-i18n="menuCompanyLinksReport">تقرير ربط الشركات</span></a></li>
+            <li><a href="collections-report.html"><span class="menu-icon" data-icon="people"></span><span class="menu-label" data-i18n="menuCollectionsReport">تقرير تحصيل الموظفين</span></a></li>
+            <li><a href="companies-collections-report.html"><span class="menu-icon" data-icon="bank"></span><span class="menu-label" data-i18n="menuCompaniesCollectionsReport">تقرير تحصيل الشركات</span></a></li>
+            <li><a href="attendance-report.html"><span class="menu-icon" data-icon="clock"></span><span class="menu-label" data-i18n="menuAttendanceReport">تقرير الحضور والانصراف</span></a></li>
+            <li><a href="tasks-report.html"><span class="menu-icon" data-icon="clipboard"></span><span class="menu-label" data-i18n="menuTasksReport">تقرير المهام</span></a></li>
+
+        </ul>
+    </li>
+
+    <li class="menu-item has-submenu" data-menu-key="users">
+        <a href="#" onclick="toggleSubmenu(event)">
+            <span class="menu-icon" data-icon="gear"></span>
+            <span class="menu-label" data-i18n="menuSettings">الإعدادات</span>
+            <span class="arrow">▼</span>
+        </a>
+        <ul class="submenu">
+
+
+            <li><a href="users.html"><span class="menu-icon" data-icon="people"></span><span class="menu-label" data-i18n="menuUsers">المستخدمين</span></a></li>
+            <li><a href="roles.html"><span class="menu-icon" data-icon="shield"></span><span class="menu-label" data-i18n="menuRoles">الأدوار والصلاحيات</span></a></li>
+
+        </ul>
+    </li>
+    <li class="menu-item" data-menu-key="support">
+        <a href="support.html" data-tooltip="الدعم الفني">
+            <span class="menu-icon" data-icon="headset"></span>
+            <span class="menu-label" data-i18n="menuSupport">الدعم الفني</span>
+        </a>
+    </li>
+</ul>
+
+    </aside>

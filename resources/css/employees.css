@@ -1,0 +1,356 @@
+/* ==========================================================================
+   1. Page Layout Workspace Headers & Filter Bars
+   ========================================================================== */
+.view-main-title {
+    color: #d97706; /* Elegant Amber / Gold tone */
+    font-size: 24px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+}
+
+.title-icon { margin-inline-end: 8px; }
+.view-subtitle { color: #64748b; font-size: 13px; margin-top: 4px; }
+
+.btn-add-employee {
+    background-color: #f59e0b; /* Unified gold/amber "add" action color, matching + Add Company */
+    color: #ffffff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+/* Container holding the action button on the left */
+.header-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end; /* Ensures alignment defaults to the outer left boundary in RTL */
+}
+.btn-add-employee:hover { background-color: #d97706; }
+
+.companies-filter-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 20px;
+    margin-bottom: 15px;
+    width: 100%;
+}
+
+@media (max-width: 700px) {
+    .companies-filter-bar .search-box-wrapper,
+    .companies-filter-bar .filter-dropdown-wrapper { width: 100%; }
+    .companies-filter-bar .filter-dropdown-wrapper select { width: 100%; }
+}
+
+.search-box-wrapper { position: relative; flex: 1; }
+.search-icon { position: absolute; inset-inline-start: 14px; top: 50%; transform: translateY(-50%); font-size: 14px; color: #94a3b8; pointer-events: none; }
+
+.search-box-wrapper input {
+    width: 100%; height: 44px; box-sizing: border-box; padding: 0 16px; padding-inline-start: 40px;
+    border: 1px solid #e2e8f0; border-radius: 6px; background-color: #ffffff;
+    font-size: 14px; outline: none; transition: border-color 0.15s ease;
+}
+.search-box-wrapper input:focus { border-color: #e05236; }
+
+.filter-dropdown-wrapper select {
+    height: 44px; box-sizing: border-box; padding: 0 16px; border: 1px solid #e2e8f0; border-radius: 6px;
+    background-color: #ffffff; font-size: 14px; color: #334155;
+    outline: none; min-width: 120px; cursor: pointer;
+}
+
+/* ==========================================================================
+   قائمة اقتراحات البحث المنسدلة (Search Suggestions Dropdown) — أسماء الموظفين
+   ========================================================================== */
+.combo-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    inset-inline-start: 0;
+    inset-inline-end: 0;
+    max-height: 240px;
+    overflow-y: auto;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
+    z-index: 40;
+    display: none;
+}
+.combo-dropdown.open { display: block; }
+
+.combo-item {
+    padding: 10px 16px;
+    font-size: 14px;
+    color: #334155;
+    cursor: pointer;
+    transition: background-color 0.12s ease;
+}
+.combo-item:hover { background-color: #fff5f2; color: #e05236; }
+.combo-item.selected { background-color: #fff0ea; color: #e05236; font-weight: 700; }
+
+.combo-item-clear {
+    border-bottom: 1px solid #f1f5f9;
+    color: #94a3b8;
+    font-weight: 600;
+}
+.combo-item-clear:hover { background-color: #f8fafc; color: #64748b; }
+
+.combo-empty {
+    padding: 14px 16px;
+    font-size: 13px;
+    color: #94a3b8;
+    text-align: center;
+}
+
+/* شارات حالة الموظف (نشط / غير نشط) */
+.status-badge-active {
+    background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;
+    padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;
+}
+.status-badge-inactive {
+    background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;
+    padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;
+}
+/* 🆕 شارة "قيد المعالجة" — تُستخدم لحالة ربط الموظف (link_status بجدول
+   employee_links) بشاشة "ربط الموظفين"، بنفس لون شارة "قيد الانتظار" المعتمد
+   بشاشة "إدارة المهام" (tasks.css/.badge-status-pending) لتوحيد لغة الألوان
+   عبر المنصة (كهرماني = حالة معلّقة تحتاج متابعة). */
+.status-badge-pending {
+    background: #fffbeb; color: #b45309; border: 1px solid #fde68a;
+    padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;
+}
+
+/* 🆕 السطر الثانوي الرمادي الصغير تحت عنصر رئيسي بخلية جدول (مثال: اسم
+   الشركة تحت اسم الموظف بعمود "الموظف" بشاشة "ربط الموظفين") — نفس اسم
+   وطراز .report-subtext المستخدم بملف companies-report.css */
+.report-subtext {
+    font-size: 11.5px;
+    color: #94a3b8;
+    font-weight: 600;
+    margin-top: 3px;
+}
+
+/* 🆕 نسخة مصغّرة اختيارية من شارات status-badge-* (يُضاف كصنف إضافي بجانب
+   الصنف الأصلي، بلا تعديل الأصل حتى لا يتأثر أي استخدام آخر له بالمنصة) —
+   تُستخدم بعمود "حالة الربط" بشاشة "ربط الموظفين" حيث النص غالباً كلمتان
+   ("تم التعيين"/"قيد المعالجة") وقد لا يتسع بالحجم الافتراضي داخل عمود ضيق،
+   فيلتف لسطرين؛ هذا الحجم الأصغر يبقيه على سطر واحد. */
+.badge-compact {
+    font-size: 0.72rem;
+    padding: 3px 9px;
+    white-space: nowrap;
+}
+
+/* ==========================================================================
+   2. Tables & Presentation Grid Modules
+   ========================================================================== */
+.table-container { background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto; width: 100%; }
+.companies-table { width: 100%; border-collapse: collapse; text-align: start; }
+.companies-table th { background-color: #f8fafc; color: #475569; font-size: 13px; font-weight: 700; padding: 14px 18px; border-bottom: 1px solid #e2e8f0; }
+.companies-table td { padding: 14px 18px; font-size: 13.5px; color: #334155; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+.table-loading-state { text-align: center; padding: 50px !important; color: #94a3b8; font-weight: 600; }
+
+.pagination-container { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 20px; direction: ltr; }
+
+/* ==========================================================================
+   أزرار الإجراءات داخل الجدول (عرض / تعديل / قائمة سوداء / حذف)
+   ملاحظة: employees.js يحقن أيقونات SVG خام من ICONS.* مباشرة داخل هذه
+   الأزرار (بدون data-icon)، وبما أنها SVGs بلا width/height صريحين فهي
+   تحتاج قاعدة تحجيم صريحة هنا وإلا تُعرض بالحجم الافتراضي الضخم للمتصفح
+   (300x150px تقريباً) فتنكسر داخل الخلية وتبدو وكأنها غير ظاهرة إطلاقاً.
+   ========================================================================== */
+.action-icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #64748b;
+    padding: 6px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    transition: color 0.15s ease, background-color 0.15s ease;
+}
+.action-icon-btn:hover { color: #0f172a; background-color: #f1f5f9; }
+.action-icon-btn svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+    flex-shrink: 0;
+}
+
+/* ==========================================================================
+   3. Interactive Modal Creation Layer Overlay Frame
+   ========================================================================== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(15, 23, 42, 0.6); /* Modern dark background backdrop layer */
+    backdrop-filter: blur(4px); /* Clean glassmorphism effect */
+    z-index: 3000;
+    display: none; /* Controlled dynamically via active state toggles in JS (.style.display = 'flex') */
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.modal-content-box {
+    background-color: #ffffff;
+    width: 100%;
+    max-width: 680px; /* Comfortable layout profile sizing boundaries */
+    border-radius: 12px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh; /* Prevents overflow cropping on smaller laptop displays */
+    overflow-y: auto;
+}
+
+.modal-header-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+}
+
+.modal-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.btn-close-x {
+    background: none;
+    border: none;
+    font-size: 26px;
+    color: #94a3b8;
+    cursor: pointer;
+    line-height: 1;
+    transition: color 0.15s;
+}
+.btn-close-x:hover { color: #475569; }
+
+/* Avatar Branding Profile Uploader Layout */
+.logo-upload-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.circle-avatar-placeholder {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background-color: #f8fafc;
+    border: 2px dashed #cbd5e1;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.btn-upload-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #e05236;
+    cursor: pointer;
+    background-color: #fff5f3;
+    padding: 6px 12px;
+    border-radius: 4px;
+    transition: background-color 0.15s;
+}
+.btn-upload-label:hover { background-color: #fde8e4; }
+
+/* Grid Forms Structural Trackers */
+.form-fields-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* Split form cleanly into double column streams */
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.input-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.input-field-group label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    text-align: right;
+}
+
+.input-field-group input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #1e293b;
+    outline: none;
+    transition: border-color 0.15s;
+}
+.input-field-group input:focus { border-color: #e05236; }
+
+/* Force Address track element to stretch full screen widths */
+.width-full-row {
+    grid-column: span 2;
+    margin-bottom: 24px;
+}
+
+/* Control Buttons Track alignment configuration rules */
+.modal-footer-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    border-top: 1px solid #f1f5f9;
+    padding-top: 20px;
+}
+
+.btn-modal-cancel {
+    background-color: #f1f5f9;
+    color: #475569;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+.btn-modal-cancel:hover { background-color: #e2e8f0; }
+
+.btn-modal-save {
+    background-color: #e05236;
+    color: #ffffff;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+.btn-modal-save:hover { background-color: #c64127; }
+
+/* Responsive Viewports Adjustments Matrix */
+@media (max-width: 768px) {
+    .form-fields-grid { grid-template-columns: 1fr; } /* Fall back to single vertical tracking layout columns on tablet/mobile screens */
+    .width-full-row { grid-column: span 1; }
+    .modal-footer-buttons { flex-direction: column-reverse; }
+    .btn-modal-cancel, .btn-modal-save { width: 100%; padding: 12px; }
+}

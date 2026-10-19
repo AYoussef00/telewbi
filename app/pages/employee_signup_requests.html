@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="menuEmployeeSignupRequests">طلبات تسجيل الموظفين - بصمة الأعمال</title>
+
+    <link rel="preconnect" href="https://googleapis.com">
+    <link rel="preconnect" href="https://gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="../../config/supabase.js"></script>
+    <script src="../../routes/routes.js"></script>
+    <script src="../shared/icons.js"></script>
+
+    <link rel="stylesheet" href="../../resources/css/global-layout.css?v=2">
+    <link rel="stylesheet" href="../../resources/css/sidebar.css?v=2">
+    <link rel="stylesheet" href="../../resources/css/navbar.css">
+    <link rel="stylesheet" href="../../resources/css/employees.css">
+    <link rel="stylesheet" href="../../resources/css/employee_signup_requests.css">
+</head>
+<body>
+    <div class="app-container">
+        <div id="sidebar-container"></div>
+
+        <main class="main-content">
+            <div id="navbar-container"></div>
+
+            <div class="dashboard-container">
+                <div class="page-header">
+                    <div class="header-title">
+                        <h1 class="view-main-title">
+                            <span class="title-icon" data-icon="id-card"></span>
+                            <span>طلبات تسجيل الموظفين</span>
+                        </h1>
+                        <p class="view-subtitle">راجع طلبات إنشاء الحساب الذاتي التي أرسلها الموظفون من شاشة "دخول الموظفين"، ووافق عليها أو ارفضها</p>
+                    </div>
+                </div>
+
+                <!-- 🔘 التحكم بإظهار/إخفاء خيار "إنشاء حساب" بشاشة دخول الموظفين -->
+                <div class="settings-toggle-card">
+                    <div class="settings-toggle-info">
+                        <div class="settings-toggle-title"><span data-icon="key"></span> خيار "إنشاء حساب" بشاشة دخول الموظفين</div>
+                        <p class="settings-toggle-desc">عند التفعيل، يظهر رابط "إنشاء حساب جديد" أسفل شاشة دخول الموظفين ويمكن لأي شخص إرسال طلب تسجيل ذاتي (يبقى تحت المراجعة حتى تُوافق عليه هنا). عند الإيقاف، يختفي الرابط تماماً ولا يمكن فتح شاشة التسجيل مباشرة.</p>
+                    </div>
+                    <div class="toggle-switch-wrapper">
+                        <span class="toggle-switch-label" id="toggleStatusLabel">جاري التحميل...</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="selfRegistrationToggle" disabled>
+                            <span class="toggle-switch-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="toggleAlert" class="form-alert" style="display:none; margin-bottom:18px;"></div>
+
+                <!-- تبويبات تصفية الحالة -->
+                <div class="status-filter-tabs" id="statusFilterTabs">
+                    <button type="button" class="status-filter-tab active" data-status="pending">قيد المراجعة</button>
+                    <button type="button" class="status-filter-tab" data-status="approved">مقبولة</button>
+                    <button type="button" class="status-filter-tab" data-status="rejected">مرفوضة</button>
+                    <button type="button" class="status-filter-tab" data-status="all">الكل</button>
+                </div>
+
+                <!-- شريط البحث -->
+                <section class="companies-filter-bar">
+                    <div class="search-box-wrapper">
+                        <span class="search-icon" data-icon="search"></span>
+                        <input type="text" id="requestsSearchInput" placeholder="بحث بالاسم أو رقم الهوية أو البريد الإلكتروني...">
+                    </div>
+                </section>
+
+                <section class="table-container">
+                    <table class="companies-table">
+                        <thead>
+                            <tr>
+                                <th>الموظف</th>
+                                <th>رقم الهوية</th>
+                                <th>رقم الجوال</th>
+                                <th>البريد الإلكتروني</th>
+                                <th>المرفقات</th>
+                                <th style="text-align:center;">الحالة</th>
+                                <th style="text-align:center;">تاريخ الطلب</th>
+                                <th style="text-align:center;">الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="requestsTableBody">
+                            <tr>
+                                <td colspan="8" class="table-loading-state">جاري تحميل طلبات التسجيل...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <div id="requestsPagination" class="pagination-container"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- نافذة رفض الطلب: يُطلب سبب الرفض إلزامياً -->
+    <div class="modal-overlay" id="rejectRequestModal">
+        <div class="modal-content-box">
+            <div class="modal-header-section">
+                <h2 class="modal-title">رفض طلب التسجيل</h2>
+                <button type="button" class="btn-close-x" id="btnCloseRejectModal">×</button>
+            </div>
+
+            <p style="font-size:13.5px; color:#64748b; margin-bottom:16px; line-height:1.8;">
+                الرجاء توضيح سبب رفض طلب الموظف <strong id="rejectModalEmployeeName">—</strong>، ليظهر له عند محاولة تسجيل الدخول.
+            </p>
+
+            <div class="input-field-group full-width">
+                <label for="rejectReasonInput">سبب الرفض</label>
+                <textarea id="rejectReasonInput" rows="4" placeholder="مثال: بيانات الهوية غير مطابقة للمرفقات..." style="width:100%; padding:10px 14px; border:1px solid #cbd5e1; border-radius:6px; font-family:inherit; font-size:13.5px; resize:vertical; outline:none;"></textarea>
+                <span class="field-error" id="error-reject_reason"></span>
+            </div>
+
+            <div class="form-alert" id="rejectModalAlert" style="display:none;"></div>
+
+            <div class="modal-footer-buttons">
+                <button type="button" class="btn-modal-cancel" id="btnCancelRejectModal">إلغاء</button>
+                <button type="button" class="btn-modal-save btn-modal-danger" id="btnConfirmRejectModal" style="background-color:#dc2626;">تأكيد الرفض</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../bootstrap/permissions.js?v=8"></script>
+    <script src="../../bootstrap/app-core.js"></script>
+    <script src="../shared/sidebar.js?v=3"></script>
+    <script src="../shared/navbar.js"></script>
+    <script src="../scripts/employee_signup_requests.js?v=1"></script>
+</body>
+</html>

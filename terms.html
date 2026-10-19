@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>الشروط والأحكام | بصمة الأعمال</title>
+
+    <!-- خط القاهرة الرسمي المعتمد في واجهات المنصة -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- نفس ملف تنسيق الصفحة الرئيسية (الهيدر والفوتر مطابقان لـ index.html حرفياً) -->
+    <link rel="stylesheet" href="resources/css/homepage.css">
+
+    <!-- تنسيقات إضافية خاصة بمحتوى المستندات القانونية (سياسة الخصوصية/الشروط والأحكام) -->
+    <style>
+        .legal-page-wrapper {
+            max-width: 880px;
+            margin: 0 auto;
+            padding: 48px 24px 80px;
+        }
+        .legal-page-header {
+            margin-bottom: 40px;
+        }
+        .legal-page-header h1 {
+            font-size: 30px;
+            color: #111827;
+            margin-bottom: 10px;
+        }
+        .legal-updated-date {
+            font-size: 13px;
+            color: #6b7280;
+        }
+        .legal-content {
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+        }
+        .legal-intro {
+            font-size: 15px;
+            line-height: 1.9;
+            color: #374151;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #111827;
+            margin: 10px 0 0 0;
+        }
+        .legal-paragraph {
+            font-size: 15px;
+            line-height: 1.9;
+            color: #374151;
+            text-align: justify;
+            margin: 0;
+        }
+        .legal-paragraph ul {
+            margin: 10px 0 0;
+            padding-inline-start: 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .legal-link {
+            color: #ff5a22;
+            text-decoration: none;
+        }
+        .legal-link:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 768px) {
+            .legal-page-wrapper { padding: 32px 20px 60px; }
+            .legal-page-header h1 { font-size: 24px; }
+            .legal-paragraph, .legal-intro { font-size: 14px; line-height: 1.8; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- الهيدر الرئيسي — مطابق حرفياً لهيدر الصفحة الرئيسية index.html -->
+    <header class="main-navbar">
+        <div class="navbar">
+            <div class="nav-right">
+                <a class="logo" href="index.html">
+                    <span class="logo-circle"><img src="resources/images/logo.png" width="25px" alt="أيقونة"></span>
+                    <strong data-i18n="logo_text">بصمة الأعمال</strong>
+                </a>
+            </div>
+            <div class="nav-actions">
+                <!-- زر تبديل اللغة -->
+                <a href="#" id="langToggle" class="lang-switch">English</a>
+                <a href="login-employee.html" class="btn btn-register" data-i18n="btn_employee_login">دخول موظف</a>
+                <a href="login-companies.html" class="btn btn-login" data-i18n="btn_login">تسجيل دخول الشركات</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- محتوى الشروط والأحكام -->
+    <main class="legal-page-wrapper">
+        <div class="legal-page-header">
+            <h1>الشروط والأحكام</h1>
+            <span class="legal-updated-date">آخر تحديث: 3 أغسطس 2026</span>
+        </div>
+
+        <article class="legal-content">
+            <p class="legal-intro">
+                تحكم هذه الشروط والأحكام استخدامك لمنصة "بصمة الأعمال"، وتنظّم العلاقة بينك (سواء كنت شركة مشتركة أو موظفاً مرتبطاً بحساب شركة) وبين المنصة. بمجرد إنشاء حساب أو استخدام أي من خدمات المنصة، فإنك تقرّ بأنك قرأت هذه الشروط وفهمتها ووافقت على الالتزام بها.
+            </p>
+
+            <h2 class="section-title">1. وصف الخدمة</h2>
+            <p class="legal-paragraph">
+                توفّر "بصمة الأعمال" منصة إلكترونية لإدارة الموارد البشرية، تشمل ربط الموظفين بالشركات، تسجيل الحضور والانصراف، توزيع ومتابعة المهام، وإصدار التقارير الإدارية ذات الصلة. تُقدَّم الخدمة "كما هي" وقد تخضع للتطوير والتحديث المستمر.
+            </p>
+
+            <h2 class="section-title">2. حسابات المستخدمين والشركات</h2>
+            <p class="legal-paragraph">
+                يلتزم صاحب حساب الشركة بتقديم بيانات صحيحة ودقيقة عند التسجيل وعن الموظفين المرتبطين بحسابه، وبالحفاظ على سرية بيانات تسجيل الدخول الخاصة به وبموظفيه. تقتصر رؤية كل حساب شركة على بياناته وموظفيه وشركاته المملوكة فقط، ولا يجوز مشاركة بيانات الدخول مع أي طرف غير مخوَّل.
+            </p>
+
+            <h2 class="section-title">3. التزامات المستخدم</h2>
+            <p class="legal-paragraph">
+                يتعهد المستخدم بعدم إساءة استخدام المنصة، وعدم محاولة الوصول غير المصرَّح به لبيانات شركات أو مستخدمين آخرين، وعدم استخدام المنصة لأي غرض مخالف للأنظمة المعمول بها في المملكة العربية السعودية. تحتفظ "بصمة الأعمال" بحقها في تعليق أو إنهاء أي حساب يُثبت مخالفته لهذه الالتزامات.
+            </p>
+
+            <h2 class="section-title">4. الاشتراكات والرسوم</h2>
+            <p class="legal-paragraph">
+                قد تخضع بعض ميزات المنصة أو خطط الربط الوظيفي لقيمة اشتراك محددة يتفق عليها مع الشركة المشتركة. تُحتسب قيم الاشتراك والرواتب المرتبطة بربط كل موظف وفق ما يُدخله صاحب حساب الشركة بنفسه، وتبقى "بصمة الأعمال" أداة إدارية لتوثيق هذه القيم دون أن تكون طرفاً في أي علاقة توظيف أو تعاقد مالي بين الشركة والموظف.
+            </p>
+
+            <h2 class="section-title">5. الاستخدام المقبول للمنصة</h2>
+            <p class="legal-paragraph">
+                يُمنع استخدام المنصة لإدخال بيانات مضللة أو غير قانونية، أو محاولة استغلال أي ثغرة تقنية، أو إعادة هندسة أجزاء من النظام. أي استخدام يخالف هذا البند يُعرّض الحساب المخالف للتعليق الفوري دون إشعار مسبق في الحالات الجسيمة.
+            </p>
+
+            <h2 class="section-title">6. الملكية الفكرية</h2>
+            <p class="legal-paragraph">
+                جميع الحقوق المتعلقة بتصميم المنصة، وشعارها، وأكوادها البرمجية محفوظة لـ"بصمة الأعمال"، ولا يجوز نسخها أو إعادة استخدامها تجارياً دون إذن كتابي مسبق. تبقى البيانات التي يُدخلها المستخدم (بيانات شركته وموظفيه) ملكاً له، ولا تستخدمها المنصة إلا في نطاق تقديم الخدمة المتفق عليها.
+            </p>
+
+            <h2 class="section-title">7. حدود المسؤولية</h2>
+            <p class="legal-paragraph">
+                تبذل "بصمة الأعمال" جهدها لضمان استمرارية الخدمة ودقة البيانات المعروضة، لكنها لا تتحمل مسؤولية أي أضرار غير مباشرة تنشأ عن انقطاع مؤقت للخدمة، أو عن دقة البيانات التي يُدخلها المستخدم بنفسه عن موظفيه أو شركته.
+            </p>
+
+            <h2 class="section-title">8. إنهاء الحساب أو الخدمة</h2>
+            <p class="legal-paragraph">
+                يحق لصاحب الحساب طلب إغلاق حسابه في أي وقت بالتواصل معنا. كما تحتفظ "بصمة الأعمال" بحق تعليق أو إنهاء أي حساب يخالف هذه الشروط، مع إشعار صاحب الحساب متى أمكن ذلك.
+            </p>
+
+            <h2 class="section-title">9. التعديلات على الشروط</h2>
+            <p class="legal-paragraph">
+                قد تُحدَّث هذه الشروط من وقت لآخر، وسيُنشر أي تعديل جوهري على هذه الصفحة مع تحديث تاريخ آخر تعديل أعلاها. استمرارك في استخدام المنصة بعد نشر التعديلات يُعد قبولاً بها.
+            </p>
+
+            <h2 class="section-title">10. القانون الحاكم وتسوية النزاعات</h2>
+            <p class="legal-paragraph">
+                تخضع هذه الشروط وتُفسَّر وفقاً لأنظمة المملكة العربية السعودية، وتختص الجهات القضائية المختصة بالمملكة بالفصل في أي نزاع ينشأ عن استخدام المنصة، ما لم يُتفق على خلاف ذلك.
+            </p>
+
+            <h2 class="section-title">11. التواصل بنا</h2>
+            <p class="legal-paragraph">
+                لأي استفسار يخص هذه الشروط، يسعدنا تواصلك معنا عبر
+                <a href="contact-us.html" class="legal-link">صفحة اتصل بنا</a>.
+            </p>
+        </article>
+    </main>
+
+    <!-- قسم التذييل / الفوتر — مطابق حرفياً لفوتر الصفحة الرئيسية index.html -->
+    <footer class="main-footer">
+        <div class="footer-container">
+            <!-- عمود الهوية (الشعار، الوصف، وسائل التواصل) -->
+            <div class="footer-brand">
+                <div class="footer-brand-top">
+                    <span class="footer-logo-circle"><img src="resources/images/logo.png" alt="شعار بصمة الأعمال"></span>
+                    <div>
+                        <strong class="footer-brand-name" data-i18n="footer_col1_title">بصمة الأعمال</strong>
+                        <span class="footer-brand-tagline" data-i18n="footer_brand_tagline">للخدمات والاستشارات الإدارية الرقمية</span>
+                    </div>
+                </div>
+                <p class="footer-brand-desc" data-i18n="footer_brand_desc">نساعد الشركات على إدارة مواردها البشرية وعملياتها اليومية من خلال منصة رقمية متكاملة تواكب أعلى معايير الجودة والاحترافية.</p>
+                <p class="footer-brand-highlight" data-i18n="footer_brand_highlight">نساعد شركتك على النمو ببناء أنظمة إدارية أكثر كفاءة واستدامة.</p>
+                <div class="social-icons">
+                    <a href="#" class="icon-link" aria-label="LinkedIn">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M6.94 8.5H3.56V20h3.38V8.5zM5.25 3.5a1.96 1.96 0 1 0 0 3.92 1.96 1.96 0 0 0 0-3.92zM20.44 20h-3.37v-5.6c0-1.34-.03-3.06-1.87-3.06-1.87 0-2.16 1.46-2.16 2.96V20H9.68V8.5h3.24v1.57h.05c.45-.85 1.55-1.75 3.2-1.75 3.42 0 4.05 2.25 4.05 5.18V20z"/></svg>
+                    </a>
+                    <a href="#" class="icon-link" aria-label="X">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true"><path d="M18.9 2H22l-7.2 8.2L23.3 22h-6.8l-5.3-6.9L5.1 22H2l7.7-8.8L1 2h7l4.8 6.3L18.9 2zm-1.2 18h1.9L7.4 3.9H5.4L17.7 20z"/></svg>
+                    </a>
+                    <a href="#" class="icon-link" aria-label="Instagram">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none"/></svg>
+                    </a>
+                    <a href="#" class="icon-link" aria-label="TikTok">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true"><path d="M16.6 5.8c-.8-.9-1.3-2-1.4-3.3h-3.1v14.2a2.6 2.6 0 1 1-2.6-2.7c.3 0 .5 0 .8.1V10.9a5.7 5.7 0 0 0-.8-.1A5.7 5.7 0 1 0 15.2 16V9.1a8.3 8.3 0 0 0 4.8 1.5V7.5a5 5 0 0 1-3.4-1.7z"/></svg>
+                    </a>
+                </div>
+            </div>
+
+            <!-- عمود الشركة -->
+            <div class="footer-column">
+                <h3 data-i18n="footer_heading_company">الشركة</h3>
+                <ul>
+                    <li><a href="index.html" data-i18n="footer_link_about">من نحن</a></li>
+                    <li><a href="register-companies.html" data-i18n="footer_link_register_company">تسجيل شركة جديدة</a></li>
+                    <li><a href="login-companies.html" data-i18n="footer_link_company_login">تسجيل دخول الشركات</a></li>
+                    <li><a href="login.html" data-i18n="footer_emp_login">دخول الموظفين</a></li>
+                    <li><a href="contact-us.html" data-i18n="footer_contact">اتصل بنا</a></li>
+                </ul>
+            </div>
+
+            <!-- عمود مزايا المنصة -->
+            <div class="footer-column">
+                <h3 data-i18n="footer_heading_features">مزايا المنصة</h3>
+                <ul class="footer-feature-list">
+                    <li><span class="bullet-dot" aria-hidden="true"></span><span data-i18n="footer_feature_employees">إدارة الموظفين</span></li>
+                    <li><span class="bullet-dot" aria-hidden="true"></span><span data-i18n="footer_feature_attendance">الحضور والانصراف</span></li>
+                    <li><span class="bullet-dot" aria-hidden="true"></span><span data-i18n="footer_feature_tasks">إدارة المهام وتوزيعها</span></li>
+                    <li><span class="bullet-dot" aria-hidden="true"></span><span data-i18n="footer_feature_companies">إدارة الشركات المشتركة</span></li>
+                    <li><span class="bullet-dot" aria-hidden="true"></span><span data-i18n="footer_feature_reports">التقارير الإدارية الدقيقة</span></li>
+                    <li><span class="bullet-dot" aria-hidden="true"></span><span data-i18n="footer_feature_roles">الأدوار والصلاحيات</span></li>
+                </ul>
+            </div>
+
+            <!-- عمود التواصل -->
+            <div class="footer-column">
+                <h3 data-i18n="footer_heading_contact">تواصل معنا</h3>
+                <ul class="footer-contact-list">
+                    <li>
+                        <span class="contact-icon-badge" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 6.5-9 12-9 12s-9-5.5-9-12a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
+                        <a href="https://maps.app.goo.gl/e4wGszkoqNZotkTq8" target="_blank" rel="noopener" data-i18n="footer_address">الرياض - طريق الصحابة - حي إشبيلية - مجمع الحمراء سيتي - الطابق الثالث، مكتب رقم 304</a>
+                    </li>
+                    <li>
+                        <span class="contact-icon-badge" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v2.6a2 2 0 0 1-2.2 2 19.6 19.6 0 0 1-8.5-3 19.3 19.3 0 0 1-6-6 19.6 19.6 0 0 1-3-8.6A2 2 0 0 1 4.3 2h2.6a2 2 0 0 1 2 1.7c.1.9.4 1.9.7 2.7a2 2 0 0 1-.4 2.1L8 9.9a16 16 0 0 0 6 6l1.4-1.2a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.8 2z"/></svg></span>
+                        <a href="tel:+966114508452" dir="ltr">+966 11 450 8452</a>
+                    </li>
+                    <li>
+                        <span class="contact-icon-badge" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></span>
+                        <a href="mailto:info@business-imprint.com" dir="ltr">info@business-imprint.com</a>
+                    </li>
+                </ul>
+                <div class="footer-contact-actions">
+                    <a href="tel:+966114508452" class="btn-footer-call">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v2.6a2 2 0 0 1-2.2 2 19.6 19.6 0 0 1-8.5-3 19.3 19.3 0 0 1-6-6 19.6 19.6 0 0 1-3-8.6A2 2 0 0 1 4.3 2h2.6a2 2 0 0 1 2 1.7c.1.9.4 1.9.7 2.7a2 2 0 0 1-.4 2.1L8 9.9a16 16 0 0 0 6 6l1.4-1.2a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.8 2z"/></svg>
+                        <span data-i18n="footer_btn_call">اتصل الآن</span>
+                    </a>
+                    <a href="mailto:info@business-imprint.com" class="btn-footer-msg">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+                        <span data-i18n="footer_btn_email">راسلنا بالبريد</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <div class="bottom-left">
+                <span data-i18n="footer_copy">© 2026 بصمة الأعمال</span>
+                <span data-i18n="footer_vat">الرقم الضريبي: 1234567890</span>
+            </div>
+            <div class="bottom-right">
+                <a href="privacy-policy.html" data-i18n="footer_privacy">سياسة الخصوصية</a>
+                <a href="terms.html" data-i18n="footer_terms">الشروط والأحكام</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ربط نفس سكربت الترجمة/تبديل اللغة المستخدم بالصفحة الرئيسية حتى يعمل زر تبديل اللغة بالهيدر والفوتر بنفس الطريقة -->
+    <script src="routes/routes.js"></script>
+    <script src="app/scripts/site/homepage.js"></script>
+</body>
+</html>

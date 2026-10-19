@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="menuRoles">بصمة الأعمال - الأدوار والصلاحيات</title>
+
+    <link rel="preconnect" href="https://googleapis.com">
+    <link rel="preconnect" href="https://gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="../../config/supabase.js"></script>
+    <script src="../../routes/routes.js"></script>
+    <script src="../shared/icons.js"></script>
+
+    <link rel="stylesheet" href="../../resources/css/global-layout.css?v=2">
+    <link rel="stylesheet" href="../../resources/css/sidebar.css?v=2">
+    <link rel="stylesheet" href="../../resources/css/navbar.css">
+    <link rel="stylesheet" href="../../resources/css/roles.css?v=2">
+</head>
+<body>
+    <div class="app-container">
+
+        <div id="sidebar-container"></div>
+
+        <main class="main-content">
+            <div id="navbar-container"></div>
+
+            <div class="page-container">
+                <div class="roles-container">
+
+                    <div class="page-header">
+                        <div class="header-title">
+                            <nav class="breadcrumb-nav" aria-label="breadcrumb">
+                                <span class="title-icon" data-icon="shield"></span>
+                                <span class="breadcrumb-current" data-i18n="menuRoles">الأدوار والصلاحيات</span>
+                            </nav>
+                            <p class="view-subtitle" data-i18n="rolesSubtitle">حدّد بدقة من يملك صلاحية عرض/إضافة/تعديل/حذف لكل قسم من أقسام النظام، لكل دور من أدوار المستخدمين</p>
+                        </div>
+                    </div>
+
+                    <!-- ============================================================
+                         🙍 تعيين دور لمستخدم محدد — البحث عن مستخدم وتغيير دوره مباشرة
+                         من هذه الشاشة (بديل أسرع من فتح شاشة "المستخدمين" وتعديل بياناته كاملة)
+                         ============================================================ -->
+                    <div class="form-card user-role-assign-card">
+                        <div id="userRoleAlert" class="form-alert" style="display:none;"></div>
+
+                        <p class="section-label">تعيين دور لمستخدم:</p>
+
+                        <div class="user-role-assign-grid">
+                            <div class="form-group" id="group-user_select">
+                                <label for="userRoleSearch">المستخدم (الاسم أو البريد الإلكتروني)</label>
+                                <div class="combo-box" id="comboUserRole">
+                                    <input type="text" id="userRoleSearch" class="combo-input" placeholder="جاري تحميل المستخدمين..." autocomplete="off" disabled>
+                                    <input type="hidden" id="userRoleUserId">
+                                    <span class="combo-arrow">▾</span>
+                                    <div class="combo-dropdown" id="userRoleDropdown"></div>
+                                </div>
+                            </div>
+
+                            <div class="form-group" id="group-current_role">
+                                <label>الدور الحالي</label>
+                                <div class="current-role-badge" id="userRoleCurrentDisplay">—</div>
+                            </div>
+
+                            <div class="form-group" id="group-new_role">
+                                <label for="userRoleNewSelect">الدور الجديد</label>
+                                <!-- تُبنى الخيارات ديناميكياً عبر roles.js (populateAssignRoleSelect) لتشمل
+                                     الأدوار الأساسية وأي أدوار مخصصة تم إنشاؤها من قسم "إضافة دور جديد" أدناه -->
+                                <select id="userRoleNewSelect" disabled></select>
+                            </div>
+
+                            <div class="form-group" id="group-assign_action">
+                                <label>&nbsp;</label>
+                                <button type="button" id="btnAssignUserRole" class="btn btn-submit" disabled>حفظ الدور الجديد</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- شريط تبديل الدور المراد تعديل صلاحياته — تُبنى الأزرار ديناميكياً عبر
+                         roles.js (renderRoleTabs) من الأدوار الأساسية + أي أدوار مخصصة محفوظة -->
+                    <div class="role-tabs" id="roleTabs"></div>
+
+                    <!-- ➕ إضافة دور جديد: يُنشئ صفاً جديداً بجدول role_permissions بلا أي
+                         صلاحيات ممنوحة افتراضياً (أكثر أماناً)، ويظهر كتبويب جديد فوراً -->
+                    <div class="add-role-row">
+                        <input type="text" id="newRoleNameInput" class="add-role-input" placeholder="اسم الدور الجديد (مثال: مشرف الفرع)" autocomplete="off">
+                        <button type="button" id="btnAddNewRole" class="btn btn-cancel add-role-btn">+ إضافة دور جديد</button>
+                    </div>
+
+                    <div class="form-card">
+                        <div id="rolesAlert" class="form-alert" style="display:none;"></div>
+
+                        <div id="superAdminNotice" class="super-admin-notice" style="display:none;">
+                            <span data-icon="lock" class="icon-inline"></span> مدير عام النظام يملك كل الصلاحيات دائماً ولا يمكن تقييدها من هنا.
+                        </div>
+
+                        <p class="section-label">صلاحيات هذا الدور — حدّد لكل قسم أي الإجراءات مسموحة له:</p>
+
+                        <div class="perm-table-wrapper" id="permTableWrapper">
+                            <table class="perm-table" id="permTable">
+                                <thead>
+                                    <tr>
+                                        <th>القسم</th>
+                                        <th>عرض</th>
+                                        <th>إضافة</th>
+                                        <th>تعديل</th>
+                                        <th>حذف</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="permTableBody">
+                                    <!-- تُبنى الصفوف ديناميكياً من Permissions.SECTIONS عبر roles.js -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <p style="font-size:12.5px; color:#94a3b8; margin-top:14px; line-height:1.8;">
+                            💡 "عرض" هي الصلاحية الأساسية: بدونها يُمنع المستخدم من فتح صفحة هذا القسم نهائياً (حتى لو فتح رابطها مباشرة)، بغضّ النظر عن أي إجراءات أخرى ممنوحة له. أزرار "إضافة/تعديل/حذف" غير الممنوحة لا تظهر إطلاقاً بصفحات هذا القسم.
+                        </p>
+
+                        <div class="form-actions">
+                            <button type="button" id="btnSaveRolePermissions" class="btn btn-submit">حفظ صلاحيات هذا الدور</button>
+                            <button type="button" id="btnSelectAll" class="btn btn-cancel">تحديد الكل</button>
+                            <button type="button" id="btnClearAll" class="btn btn-cancel">إلغاء تحديد الكل</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../../bootstrap/permissions.js?v=8"></script>
+    <script src="../../bootstrap/app-core.js"></script>
+    <script src="../shared/sidebar.js?v=3"></script>
+    <script src="../shared/navbar.js"></script>
+    <script src="../scripts/roles.js?v=2"></script>
+</body>
+</html>

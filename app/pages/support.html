@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="menuSupport">الدعم الفني</title>
+
+    <!-- خط القاهرة الرسمي المعتمد في واجهات المنصة -->
+    <link rel="preconnect" href="https://googleapis.com">
+    <link rel="preconnect" href="https://gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- استدعاء حزمة سوبابيس الرسمية عبر خادم unpkg المباشر والمستقر -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="../../config/supabase.js"></script>
+    <script src="../../routes/routes.js"></script>
+    <script src="../shared/icons.js"></script>
+
+    <!-- ملفات التنسيق الموديلار: employees.css أساس مشترك (جدول/بحث/نافذة منبثقة) -->
+    <link rel="stylesheet" href="../../resources/css/global-layout.css?v=2">
+    <link rel="stylesheet" href="../../resources/css/sidebar.css?v=2">
+    <link rel="stylesheet" href="../../resources/css/navbar.css">
+    <link rel="stylesheet" href="../../resources/css/employees.css">
+    <link rel="stylesheet" href="../../resources/css/support.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <div id="sidebar-container"></div>
+
+        <main class="main-content">
+            <div id="navbar-container"></div>
+
+            <div class="dashboard-container">
+
+                <div class="page-header">
+                    <div class="header-title">
+                        <h1 class="view-main-title">
+                            <span class="title-icon" data-icon="headset"></span>
+                            <span data-i18n="menuSupport">الدعم الفني</span>
+                        </h1>
+                        <p class="view-subtitle">إدارة تذاكر الدعم الفني ومتابعة حالتها</p>
+                    </div>
+
+                    <div class="header-actions">
+                        <button type="button" class="btn-add-ticket" id="btnAddTicket" data-perm="add:support">+ فتح تذكرة جديدة</button>
+                        <!-- 🎨 توحيد الأيقونات: استُبدل رمز الإيموجي 🔄 (يظهر بشكل مختلف بين
+                             أنظمة التشغيل) بأيقونة SVG موحّدة من مكتبة icons.js — نفس أسلوب
+                             زر التحديث في شاشة "إدارة المهام" (data-icon="refresh") -->
+                        <button type="button" class="btn-refresh-tickets" id="btnRefreshTickets" title="تحديث"><span data-icon="refresh"></span></button>
+                    </div>
+                </div>
+
+                <!-- بطاقات الإحصائيات الأربع -->
+                <section class="tickets-stats-grid">
+                    <div class="ticket-stat-card ticket-stat-open">
+                        <div class="ticket-stat-label">مفتوحة</div>
+                        <div class="ticket-stat-value" id="statOpen">0</div>
+                    </div>
+                    <div class="ticket-stat-card ticket-stat-inprogress">
+                        <div class="ticket-stat-label">قيد المعالجة</div>
+                        <div class="ticket-stat-value" id="statInProgress">0</div>
+                    </div>
+                    <div class="ticket-stat-card ticket-stat-closed">
+                        <div class="ticket-stat-label">مغلقة</div>
+                        <div class="ticket-stat-value" id="statClosed">0</div>
+                    </div>
+                    <div class="ticket-stat-card ticket-stat-total">
+                        <div class="ticket-stat-label">إجمالي التذاكر</div>
+                        <div class="ticket-stat-value" id="statTotal">0</div>
+                    </div>
+                </section>
+
+                <!-- شريط البحث والتصفية -->
+                <section class="companies-filter-bar tickets-filter-bar">
+                    <div class="search-box-wrapper">
+                        <!-- 🎨 توحيد الأيقونات: استُبدل رمز الإيموجي 🔍 بأيقونة SVG موحّدة
+                             (data-icon="search")، نفس أسلوب شريط البحث بشاشة "إدارة المهام" -->
+                        <span class="search-icon" data-icon="search"></span>
+                        <input type="text" id="ticketSearchInput" autocomplete="off" placeholder="الموضوع أو الشركة أو مقدّم الطلب...">
+                    </div>
+                    <div class="combo-box ticket-filter-combo" id="comboTicketCompanyFilter" style="display:none;">
+                        <input type="text" id="ticketCompanyFilterSearch" class="combo-input" placeholder="جميع الشركات" autocomplete="off">
+                        <input type="hidden" id="ticketCompanyFilterId" value="all">
+                        <span class="combo-arrow">▾</span>
+                        <div class="combo-dropdown" id="ticketCompanyFilterDropdown"></div>
+                    </div>
+                    <div class="combo-box ticket-filter-combo" id="comboTicketStatusFilter">
+                        <input type="text" id="ticketStatusFilterSearch" class="combo-input" placeholder="الحالة: الكل" autocomplete="off">
+                        <input type="hidden" id="ticketStatusFilterId" value="all">
+                        <span class="combo-arrow">▾</span>
+                        <div class="combo-dropdown" id="ticketStatusFilterDropdown"></div>
+                    </div>
+                </section>
+
+                <!-- جدول التذاكر -->
+                <section class="table-container" style="margin-top: 16px;">
+                    <table class="companies-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 32%;">عنوان التذكرة</th>
+                                <th style="width: 24%;">مقدّم الطلب</th>
+                                <th style="width: 16%;">تاريخ الفتح</th>
+                                <th style="width: 16%; text-align:center;">الحالة</th>
+                                <th style="width: 12%; text-align:center;">إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ticketsTableBody">
+                            <tr><td colspan="5" class="table-loading-state">جاري تحميل التذاكر...</td></tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <div id="ticketsPagination" class="pagination-container"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- نافذة تفاصيل/إدارة التذكرة -->
+    <div class="modal-overlay" id="ticketModal">
+        <div class="modal-content-box">
+            <div class="modal-header-section">
+                <h2 class="modal-title" id="ticketModalTitle">تفاصيل التذكرة</h2>
+                <button type="button" class="btn-close-x" id="btnCloseTicketModal">×</button>
+            </div>
+
+            <input type="hidden" id="ticketId">
+
+            <div class="ticket-meta-grid">
+                <div class="ticket-meta-item">
+                    <span class="ticket-meta-label">الشركة</span>
+                    <span class="ticket-meta-value" id="ticketMetaCompany">—</span>
+                </div>
+                <div class="ticket-meta-item">
+                    <span class="ticket-meta-label">مقدّم الطلب</span>
+                    <span class="ticket-meta-value" id="ticketMetaRequester">—</span>
+                </div>
+                <div class="ticket-meta-item">
+                    <span class="ticket-meta-label">تاريخ الفتح</span>
+                    <span class="ticket-meta-value" id="ticketMetaDate">—</span>
+                </div>
+                <div class="ticket-meta-item">
+                    <span class="ticket-meta-label">الحالة الحالية</span>
+                    <span class="ticket-meta-value" id="ticketMetaStatus">—</span>
+                </div>
+            </div>
+
+            <div class="ticket-detail-block">
+                <label>الموضوع</label>
+                <div class="ticket-description-text" id="ticketMetaSubject" style="font-weight:700;"></div>
+            </div>
+
+            <div class="ticket-detail-block">
+                <label>وصف المشكلة</label>
+                <div class="ticket-description-text" id="ticketMetaDescription"></div>
+            </div>
+
+            <!-- تُعرض هذه المجموعة لمسؤولي النظام فقط (تعديل الحالة + كتابة رد) -->
+            <div id="ticketAdminControls" style="display:none;">
+                <div class="ticket-detail-block">
+                    <label for="ticketStatusSelect">تحديث حالة التذكرة</label>
+                    <select id="ticketStatusSelect">
+                        <option value="مفتوحة">مفتوحة</option>
+                        <option value="قيد المعالجة">قيد المعالجة</option>
+                        <option value="مغلقة">مغلقة</option>
+                    </select>
+                </div>
+                <div class="ticket-detail-block">
+                    <label for="ticketAdminReply">رد الدعم الفني <span class="optional-tag">(اختياري)</span></label>
+                    <textarea id="ticketAdminReply" placeholder="اكتب رد الدعم الفني على هذه التذكرة..."></textarea>
+                </div>
+            </div>
+
+            <!-- يُعرض هذا فقط لصاحب التذكرة (رد الدعم الفني كنص للقراءة فقط) -->
+            <div class="ticket-detail-block" id="ticketReplyReadonlyBlock" style="display:none;">
+                <label>رد الدعم الفني</label>
+                <div class="ticket-reply-readonly" id="ticketReplyReadonlyText"></div>
+            </div>
+
+            <div class="form-alert" id="ticketFormAlert" style="display:none;"></div>
+
+            <div class="modal-footer-buttons">
+                <button type="button" class="btn-modal-cancel" id="btnCancelTicketModal">إغلاق النافذة</button>
+                <button type="button" class="btn-close-ticket" id="btnOwnerCloseTicket" style="display:none;">✅ إغلاق التذكرة</button>
+                <button type="button" class="btn-modal-save" id="btnSaveTicketUpdates" style="display:none;">حفظ التحديثات</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../bootstrap/permissions.js?v=8"></script>
+    <script src="../../bootstrap/app-core.js"></script>
+    <script src="../shared/sidebar.js?v=3"></script>
+    <script src="../shared/navbar.js"></script>
+    <script src="../scripts/support.js?v=2"></script>
+</body>
+</html>

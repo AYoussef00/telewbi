@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="menuBlacklist">بصمة الأعمال - حظر موظف</title>
+
+    <link rel="preconnect" href="https://googleapis.com">
+    <link rel="preconnect" href="https://gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="../../config/supabase.js"></script>
+    <script src="../../routes/routes.js"></script>
+    <script src="../shared/icons.js"></script>
+
+    <link rel="stylesheet" href="../../resources/css/global-layout.css?v=2">
+    <link rel="stylesheet" href="../../resources/css/sidebar.css?v=2">
+    <link rel="stylesheet" href="../../resources/css/navbar.css">
+    <link rel="stylesheet" href="../../resources/css/blacklist.css">
+</head>
+<body>
+    <div class="app-container">
+
+        <div id="sidebar-container"></div>
+
+        <main class="main-content">
+            <div id="navbar-container"></div>
+
+            <div class="dashboard-container">
+                <div class="page-header">
+                    <div class="header-title">
+                        <h1 class="view-main-title">
+                            <span class="title-icon">🚫</span>
+                            <span data-i18n="menuBlacklist">حظر موظف</span>
+                        </h1>
+                        <p class="view-subtitle" data-i18n="blacklistSubtitle">أصحاب الهويات الممنوعين من إعادة التوظيف بالنظام</p>
+                    </div>
+
+                    <div class="header-actions">
+                        <button class="btn-add-blacklist" id="btnOpenAddBlacklist" data-perm="add:blacklist">+ إضافة للقائمة السوداء</button>
+                    </div>
+                </div>
+
+                <section class="companies-filter-bar">
+                    <div class="search-box-wrapper">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="blacklistSearchInput" oninput="handleBlacklistFilterChange()" placeholder="بحث بالاسم أو رقم الهوية...">
+                    </div>
+                </section>
+
+                <section class="table-container">
+                    <table class="companies-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 25%;">رقم الهوية</th>
+                                <th style="width: 25%;">الاسم</th>
+                                <th style="width: 35%;">السبب</th>
+                                <th style="width: 15%; text-align: center;">الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="blacklistTableBody">
+                            <tr><td colspan="4" class="table-loading-state">جاري تحميل القائمة السوداء...</td></tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <div id="blacklistPagination" class="pagination-container"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- مودال إضافة إلى القائمة السوداء -->
+    <div class="modal-overlay" id="addBlacklistModal">
+        <div class="modal-content-box">
+            <div class="modal-header-section">
+                <h2 class="modal-title">إضافة للقائمة السوداء</h2>
+                <button type="button" class="btn-close-x" onclick="closeBlacklistModal()">×</button>
+            </div>
+
+            <form id="addBlacklistForm" onsubmit="handleBlacklistSubmission(event)" novalidate>
+                <div id="blacklistFormAlert" class="form-alert" style="display:none;"></div>
+
+                <div class="form-fields-grid">
+                    <div class="input-field-group full-width" id="group-bl_employee">
+                        <label>اختر الموظف (بالاسم أو رقم الهوية)</label>
+                        <div class="combo-box">
+                            <input type="text" id="blEmployeeSearch" class="combo-input" autocomplete="off" placeholder="جاري تحميل قائمة الموظفين..." disabled>
+                            <input type="hidden" id="blNationalId">
+                            <input type="hidden" id="blName">
+                            <span class="combo-arrow">▾</span>
+                            <div class="combo-dropdown" id="blEmployeeDropdown"></div>
+                        </div>
+                        <span class="field-error" id="error-bl_employee"></span>
+                    </div>
+                    <div class="input-field-group full-width" id="group-bl_reason">
+                        <label>السبب</label>
+                        <textarea id="blReason" rows="3" placeholder="سبب إضافة هذا الشخص للقائمة السوداء..."></textarea>
+                        <span class="field-error" id="error-bl_reason"></span>
+                    </div>
+                </div>
+                <p class="combo-hint">🔒 لا يمكن إضافة شخص غير مسجّل بالنظام — اختر موظفاً موجوداً فعلاً بجدول الموظفين.</p>
+
+                <div class="modal-footer-buttons">
+                    <button type="button" class="btn-modal-cancel" onclick="closeBlacklistModal()">إلغاء</button>
+                    <button type="submit" class="btn-modal-save">حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../../bootstrap/permissions.js?v=8"></script>
+    <script src="../../bootstrap/app-core.js"></script>
+    <script src="../shared/sidebar.js?v=3"></script>
+    <script src="../shared/navbar.js"></script>
+    <script src="../scripts/blacklist.js?v=2"></script>
+</body>
+</html>

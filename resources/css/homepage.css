@@ -1,0 +1,1034 @@
+/* --- Global Styles --- */
+
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Cairo', Tahoma, Geneva, Verdana, sans-serif;
+}
+/* --- Navigation Module Styles --- */
+.main-navbar {
+    width: 100%;
+    background-color: #ffffff;
+    border-bottom: 1px solid #f3f4f6;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+.nav-container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.nav-right, .nav-left {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+}
+.brand-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+}
+.logo-circle {
+    margin-top: 8px;
+    width: 32px;
+    height: 32px;
+    background-color: var(--sabbar-orange);
+    border-radius: 50%;
+}
+.logo-text {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--sabbar-orange);
+}
+.nav-menu {
+    display: flex;
+    gap: 24px;
+}
+.menu-item, .lang-toggle {
+    text-decoration: none;
+    color: var(--text-dark);
+    font-size: 14px;
+    font-weight: 600;
+}
+.menu-item:hover, .lang-toggle:hover {
+    color: var(--sabbar-orange);
+}
+.btn {
+    padding: 8px 20px;
+    border-radius: 24px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+}
+.btn-primary {
+    background-color: var(--sabbar-orange);
+    color: #ffffff;
+}
+.btn-primary:hover {
+    background-color: var(--sabbar-orange-hover);
+}
+.btn-secondary {
+    border: 1px solid var(--sabbar-orange);
+    color: var(--sabbar-orange);
+}
+.btn-secondary:hover {
+    background-color: rgba(255, 90, 34, 0.04);
+}
+body {
+    background-color: #ffffff;
+    color: #333333;
+    line-height: 1.6;
+}
+
+/* --- Utility Components --- */
+.btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 14px;
+    transition: background 0.3s ease;
+}
+
+.btn-primary {
+    background-color: #030303;
+    color: white;
+    border: none;
+}
+
+.btn-primary:hover {
+   /* background-color: #e04827; */
+    background-color: #030303;
+}
+
+.btn-secondary {
+    background-color: transparent;
+    color: #030303;
+    border: 2px solid #030303;
+}
+
+.btn-secondary:hover {
+    background-color: #fff1ed;
+}
+
+.subtitle {
+    color: #666666;
+    font-size: 14px;
+    margin-top: 8px;
+    margin-bottom: 40px;
+}
+
+/* --- Navbar --- */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 8%;
+    background-color: #ffffff;
+}
+
+.logo {
+    font-size: 22px;
+    /*color: #ff5a36;*/
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.nav-links a {
+    margin: 0 15px;
+    text-decoration: none;
+    color: #333333;
+    font-weight: 500;
+    font-size: 15px;
+}
+
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.lang-switch {
+    text-decoration: none;
+    color: #333333;
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+.btn-register {
+    background-color: #030303;
+    color: white;
+    border: none;
+}
+
+.btn-login {
+    background-color: white;
+    color: #030303;
+    border: 1px solid #030303;
+}
+
+/* --- Brand Tokens (used across hero / images / sections for a consistent, professional identity) --- */
+:root {
+    --brand-orange: #ff5a36;
+    --brand-orange-dark: #e04827;
+    --brand-orange-soft: #fff1ed;
+    --ink-900: #1a1a1a;
+    --ink-700: #333333;
+    --ink-500: #5b6169;
+    --border-soft: #eef0f2;
+    --shadow-soft: 0 20px 45px rgba(15, 23, 42, 0.07);
+    --shadow-lift: 0 30px 60px -12px rgba(255, 90, 54, 0.22), 0 12px 24px rgba(15, 23, 42, 0.08);
+}
+
+/* --- Hero Section --- */
+.hero {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 40px;
+    padding: 90px 8% 100px;
+    background: linear-gradient(160deg, #fffaf8 0%, #ffffff 38%, #fef6f2 100%);
+    min-height: 480px;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+/* دوائر زخرفية ضبابية بلون العلامة التجارية تمنح خلفية الهيرو عمقاً احترافياً بدون أي صور إضافية */
+.hero::before,
+.hero::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    z-index: -1;
+    opacity: 0.55;
+    pointer-events: none;
+}
+
+.hero::before {
+    width: 420px;
+    height: 420px;
+    background: radial-gradient(circle, rgba(255, 90, 54, 0.16), rgba(255, 90, 54, 0) 70%);
+    top: -160px;
+    inset-inline-end: -80px;
+}
+
+.hero::after {
+    width: 320px;
+    height: 320px;
+    background: radial-gradient(circle, rgba(255, 90, 54, 0.10), rgba(255, 90, 54, 0) 70%);
+    bottom: -140px;
+    inset-inline-start: 4%;
+}
+
+.hero-content {
+    max-width: 50%;
+    position: relative;
+    z-index: 1;
+}
+
+.hero-content h1 {
+    font-size: 42px;
+    color: #1a1a1a;
+    line-height: 1.2;
+    margin-bottom: 20px;
+}
+
+.hero-content p {
+    font-size: 18px;
+    color: #555555;
+    margin-bottom: 30px;
+}
+
+.hero-buttons {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.cta-label {
+    font-weight: bold;
+    color: #030303;
+}
+
+.hero-image {
+    max-width: 45%;
+    display: flex;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+}
+
+.image-placeholder {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    aspect-ratio: 16 / 11;
+    height: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 24px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #fff3ec 0%, #ffe3d5 100%);
+    box-shadow: var(--shadow-lift);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    color: #666;
+    font-weight: bold;
+    transition: transform 0.45s ease, box-shadow 0.45s ease;
+}
+
+.image-placeholder:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 40px 70px -14px rgba(255, 90, 54, 0.3), 0 16px 30px rgba(15, 23, 42, 0.1);
+}
+
+.image-placeholder img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* --- Companies Section --- */
+.companies {
+    position: relative;
+    padding: 80px 8%;
+    text-align: center;
+    background: linear-gradient(180deg, #fafbfc 0%, #ffffff 100%);
+    border-top: 1px solid var(--border-soft);
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.companies h2 {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--ink-900);
+}
+
+.logo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 30px;
+    align-items: center;
+    justify-items: center;
+}
+
+.logo-item {
+    font-size: 18px;
+    font-weight: bold;
+    color: #888888;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* --- About Highlight Section (قسم "من نحن") — استبدل قسم "فرص عمل في جميع القطاعات" القديم --- */
+.about-highlight {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 70px;
+    padding: 90px 8%;
+    background-color: #fcfcfc;
+    overflow: hidden;
+}
+
+/* تنويع بصري لقسم "من نحن" الثاني عن قسم "رؤيتنا" الأول لخلق إيقاع بصري احترافي بين الأقسام */
+.about-highlight--muted {
+    background: linear-gradient(180deg, #fbfbfc 0%, #f6f7f9 100%);
+}
+
+.about-image {
+    flex: 1 1 45%;
+    display: flex;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+}
+
+/* شكل زخرفي هندسي خلف الصورة يمنحها عمقاً وطابعاً احترافياً دون الحاجة لصور إضافية */
+.about-image::before {
+    content: "";
+    position: absolute;
+    width: 86%;
+    height: 86%;
+    background: linear-gradient(135deg, rgba(255, 90, 54, 0.14), rgba(255, 90, 54, 0.02));
+    border-radius: 28px;
+    top: 12%;
+    inset-inline-start: -6%;
+    z-index: -1;
+    transform: rotate(-4deg);
+}
+
+.about-img {
+    width: 100%;
+    max-width: 540px;
+    aspect-ratio: 16 / 10;
+    height: auto;
+    border-radius: 20px;
+    object-fit: cover;
+    border: 1px solid rgba(15, 23, 42, 0.04);
+    box-shadow: var(--shadow-soft);
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+
+.about-img:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 28px 55px rgba(15, 23, 42, 0.12);
+}
+
+.about-text {
+    flex: 1 1 50%;
+    position: relative;
+    z-index: 1;
+}
+
+.about-text h2 {
+    font-size: 34px;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin-bottom: 18px;
+}
+
+.about-underline {
+    display: block;
+    width: 56px;
+    height: 4px;
+    background-color: #ff5a36;
+    border-radius: 2px;
+    margin-bottom: 26px;
+}
+
+.about-text p {
+    font-size: 15.5px;
+    line-height: 1.9;
+    color: #555555;
+    margin-bottom: 16px;
+}
+
+.about-btn {
+    margin-top: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* --- Mission Highlight Section (قسم "رسالتنا" — فوق قسم الشركات الموثوقة) --- */
+.mission-highlight {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 70px;
+    padding: 90px 8% 100px;
+    background-color: #ffffff;
+    overflow: hidden;
+}
+
+.mission-visual {
+    flex: 1 1 42%;
+    display: flex;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+}
+
+/* شكل زخرفي هندسي خلف صورة الرسالة، بميلان معاكس لصورة الرؤية لكسر التكرار البصري */
+.mission-visual::before {
+    content: "";
+    position: absolute;
+    width: 82%;
+    height: 82%;
+    background: linear-gradient(135deg, rgba(255, 90, 54, 0.12), rgba(255, 90, 54, 0.02));
+    border-radius: 28px;
+    top: 14%;
+    inset-inline-end: -6%;
+    z-index: -1;
+    transform: rotate(4deg);
+}
+
+.mission-svg {
+    width: 100%;
+    max-width: 380px;
+    height: auto;
+}
+
+.mission-img {
+    width: 100%;
+    max-width: 500px;
+    aspect-ratio: 16 / 10;
+    height: auto;
+    border-radius: 20px;
+    object-fit: cover;
+    border: 1px solid rgba(15, 23, 42, 0.04);
+    box-shadow: var(--shadow-soft);
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+
+.mission-img:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 28px 55px rgba(15, 23, 42, 0.12);
+}
+
+.mission-text {
+    flex: 1 1 53%;
+    position: relative;
+    z-index: 1;
+}
+
+.mission-text h2 {
+    font-size: 34px;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin-bottom: 18px;
+}
+
+.mission-text p {
+    font-size: 15.5px;
+    line-height: 1.9;
+    color: #555555;
+}
+
+/* --- Responsive Adjustments --- */
+@media (max-width: 992px) {
+    .hero {
+        flex-direction: column;
+        text-align: center;
+        padding: 70px 6% 80px;
+    }
+    .hero-content {
+        max-width: 100%;
+        margin-bottom: 40px;
+    }
+    .hero-buttons {
+        justify-content: center;
+    }
+    .hero-image {
+        max-width: 100%;
+    }
+    .image-placeholder {
+        max-width: 100%;
+    }
+    .about-highlight,
+    .mission-highlight {
+        flex-direction: column;
+        text-align: center;
+        padding: 60px 6%;
+    }
+    .about-underline {
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .about-image::before,
+    .mission-visual::before {
+        display: none;
+    }
+}
+
+@media (max-width: 600px) {
+    .navbar {
+        flex-direction: column;
+        gap: 15px;
+    }
+    .hero-buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+    .hero::before,
+    .hero::after {
+        opacity: 0.35;
+    }
+}
+
+
+/* --- Footer Section --- */
+.main-footer {
+    --footer-accent: #ff5a36;
+    --footer-heading: #1a1a1a;
+    --footer-text: #5b6169;
+    --footer-muted: #8a8f98;
+    --footer-border: #e9e9e9;
+
+    position: relative;
+    background-color: #fafafa;
+    padding: 66px 8% 28px;
+    font-size: 14px;
+    border-top: 1px solid var(--footer-border);
+    overflow: hidden;
+}
+
+/* شريط علوي زخرفي رفيع بلون العلامة التجارية */
+.main-footer::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    inset-inline: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent 0%, var(--footer-accent) 50%, transparent 100%);
+    opacity: 0.9;
+}
+
+.footer-container {
+    display: grid;
+    grid-template-columns: 1.35fr 1fr 1.15fr 1.25fr;
+    gap: 46px;
+    margin-bottom: 46px;
+    align-items: start;
+}
+
+/* فواصل رأسية رفيعة بين الأعمدة (سطح المكتب فقط) */
+.footer-container > div:not(:first-child) {
+    position: relative;
+}
+
+.footer-container > div:not(:first-child)::before {
+    content: "";
+    position: absolute;
+    top: 2px;
+    bottom: 2px;
+    inset-inline-start: -23px;
+    width: 1px;
+    background: linear-gradient(180deg, transparent, var(--footer-border) 15%, var(--footer-border) 85%, transparent);
+}
+
+/* Brand column (logo, name, tagline, description, highlight, social) */
+.footer-brand-top {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    margin-bottom: 20px;
+}
+
+.footer-logo-circle {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #fff4ef, #ffe3d5);
+    border: 1px solid #ffd6c2;
+    box-shadow: 0 2px 8px rgba(255, 90, 54, 0.14);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.footer-logo-circle img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    border-radius: 50%;
+}
+
+.footer-brand-name {
+    display: block;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--footer-heading);
+    line-height: 1.4;
+}
+
+.footer-brand-tagline {
+    display: block;
+    font-size: 12.5px;
+    color: var(--footer-muted);
+    margin-top: 2px;
+}
+
+.footer-brand-desc {
+    font-size: 14px;
+    line-height: 1.9;
+    color: var(--footer-text);
+    margin-bottom: 16px;
+}
+
+.footer-brand-highlight {
+    background: linear-gradient(135deg, rgba(255, 90, 54, 0.09), rgba(255, 90, 54, 0.02));
+    border: 1px solid rgba(255, 90, 54, 0.18);
+    border-radius: 10px;
+    padding: 13px 15px;
+    color: #e0491d;
+    font-weight: 700;
+    font-size: 13.5px;
+    line-height: 1.8;
+    margin-bottom: 24px;
+}
+
+/* Shared column heading style */
+.footer-column h3 {
+    font-size: 15px;
+    color: var(--footer-heading);
+    margin-bottom: 22px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    position: relative;
+    padding-bottom: 12px;
+}
+
+.footer-column h3::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 34px;
+    height: 3px;
+    background-color: var(--footer-accent);
+    border-radius: 2px;
+}
+
+[dir="ltr"] .footer-column h3::after {
+    right: auto;
+    left: 0;
+}
+
+.footer-column ul {
+    list-style: none;
+    padding: 0;
+}
+
+.footer-column ul li {
+    margin-bottom: 13px;
+}
+
+.footer-column ul li a {
+    text-decoration: none;
+    color: var(--footer-text);
+    transition: color 0.2s ease;
+    font-size: 14px;
+}
+
+.footer-column ul li a:hover {
+    color: var(--footer-accent);
+}
+
+/* Platform features list — bullet marker fixed before the text, top-aligned,
+   so multi-line items never throw the dot out of alignment */
+.footer-feature-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    color: var(--footer-text);
+    font-size: 14px;
+    line-height: 1.75;
+    margin-bottom: 12px;
+}
+
+.footer-feature-list li:last-child {
+    margin-bottom: 0;
+}
+
+.footer-feature-list li .bullet-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--footer-accent);
+    flex-shrink: 0;
+    margin-top: 8px;
+}
+
+/* Contact column */
+.footer-contact-list {
+    margin-bottom: 22px;
+}
+
+.footer-contact-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.footer-contact-list .contact-icon-badge {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: rgba(255, 90, 54, 0.1);
+    color: var(--footer-accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.footer-contact-list a {
+    color: var(--footer-text);
+    text-decoration: none;
+    font-size: 13.5px;
+    line-height: 1.85;
+    padding-top: 4px;
+}
+
+.footer-contact-list a:hover {
+    color: var(--footer-accent);
+}
+
+.footer-contact-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.btn-footer-call,
+.btn-footer-msg {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.btn-footer-call {
+    background-color: #030303;
+    color: #ffffff;
+    border: 1.5px solid #030303;
+    box-shadow: 0 4px 12px rgba(3, 3, 3, 0.16);
+}
+
+.btn-footer-call:hover {
+    background-color: #1a1a1a;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(3, 3, 3, 0.22);
+}
+
+.btn-footer-msg {
+    background-color: transparent;
+    color: #030303;
+    border: 1.5px solid #dcdcdc;
+}
+
+.btn-footer-msg:hover {
+    border-color: #030303;
+    background-color: #f5f5f5;
+}
+
+/* Social Icons Layout */
+.social-icons {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 0;
+}
+
+.icon-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background-color: #000000;
+    color: #ffffff;
+    border-radius: 50%;
+    text-decoration: none;
+    font-size: 14px;
+    transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+.icon-link:hover {
+    background-color: var(--footer-accent);
+    transform: translateY(-2px);
+}
+
+.app-heading {
+    margin-top: 10px;
+}
+
+/* App Download Badge Style */
+.app-store-btn {
+    display: inline-flex;
+    align-items: center;
+    background-color: #000000;
+    color: #ffffff;
+    padding: 8px 16px;
+    border-radius: 8px;
+    text-decoration: none;
+    gap: 10px;
+    width: fit-content;
+}
+
+.store-icon {
+    font-size: 22px;
+}
+
+.store-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+}
+
+.store-text small {
+    font-size: 10px;
+    color: #cccccc;
+}
+
+.store-text strong {
+    font-size: 14px;
+}
+
+/* Footer Bottom Strip Layout */
+.footer-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--footer-border);
+    padding-top: 24px;
+    color: var(--footer-muted);
+    font-size: 13px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.bottom-left {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.bottom-left span:not(:last-child)::after {
+    content: "•";
+    margin-inline-start: 12px;
+    color: #d6d6d6;
+}
+
+.bottom-right {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+}
+
+.bottom-right a {
+    text-decoration: none;
+    color: var(--footer-muted);
+    transition: color 0.2s ease;
+}
+
+.bottom-right a:hover {
+    color: var(--footer-accent);
+}
+
+/* --- Footer Responsive adjustments --- */
+@media (max-width: 992px) {
+    .footer-container {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 36px 40px;
+    }
+    .footer-container > div:not(:first-child)::before {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .footer-bottom {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 560px) {
+    .footer-container {
+        grid-template-columns: 1fr;
+        gap: 40px;
+    }
+    .bottom-left {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+    .bottom-left span:not(:last-child)::after {
+        content: "";
+        margin: 0;
+    }
+}
+
+
+/* تأثير التلاشي للترجمة الديناميكية */
+[data-i18n] {
+    transition: opacity 0.25s ease-in-out;
+    opacity: 1;
+}
+
+/* الكلاس الذي سيتم تفعيله عبر الجافاسكربت للحظات أثناء التبديل */
+.fade-out {
+    opacity: 0 !important;
+}
+
+/* Logo Section Container */
+
+
+.companies .subtitle {
+  font-size: 1.1rem;
+  color: var(--ink-500);
+  margin-bottom: 48px;
+}
+
+/* Responsive Grid Layout */
+.logo-grid {
+  display: grid;
+  /* Automatically adjusts column count based on screen size */
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+  align-items: center;
+  justify-items: center;
+}
+
+/* Logo Item Box */
+.logo-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100px;
+  padding: 14px;
+  background: #ffffff;
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+  transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+}
+
+/* Image Controls (Prevents stretching) */
+.logo-item img {
+  max-width: 85%;
+  max-height: 85%;
+  object-fit: contain; /* Keeps original aspect ratio */
+  filter: grayscale(0%); /* Elegant, unified look */
+  opacity: 1.0;
+  transition: filter 0.3s ease, opacity 0.3s ease;
+}
+
+/* Hover Effects */
+.logo-item:hover {
+  transform: translateY(-6px);
+  border-color: rgba(255, 90, 54, 0.25);
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.1);
+}
+
+.logo-item:hover img {
+  filter: grayscale(0%); /* Returns to natural colors */
+  opacity: 1;
+}
+
+/* Text fallback styling (if you are still using text) */
+.logo-item {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #777;
+}
+.logo-item:hover {
+  color: #000;
+}

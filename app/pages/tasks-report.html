@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="menuTasksReport">تقرير المهام</title>
+
+    <!-- خط القاهرة الرسمي المعتمد في واجهات المنصة -->
+    <link rel="preconnect" href="https://googleapis.com">
+    <link rel="preconnect" href="https://gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- استدعاء حزمة سوبابيس الرسمية عبر خادم unpkg المباشر والمستقر -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="../../config/supabase.js"></script>
+    <script src="../../routes/routes.js"></script>
+    <script src="../shared/icons.js"></script>
+    <!-- مكتبة SheetJS لتصدير التقرير كملف Excel (.xlsx) مباشرة من المتصفح -->
+    <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- مكتبة توليد رمز QR (يُضمَّن بترويسة صفحة الطباعة، ويشير لصفحة عرض عامة للتقرير) -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <!-- وحدة بناء صفحات الطباعة الاحترافية المشتركة (ترويسة/جدول/علامة مائية/تذييل) -->
+    <script src="../scripts/print-report.js?v=4"></script>
+
+    <!-- ملفات التنسيق الموديلار: employees.css أساس مشترك (جدول/بحث)، tasks.css لشارات النوع/الحالة -->
+    <link rel="stylesheet" href="../../resources/css/global-layout.css?v=2">
+    <link rel="stylesheet" href="../../resources/css/sidebar.css?v=2">
+    <link rel="stylesheet" href="../../resources/css/navbar.css">
+    <link rel="stylesheet" href="../../resources/css/employees.css">
+    <link rel="stylesheet" href="../../resources/css/tasks.css">
+    <link rel="stylesheet" href="../../resources/css/tasks-report.css">
+    <link rel="stylesheet" href="../../resources/css/print-report.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- 1. القائمة الجانبية المظلمة الاحترافية (Sidebar) -->
+        <div id="sidebar-container"></div>
+
+        <!-- مساحة العمل الرئيسية -->
+        <main class="main-content">
+            <!-- الشريط العلوي المستقر مع حسابات المستخدم واللغات -->
+            <div id="navbar-container"></div>
+
+            <div class="dashboard-container">
+
+                <!-- حاوية صفحات الطباعة الاحترافية: مخفية تماماً على الشاشة،
+                     تُبنى ديناميكياً وتظهر فقط عند استدعاء "طباعة" (انظر print-report.js/.css) -->
+                <div id="printPagesRoot" class="print-report-container"></div>
+
+                <div class="page-header">
+                    <div class="header-title">
+                        <h1 class="view-main-title">
+                            <span class="title-icon" data-icon="clipboard"></span>
+                            <span data-i18n="menuTasksReport">تقرير المهام</span>
+                        </h1>
+                        <p class="view-subtitle">بحث شامل في مهام جميع الشركات والموظفين وتصدير التقرير</p>
+                    </div>
+
+                    <div class="header-actions report-actions-bar">
+                        <button type="button" class="btn-export-excel" id="btnExportExcel"><span data-icon="download"></span> تصدير Excel</button>
+                        <button type="button" class="btn-print-report" id="btnPrintReport"><span data-icon="printer"></span> طباعة</button>
+                    </div>
+                </div>
+
+                <!-- شريط البحث والتصفية: اسم الموظف + الشركة (بحث حر) + النوع + الحالة + نطاق تاريخ الاستحقاق -->
+                <section class="companies-filter-bar report-filter-bar">
+                    <div class="search-combo-wrapper" id="comboReportEmployeeSearch">
+                        <span class="search-icon" data-icon="search"></span>
+                        <input type="text" id="reportTaskEmployeeSearchInput" class="search-combo-input" placeholder="ابحث باسم الموظف..." autocomplete="off">
+                        <div class="combo-dropdown" id="reportTaskEmployeeDropdown"></div>
+                    </div>
+                    <div class="search-combo-wrapper" id="comboReportCompanySearch">
+                        <span class="search-icon" data-icon="search"></span>
+                        <input type="text" id="reportTaskCompanySearchInput" class="search-combo-input" placeholder="ابحث باسم الشركة..." autocomplete="off">
+                        <div class="combo-dropdown" id="reportTaskCompanyDropdown"></div>
+                    </div>
+                    <div class="combo-box task-filter-combo" id="comboReportTypeFilter">
+                        <input type="text" id="reportTaskTypeFilterSearch" class="combo-input" placeholder="النوع: الكل" autocomplete="off">
+                        <input type="hidden" id="reportTaskTypeFilterId" value="all">
+                        <span class="combo-arrow">▾</span>
+                        <div class="combo-dropdown" id="reportTaskTypeFilterDropdown"></div>
+                    </div>
+                    <div class="combo-box task-filter-combo" id="comboReportStatusFilter">
+                        <input type="text" id="reportTaskStatusFilterSearch" class="combo-input" placeholder="الحالة: الكل" autocomplete="off">
+                        <input type="hidden" id="reportTaskStatusFilterId" value="all">
+                        <span class="combo-arrow">▾</span>
+                        <div class="combo-dropdown" id="reportTaskStatusFilterDropdown"></div>
+                    </div>
+                    <div class="att-date-wrapper">
+                        <input type="date" id="reportFromDateInput">
+                        <span class="att-date-label">من تاريخ</span>
+                    </div>
+                    <div class="att-date-wrapper">
+                        <input type="date" id="reportToDateInput">
+                        <span class="att-date-label">إلى تاريخ</span>
+                    </div>
+                </section>
+
+                <p class="report-results-count" id="reportResultsCount"></p>
+
+                <!-- جدول تقرير المهام -->
+                <section class="table-container">
+                    <table class="companies-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 18%;">الموظف</th>
+                                <th style="width: 26%;">عنوان المهمة</th>
+                                <th style="width: 16%;">الشركة</th>
+                                <th style="width: 12%;">النوع</th>
+                                <th style="width: 14%;">التاريخ</th>
+                                <th style="width: 14%; text-align:center;">الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportTableBody">
+                            <tr>
+                                <td colspan="6" class="table-loading-state">
+                                    جاري جلب بيانات التقرير...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <!-- 📄 أزرار التنقل بين صفحات التقرير -->
+                <div id="reportPagination" class="pagination-container"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- استدعاء ملفات تشغيل المنطق البرمجي والمحاكاة بالتوالي -->
+    <script src="../../bootstrap/permissions.js?v=8"></script>
+    <script src="../../bootstrap/app-core.js"></script>
+    <script src="../shared/sidebar.js?v=3"></script>
+    <script src="../shared/navbar.js"></script>
+    <!-- 🔄 v=4: إصلاح تعارض طلبات تغيير نطاق التاريخ (ظهور أشهر إضافية بعد
+         عرض الفترة الصحيحة) بملف tasks-report.js -->
+    <script src="../scripts/tasks-report.js?v=4"></script>
+</body>
+</html>

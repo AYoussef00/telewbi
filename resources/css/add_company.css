@@ -1,0 +1,99 @@
+/* ==========================================================================
+   حقل رفع شعار الشركة الدائري — منقول كما هو من companies.css
+   (add_employee.css لا يحتوي على ودجت شعار دائري لأن الموظف لا يملك شعاراً)
+   ========================================================================== */
+.logo-upload-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 28px;
+}
+
+.circle-avatar-placeholder {
+    width: 85px;
+    height: 85px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+}
+
+.btn-upload-label {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    padding: 5px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+/* رسالة خطأ حقل الشعار (يتشارك id="group-logo_file" مع منطق setFieldError العام) */
+.logo-upload-wrapper .field-error { text-align: center; }
+
+/* ==========================================================================
+   خانة "شامل قيمة الضريبة المضافة" — منسّقة كشريحة صغيرة ملتصقة بحقل قيمة
+   الاشتراك مباشرة، حتى يظهر الارتباط بينهما بوضوح بدل خانة تعليم عادية معزولة
+   ========================================================================== */
+.vat-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    padding: 8px 12px;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+    user-select: none;
+}
+.vat-checkbox-label:hover {
+    background-color: #fff5f2;
+    border-color: #fcd9c8;
+}
+.vat-checkbox-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #e65c00;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.vat-checkbox-label:has(input[type="checkbox"]:checked) {
+    background-color: #fff5f2;
+    border-color: #e65c00;
+    color: #c2410c;
+}
+
+/* ==========================================================================
+   حقل "ملاحظة" النصي متعدد الأسطر (يظهر فقط عند اختيار حالة "غير نشط")؛
+   add_employee.css لا يعرّف نمطاً خاصاً بـ textarea (الحقول فيه كلها أحادية
+   السطر)، فبدون هذه القاعدة يظهر الحقل بالمظهر الافتراضي الخام للمتصفح
+   ========================================================================== */
+.form-group textarea {
+    width: 100%;
+    min-height: 90px;
+    padding: 12px 16px;
+    border: 1px solid #dcdcdc;
+    border-radius: 8px;
+    font-size: 15px;
+    font-family: 'Cairo', sans-serif;
+    background-color: #fff;
+    outline: none;
+    resize: vertical;
+    transition: border-color 0.2s ease;
+}
+.form-group textarea:focus {
+    border-color: #e65c00;
+    box-shadow: 0 0 0 3px rgba(230, 92, 0, 0.1);
+}

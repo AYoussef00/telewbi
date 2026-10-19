@@ -1,0 +1,156 @@
+/* ==========================================================================
+   1. Core Layout Resets & Base Scaffolding
+   ========================================================================== */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Cairo', sans-serif;
+}
+
+body {
+    background-color: #f4f6f9;
+    color: #334155;
+    min-height: 100vh;
+    display: flex;
+    overflow-x: hidden;
+}
+
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    box-sizing: border-box;
+    transition: padding-inline-start 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ==========================================================================
+   2. Top Navbar Layout
+   ========================================================================== */
+.top-navbar {
+    background-color: #ffffff;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 30px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.nav-left { display: flex; align-items: center; gap: 20px; }
+.nav-icon { font-size: 18px; cursor: pointer; color: #64748b; }
+.welcome-msg { font-weight: 600; font-size: 14px; }
+
+/* ==========================================================================
+   3. Dashboard Layout & Metric Cards
+   ========================================================================== */
+.dashboard-container { padding: 25px 30px; }
+.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+.header-title h1 { font-size: 22px; color: #1e293b; font-weight: 700; }
+.header-title p { color: #64748b; font-size: 13px; margin-top: 2px; }
+
+/* التاريخ/الوقت الفعلي: يُحسب ديناميكياً بملف dashboard.js (renderDashboardDateTime)
+   بدل النص الثابت السابق — يُبرَز بوزن أغمق قليلاً لتمييزه عن نص الترحيب */
+.dashboard-subtitle-line { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; }
+.dashboard-datetime { font-weight: 700; color: #1e293b; }
+
+.time-filter select { padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; font-size: 13px; outline: none; }
+
+.metrics-grid, .counters-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.metric-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.01);
+}
+
+.counter-card { background: #ffffff; border-radius: 8px; padding: 20px; border: 1px solid #edf2f7; text-align: center; }
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.trend-badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 12px; }
+.red-trend { background-color: #fee2e2; color: #ef4444; }
+
+.card-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+.blue-icon { background: #eff6ff; color: #3b82f6; } .purple-icon { background: #f5f3ff; color: #8b5cf6; } .pink-icon { background: #fdf2f8; color: #ec4899; } .green-icon { background: #ecfdf5; color: #10b981; }
+.metric-info { flex: 1; }
+.metric-label { color: #64748b; font-size: 13px; font-weight: 600; }
+.metric-value { font-size: 26px; font-weight: 700; color: #0f172a; margin-top: 4px; }
+.card-footer { color: #94a3b8; font-size: 11px; border-top: 1px solid #f1f5f9; padding-top: 8px; margin-top: 10px; }
+.badge-status-completed { display: inline-flex; align-items: center; gap: 4px; background-color: #d1fae5; color: #065f46; font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600; }
+.card-footer-tags { display: flex; gap: 6px; border-top: 1px solid #f1f5f9; padding-top: 8px; margin-top: 10px; }
+.tag { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 600; }
+.purple-tag { background: #f3e8ff; color: #6b21a8; }
+.blue-tag { background: #dbeafe; color: #1e40af; }
+
+/* أيقونات صغيرة داخل الشارات (badge) والوسوم (tag) — تتبع لون النص المحيط بها تلقائياً */
+.badge-icon, .tag-icon { font-size: 11px; flex-shrink: 0; }
+
+/* ==========================================================================
+   4. Analytical Charts Layout
+   ========================================================================== */
+.charts-grid, .bottom-grid { display: grid; grid-template-columns: 1fr 2.5fr; gap: 20px; margin-bottom: 25px; }
+.chart-card { background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; padding: 25px; box-shadow: 0 1px 3px rgba(0,0,0,0.01); }
+.chart-title { font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+.chart-title .subtitle { font-size: 11px; color: #94a3b8; font-weight: 400; }
+
+/* عنوان البطاقة مع أيقونته — مجمّعان معاً بعنصر واحد حتى لا يكسر توزيع
+   justify-content: space-between بين العنوان والعنوان الفرعي (subtitle) */
+.title-with-icon { display: inline-flex; align-items: center; gap: 8px; }
+.title-icon { font-size: 15px; color: #64748b; flex-shrink: 0; }
+
+.pie-placeholder { height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; }
+.circle-chart { width: 110px; height: 110px; border-radius: 50%; border: 14px solid #0ea5e9; border-top-color: transparent; transform: rotate(45deg); }
+.pie-label { font-size: 12px; font-weight: 600; color: #64748b; }
+
+.line-chart-placeholder { height: 180px; display: flex; flex-direction: column; justify-content: space-between; position: relative; }
+.growth-svg { width: 100%; flex: 1; display: block; min-height: 0; }
+.chart-loading { text-align: center; color: #94a3b8; font-size: 12.5px; padding: 70px 0; }
+.chart-axis-x { display: flex; justify-content: space-between; border-top: 1px solid #e2e8f0; padding-top: 8px; font-size: 11px; color: #94a3b8; direction: ltr; }
+
+.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 160px; color: #94a3b8; gap: 8px; }
+.empty-icon { font-size: 24px; opacity: 0.6; }
+
+/* بطاقة "أفضل الشركات" — أعمدة أفقية بعرض متناسب مع عدد الموظفين الفعلي */
+.bar-chart-container { display: flex; flex-direction: column; gap: 14px; min-height: 160px; justify-content: center; }
+.bar-chart-loading { text-align: center; color: #94a3b8; font-size: 12.5px; padding: 20px 0; }
+.bar-row { display: flex; align-items: center; font-size: 12px; gap: 15px; }
+.bar-name { width: 110px; flex-shrink: 0; color: #64748b; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bar-track { flex: 1; background-color: #f1f5f9; border-radius: 5px; overflow: hidden; }
+.bar-line { height: 10px; border-radius: 5px; transition: width 0.4s ease; }
+.bar-count { width: 30px; flex-shrink: 0; text-align: end; color: #334155; font-weight: 700; }
+.b-blue { background-color: #3b82f6; }
+.b-green { background-color: #10b981; }
+.b-orange { background-color: #f59e0b; }
+.b-pink { background-color: #ec4899; }
+.b-purple { background-color: #8b5cf6; }
+
+/* بطاقة "النشاط الأخير" — خط زمني مدمج من أحدث الأحداث بعدة جداول (شركات/
+   موظفين/ربط موظفين/مهام)، بنفس الروح البصرية لبطاقة "أفضل الشركات" */
+.activity-list { display: flex; flex-direction: column; gap: 14px; min-height: 160px; justify-content: center; }
+.activity-row { display: flex; align-items: center; gap: 12px; }
+.activity-icon { width: 32px; height: 32px; border-radius: 8px; background: #f8fafc; color: #64748b; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+.activity-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.activity-text { font-size: 12.5px; color: #334155; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.activity-time { font-size: 11px; color: #94a3b8; }
+
+/* ==========================================================================
+   5. Responsiveness Breakpoints
+   ========================================================================== */
+@media (max-width: 992px) {
+    html[dir="rtl"] .main-content, html[dir="ltr"] .main-content { padding-right: 0 !important; padding-left: 0 !important; }
+    .metrics-grid, .counters-grid { grid-template-columns: repeat(2, 1fr); }
+    .charts-grid, .bottom-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 576px) {
+    .metrics-grid, .counters-grid { grid-template-columns: 1fr; }
+    .top-navbar { padding: 0 15px; }
+}

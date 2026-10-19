@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إضافة مهام متعددة - بصمة الأعمال</title>
+
+    <link rel="preconnect" href="https://googleapis.com">
+    <link rel="preconnect" href="https://gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="../../config/supabase.js"></script>
+    <script src="../../routes/routes.js"></script>
+    <script src="../shared/icons.js"></script>
+
+    <link rel="stylesheet" href="../../resources/css/global-layout.css?v=2">
+    <link rel="stylesheet" href="../../resources/css/sidebar.css?v=2">
+    <link rel="stylesheet" href="../../resources/css/navbar.css">
+    <link rel="stylesheet" href="../../resources/css/add_employee.css">
+    <link rel="stylesheet" href="../../resources/css/attendance_bulk.css">
+    <link rel="stylesheet" href="../../resources/css/tasks_bulk.css">
+</head>
+<body>
+
+    <!-- 🔄 شاشة التحميل بشعار الشركة — تُخفى تلقائياً بعد اكتمال تحميل السايدبار وشريط التنقل (app-core.js) -->
+    <div id="pageLoader" class="page-loader">
+        <div class="loader-ring"></div>
+        <img src="../../resources/images/logo.png" alt="شعار شركة بصمة الأعمال" class="loader-logo">
+    </div>
+
+    <div class="app-container">
+        <div id="sidebar-container"></div>
+
+        <main class="main-content">
+            <div id="navbar-container"></div>
+
+            <div class="page-container">
+                <div class="add-employee-container">
+
+                    <div class="page-header">
+                        <div class="header-title">
+                            <nav class="breadcrumb-nav" aria-label="breadcrumb">
+                                <span class="title-icon">👥</span>
+                                <a href="tasks.html" class="breadcrumb-link">إدارة المهام</a>
+                                <span class="breadcrumb-separator" aria-hidden="true">/</span>
+                                <span class="breadcrumb-current">إضافة مهام متعددة</span>
+                            </nav>
+                            <p class="view-subtitle">أنشئ نفس المهمة وأسندها لعدة موظفين من نفس الشركة دفعة واحدة، أو وّلد مهاماً تلقائياً حسب الحضور</p>
+                        </div>
+                    </div>
+
+                    <form id="bulkTaskForm" class="form-card" novalidate>
+                        <div id="formAlert" class="form-alert" style="display:none;"></div>
+
+                        <!-- الشركة -->
+                        <div class="form-grid">
+                            <div class="form-group full-width" id="group-company_id">
+                                <label for="bulkTaskCompanySearch">🏢 الشركة</label>
+                                <div class="combo-box" id="comboBulkTaskCompany">
+                                    <input type="text" id="bulkTaskCompanySearch" class="combo-input" placeholder="ابحث عن شركة..." autocomplete="off">
+                                    <input type="hidden" id="bulkTaskCompanyId">
+                                    <span class="combo-arrow">▾</span>
+                                    <div class="combo-dropdown" id="bulkTaskCompanyDropdown"></div>
+                                </div>
+                                <span class="field-error" id="error-company_id"></span>
+                            </div>
+                        </div>
+
+                        <!-- 🎲 التوليد التلقائي حسب الحضور -->
+                        <div class="form-grid">
+                            <div class="form-group full-width">
+                                <div class="auto-generate-box" id="autoGenerateBox">
+                                    <label class="auto-generate-toggle">
+                                        <input type="checkbox" id="bulkTaskAutoGenerate">
+                                        <span class="chip-box"></span>
+                                        <span class="auto-generate-toggle-text">🎲 توليد المهام تلقائياً من "قائمة المهام" حسب المسمى الوظيفي وأيام الحضور الفعلي</span>
+                                    </label>
+                                    <p class="auto-generate-hint">
+                                        عند التفعيل: لكل موظف مهمة عشوائية واحدة من قائمة مهام مسمّاه الوظيفي، عن كل مجموعة أيام حضور فعلي متتالية له (حاضر/متأخر) — بحد أقصى 4 أيام متتالية للمهمة الواحدة (أي انقطاع في التتالي، كيوم غياب، يبدأ مجموعة/مهمة جديدة)، وتاريخ كل مهمة هو "من تاريخ" أول يوم بالمجموعة و"إلى تاريخ" آخر يوم بها، ضمن الفترة المحددة أدناه (تُستخدم كنطاق بحث عن أيام الحضور فقط).
+                                        النوع دائماً "مسندة"، والملاحظات هي اسم المسمى الوظيفي، والحالة "مكتملة" لجميع المهام المولّدة ما عدا 3 أو 4 مهام تُختار عشوائياً وتكون "قيد الانتظار".
+                                        <a href="job_tasks.html" target="_blank">إدارة قائمة المهام حسب المسمى الوظيفي ⇗</a>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- عنوان المهمة (تُخفى في وضع التوليد التلقائي) -->
+                        <div class="form-grid" id="titleFieldRow">
+                            <div class="form-group full-width" id="group-title">
+                                <label for="bulkTaskTitle">📝 عنوان المهمة</label>
+                                <input type="text" id="bulkTaskTitle" placeholder="مثال: متابعة تسجيل دخول الموظفين والتزامهم بساعات العمل">
+                                <span class="field-error" id="error-title"></span>
+                            </div>
+                        </div>
+
+                        <!-- ملاحظات (تُخفى في وضع التوليد التلقائي — تُستبدل تلقائياً باسم المسمى الوظيفي) -->
+                        <div class="form-grid" id="descriptionFieldRow">
+                            <div class="form-group full-width" id="group-description">
+                                <label for="bulkTaskDescription">🗒️ ملاحظات <span class="optional-tag">(اختياري)</span></label>
+                                <textarea id="bulkTaskDescription" class="bulk-task-notes" placeholder="تفاصيل تنفيذ المهمة تُضاف لكل السجلات المولّدة..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- النوع + الحالة (تُخفيان في وضع التوليد التلقائي — تُحسبان تلقائياً) -->
+                        <div class="form-grid" id="typeStatusFieldRow">
+                            <div class="form-group" id="group-type">
+                                <label for="bulkTaskType">النوع</label>
+                                <select id="bulkTaskType">
+                                    <option value="مسندة" selected>مسندة</option>
+                                    <option value="مستقلة">مستقلة</option>
+                                    <option value="روتينية">روتينية</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="group-status">
+                                <label for="bulkTaskStatus">الحالة</label>
+                                <select id="bulkTaskStatus">
+                                    <option value="قيد الانتظار" selected>قيد الانتظار</option>
+                                    <option value="قيد التنفيذ">قيد التنفيذ</option>
+                                    <option value="مكتملة">مكتملة</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- فترة المهمة: من تاريخ / إلى تاريخ — تُستخدم لمنع تعارضها مع فترة مهمة أخرى مُسندة لأي من الموظفين المحددين -->
+                        <h3 class="form-section-title range-section-title" id="rangeSectionTitle">📅 فترة المهمة</h3>
+                        <div class="form-grid">
+                            <div class="form-group" id="group-start_date">
+                                <label for="bulkTaskStartDate">من تاريخ <span class="optional-tag" id="startDateOptionalTag">(إلزامي)</span></label>
+                                <input type="date" id="bulkTaskStartDate">
+                                <span class="field-error" id="error-start_date"></span>
+                            </div>
+                            <div class="form-group" id="group-due_date">
+                                <label for="bulkTaskDueDate">إلى تاريخ <span class="optional-tag" id="dueDateOptionalTag">(اختياري)</span></label>
+                                <input type="date" id="bulkTaskDueDate">
+                                <span class="field-error" id="error-due_date"></span>
+                            </div>
+                        </div>
+                        <span class="field-hint" id="periodHint">📌 لا يمكن إسناد المهمة لأي موظف مُحدَّد إذا كانت فترتها تتقاطع مع فترة مهمة أخرى مُسندة له مسبقاً، أو تقع خارج فترة ربطه بالشركة، أو تتضمن يوم غياب/إجازة سنوية مسجَّل له — في حال وجود تعارض لأي موظف، لن يتم حفظ أي مهمة للدفعة كاملة.</span>
+
+                        <!-- اختيار الموظفين -->
+                        <h3 class="form-section-title range-section-title">👥 إسناد المهمة إلى</h3>
+                        <div class="form-grid">
+                            <div class="form-group full-width" id="group-employees">
+                                <div class="employees-picker-toolbar">
+                                    <input type="text" id="employeesPickerSearch" placeholder="ابحث باسم موظف لتصفية القائمة..." disabled>
+                                    <label class="select-all-label">
+                                        <input type="checkbox" id="selectAllEmployeesCheckbox" disabled>
+                                        <span>تحديد الكل</span>
+                                    </label>
+                                </div>
+                                <div class="employees-picker-list" id="employeesPickerList">
+                                    <p class="employees-picker-empty">اختر الشركة أولاً لعرض موظفيها المرتبطين.</p>
+                                </div>
+                                <span class="field-error" id="error-employees"></span>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-submit" data-perm="add:tasks">متابعة</button>
+                            <button type="button" id="btnCancel" class="btn btn-cancel">إلغاء</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../../bootstrap/permissions.js?v=8"></script>
+    <script src="../../bootstrap/app-core.js"></script>
+    <script src="../shared/sidebar.js?v=3"></script>
+    <script src="../shared/navbar.js"></script>
+    <script src="../scripts/tasks_bulk.js?v=2"></script>
+</body>
+</html>

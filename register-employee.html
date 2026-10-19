@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إنشاء حساب موظف - بصمة الأعمال</title>
+
+    <link rel="preconnect" href="https://googleapis.com">
+    <link rel="preconnect" href="https://gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="config/supabase.js"></script>
+    <script src="routes/routes.js"></script>
+    <script src="app/shared/icons.js"></script>
+
+    <link rel="stylesheet" href="resources/css/register-employee.css">
+</head>
+<body>
+
+    <header class="top-nav">
+        <a href="index.html" class="logo">
+            <span class="logo-circle"><img src="resources/images/logo.png" width="25" alt="أيقونة"></span>
+            <strong>بصمة الأعمال</strong>
+        </a>
+        <a href="login-employee.html" class="top-nav-back-link">
+            <span data-icon="chevron-left"></span>
+            <span>لديك حساب بالفعل؟ تسجيل الدخول</span>
+        </a>
+    </header>
+
+    <main class="register-wrapper">
+        <div class="register-card">
+
+            <div class="card-header">
+                <h1 class="main-title">إنشاء حساب موظف جديد</h1>
+                <p class="card-subtitle">عبّئ بياناتك أدناه لإرسال طلب إنشاء حساب. سيخضع طلبك لمراجعة الإدارة قبل تفعيله، وستتمكن من تسجيل الدخول من هذه الشاشة فور الموافقة عليه.</p>
+            </div>
+
+            <!-- 🔒 تُعرض بدل النموذج بالكامل عند إيقاف الميزة من لوحة الإدارة -->
+            <div id="featureDisabledScreen" class="register-status-screen" style="display:none;">
+                <div class="register-status-icon icon-info"><span data-icon="lock"></span></div>
+                <h2 class="register-status-title">إنشاء الحساب الذاتي غير متاح حالياً</h2>
+                <p class="register-status-text">تم إيقاف خيار إنشاء حساب موظف جديد مؤقتاً من قبل الإدارة. للحصول على حساب، يرجى التواصل مع إدارة النظام مباشرة.</p>
+                <a href="login-employee.html" class="btn-back-to-login">
+                    <span data-icon="chevron-left"></span> العودة لتسجيل الدخول
+                </a>
+            </div>
+
+            <!-- ✅ شاشة النجاح النهائية بعد إرسال الطلب بنجاح -->
+            <div id="successScreen" class="register-status-screen" style="display:none;">
+                <div class="register-status-icon icon-success"><span data-icon="check-circle"></span></div>
+                <h2 class="register-status-title">تم إرسال طلبك بنجاح!</h2>
+                <p class="register-status-text">طلب إنشاء حسابك الآن قيد المراجعة من قبل الإدارة. سيتم إشعارك بمجرد تفعيل حسابك، وعندها فقط ستتمكن من تسجيل الدخول من شاشة دخول الموظفين.</p>
+                <a href="login-employee.html" class="btn-back-to-login">
+                    <span data-icon="chevron-left"></span> العودة لشاشة تسجيل الدخول
+                </a>
+            </div>
+
+            <form id="registerEmployeeForm" novalidate>
+                <div id="formAlert" class="form-alert" style="display:none;"></div>
+
+                <h3 class="form-section-title"><span data-icon="person"></span> البيانات الشخصية</h3>
+                <div class="form-grid">
+
+                    <div class="form-group full-width" id="group-name">
+                        <label for="regName">الاسم الكامل (رباعي)</label>
+                        <input type="text" id="regName" placeholder="مثال: محمد أحمد علي السالم" autocomplete="name">
+                        <span class="field-error" id="error-name"></span>
+                    </div>
+
+                    <div class="form-group" id="group-national_id">
+                        <label for="regNationalId">رقم الهوية / الإقامة</label>
+                        <input type="text" id="regNationalId" class="id-input" placeholder="1XXXXXXXXX" maxlength="10" autocomplete="off">
+                        <span class="field-error" id="error-national_id"></span>
+                    </div>
+
+                    <div class="form-group" id="group-mobile_number">
+                        <label>رقم الجوال</label>
+                        <div class="phone-input-group">
+                            <span class="phone-country-code">🇸🇦 +966</span>
+                            <input type="tel" id="regMobile" placeholder="5XXXXXXXX" maxlength="9" autocomplete="off">
+                        </div>
+                        <span class="field-error" id="error-mobile_number"></span>
+                    </div>
+
+                </div>
+
+                <h3 class="form-section-title"><span data-icon="paperclip"></span> المرفقات <span class="required-tag">(جميع المستندات إلزامية)</span></h3>
+                <div class="form-grid">
+
+                    <div class="form-group file-group" id="group-id_photo_file">
+                        <label for="regIdPhotoFile">صورة الهوية / الإقامة</label>
+                        <div class="file-drop-input">
+                            <input type="file" id="regIdPhotoFile" accept="image/*,.pdf">
+                            <span class="file-drop-text" id="fileNameIdPhoto">اضغط لاختيار صورة (حد أقصى 5MB)</span>
+                        </div>
+                        <span class="field-error" id="error-id_photo_file"></span>
+                    </div>
+
+                    <div class="form-group file-group" id="group-national_address_file">
+                        <label for="regAddressFile">صورة العنوان الوطني</label>
+                        <div class="file-drop-input">
+                            <input type="file" id="regAddressFile" accept="image/*,.pdf">
+                            <span class="file-drop-text" id="fileNameAddress">اضغط لاختيار صورة (حد أقصى 5MB)</span>
+                        </div>
+                        <span class="field-error" id="error-national_address_file"></span>
+                    </div>
+
+                    <div class="form-group file-group" id="group-iban_certificate_file">
+                        <label for="regIbanCertFile">شهادة الآيبان</label>
+                        <div class="file-drop-input">
+                            <input type="file" id="regIbanCertFile" accept="image/*,.pdf">
+                            <span class="file-drop-text" id="fileNameIbanCert">اضغط لاختيار ملف (حد أقصى 5MB)</span>
+                        </div>
+                        <span class="field-error" id="error-iban_certificate_file"></span>
+                    </div>
+
+                    <div class="form-group file-group" id="group-cv_file">
+                        <label for="regCvFile">السيرة الذاتية</label>
+                        <div class="file-drop-input">
+                            <input type="file" id="regCvFile" accept=".pdf,.doc,.docx">
+                            <span class="file-drop-text" id="fileNameCv">اضغط لاختيار ملف (حد أقصى 5MB)</span>
+                        </div>
+                        <span class="field-error" id="error-cv_file"></span>
+                    </div>
+
+                    <div class="form-group file-group" id="group-education_qualification_file">
+                        <label for="regEducationFile">المؤهل العلمي</label>
+                        <div class="file-drop-input">
+                            <input type="file" id="regEducationFile" accept="image/*,.pdf">
+                            <span class="file-drop-text" id="fileNameEducation">اضغط لاختيار ملف (حد أقصى 5MB)</span>
+                        </div>
+                        <span class="field-error" id="error-education_qualification_file"></span>
+                    </div>
+
+                    <div class="form-group file-group" id="group-cr_status_file">
+                        <label for="regCrStatusFile">حالة السجلات التجارية</label>
+                        <div class="file-drop-input">
+                            <input type="file" id="regCrStatusFile" accept="image/*,.pdf">
+                            <span class="file-drop-text" id="fileNameCrStatus">اضغط لاختيار ملف (حد أقصى 5MB)</span>
+                        </div>
+                        <span class="field-error" id="error-cr_status_file"></span>
+                    </div>
+
+                    <div class="form-group file-group" id="group-mudad_wage_certificate_file">
+                        <label for="regMudadFile">شهادة المدد والأجور</label>
+                        <div class="file-drop-input">
+                            <input type="file" id="regMudadFile" accept="image/*,.pdf">
+                            <span class="file-drop-text" id="fileNameMudad">اضغط لاختيار ملف (حد أقصى 5MB)</span>
+                        </div>
+                        <span class="field-error" id="error-mudad_wage_certificate_file"></span>
+                    </div>
+
+                    <div class="form-group file-group" id="group-qiwa_contracts_file">
+                        <label for="regQiwaFile">العقود الحالية في منصة قوى</label>
+                        <div class="file-drop-input">
+                            <input type="file" id="regQiwaFile" accept="image/*,.pdf">
+                            <span class="file-drop-text" id="fileNameQiwa">اضغط لاختيار ملف (حد أقصى 5MB)</span>
+                        </div>
+                        <span class="field-error" id="error-qiwa_contracts_file"></span>
+                    </div>
+
+                </div>
+
+                <h3 class="form-section-title"><span data-icon="key"></span> بيانات الدخول</h3>
+                <div class="form-grid">
+
+                    <div class="form-group full-width" id="group-email">
+                        <label for="regEmail">البريد الإلكتروني</label>
+                        <input type="email" id="regEmail" placeholder="name@example.com" autocomplete="email" style="direction:ltr; text-align:right;">
+                        <span class="field-error" id="error-email"></span>
+                    </div>
+
+                    <div class="form-group password-field-wrapper" id="group-password">
+                        <label for="regPassword">كلمة المرور</label>
+                        <input type="password" id="regPassword" placeholder="8 أحرف على الأقل" autocomplete="new-password">
+                        <button type="button" class="password-toggle-btn" id="toggleRegPassword" aria-label="إظهار كلمة المرور">
+                            <svg id="regEyeIcon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                            </svg>
+                        </button>
+                        <span class="field-error" id="error-password"></span>
+                    </div>
+
+                    <div class="form-group password-field-wrapper" id="group-confirm_password">
+                        <label for="regConfirmPassword">تأكيد كلمة المرور</label>
+                        <input type="password" id="regConfirmPassword" placeholder="أعد كتابة كلمة المرور" autocomplete="new-password">
+                        <button type="button" class="password-toggle-btn" id="toggleRegConfirmPassword" aria-label="إظهار كلمة المرور">
+                            <svg id="regConfirmEyeIcon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                            </svg>
+                        </button>
+                        <span class="field-error" id="error-confirm_password"></span>
+                    </div>
+
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-submit" id="btnRegisterSubmit">
+                        <span class="btn-spinner" id="registerBtnSpinner" style="display:none;"></span>
+                        <span id="registerBtnText">إرسال طلب إنشاء الحساب</span>
+                    </button>
+                </div>
+
+                <p class="terms-text">
+                    بإرسال هذا الطلب فإنك تؤكد صحة البيانات المدخلة وموافقتك على
+                    <a href="#">الشروط والأحكام</a> و<a href="#">سياسة الخصوصية</a>
+                </p>
+            </form>
+
+        </div>
+    </main>
+
+    <script src="app/scripts/auth/register-employee.js?v=1"></script>
+</body>
+</html>

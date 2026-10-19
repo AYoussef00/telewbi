@@ -1,0 +1,169 @@
+/* --- Global Variable Architecture --- */
+:root {
+    --brand-orange: #ff5a22;
+    --brand-orange-hover: #e04814;
+    --text-main: #374151;
+    --text-muted: #6b7280;
+    --text-heading: #111827;
+    --border-color: #e5e7eb;
+    --bg-white: #ffffff;
+}
+
+/* --- Layout Reset configurations --- */
+body {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg-white);
+    color: var(--text-main);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* --- Navigation Header (نفس تنسيق الهيدر المستخدم بالصفحة الرئيسية index.html/homepage.css حرفياً) --- */
+.main-navbar {
+    width: 100%;
+    background-color: #ffffff;
+    border-bottom: 1px solid #f3f4f6;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 8%;
+    background-color: #ffffff;
+}
+
+.logo {
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    text-decoration: none;
+    color: inherit;
+}
+
+.logo-circle {
+    margin-top: 8px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nav-links a {
+    margin: 0 15px;
+    text-decoration: none;
+    color: #333333;
+    font-weight: 500;
+    font-size: 15px;
+}
+
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.lang-switch {
+    text-decoration: none;
+    color: #333333;
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+.btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 14px;
+    transition: background 0.3s ease;
+}
+
+.btn-register {
+    background-color: #030303;
+    color: white;
+    border: none;
+}
+
+.btn-login {
+    background-color: white;
+    color: #030303;
+    border: 1px solid #030303;
+}
+
+/* تأثير التلاشي للترجمة الديناميكية عند تبديل اللغة (homepage.js) */
+[data-i18n] {
+    transition: opacity 0.25s ease-in-out;
+    opacity: 1;
+}
+.fade-out {
+    opacity: 0 !important;
+}
+
+/* --- Document Content Typography layout definitions --- */
+.document-wrapper {
+    max-width: 960px;
+    margin: 48px auto;
+    padding: 0 24px;
+}
+
+.legal-content {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-heading);
+    margin: 16px 0 0 0;
+}
+
+.legal-paragraph {
+    font-size: 15px;
+    line-height: 1.85;
+    color: var(--text-main);
+    text-align: justify;
+    margin: 0;
+}
+
+.legal-link {
+    color: var(--brand-orange);
+    text-decoration: none;
+    word-break: break-all;
+    direction: ltr;
+    display: inline-block;
+}
+
+.legal-link:hover {
+    text-decoration: underline;
+}
+
+/* --- Responsive Media Queries Breakdown rules --- */
+@media (max-width: 768px) {
+    .document-wrapper {
+        margin: 24px auto;
+    }
+    .legal-paragraph {
+        font-size: 14px;
+        line-height: 1.75;
+    }
+}
+
+@media (max-width: 600px) {
+    .navbar {
+        flex-direction: column;
+        gap: 15px;
+    }
+}

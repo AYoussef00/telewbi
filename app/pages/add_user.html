@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إضافة مستخدم جديد - بصمة الأعمال</title>
+    <!-- استدعاء خط Cairo للأنظمة العربية -->
+    <link rel="preconnect" href="https://googleapis.com">
+    <link rel="preconnect" href="https://gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- استدعاء حزمة سوبابيس الرسمية عبر خادم unpkg المباشر والمستقر -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="../../config/supabase.js"></script>
+    <script src="../../routes/routes.js"></script>
+    <script src="../shared/icons.js"></script>
+
+    <!-- ملفات التنسيق الموديلار المفصولة والمنظمة -->
+    <link rel="stylesheet" href="../../resources/css/global-layout.css?v=2">
+    <link rel="stylesheet" href="../../resources/css/sidebar.css?v=2">
+    <link rel="stylesheet" href="../../resources/css/navbar.css">
+    <!-- ربط ملف التنسيقات الخارجي -->
+    <link rel="stylesheet" href="../../resources/css/add_user.css">
+</head>
+<body>
+    <div class="app-container">
+
+        <!-- اللوحة الجانبية للنظام -->
+        <div id="sidebar-container"></div>
+
+        <!-- منطقة المحتوى وشريط التنقل العلوي -->
+        <main class="main-content">
+
+            <div id="navbar-container"></div>
+
+            <div class="page-container">
+                <div class="add-user-container">
+
+                    <div class="page-header">
+                        <div class="header-title">
+                            <nav class="breadcrumb-nav" aria-label="breadcrumb">
+                                <span class="title-icon" data-icon="person"></span>
+                                <a href="users.html" class="breadcrumb-link" data-i18n="menuUsers">المستخدمين</a>
+                                <span class="breadcrumb-separator" aria-hidden="true">/</span>
+                                <span class="breadcrumb-current" data-i18n="addUserTitle">إضافة مستخدم جديد</span>
+                            </nav>
+                            <p class="view-subtitle" data-i18n="addUserSubtitle">أضف بيانات المستخدم الجديد وحدد دوره وحالته في النظام</p>
+                        </div>
+                    </div>
+
+                    <!-- نموذج بيانات المستخدم الجديد -->
+                    <form id="addUserForm" class="form-card" novalidate>
+
+                        <!-- شريط تنبيه عام لعرض رسائل النجاح/الفشل بدل alert() -->
+                        <div id="formAlert" class="form-alert" style="display:none;"></div>
+
+                        <div class="form-grid">
+
+                            <!-- حقل الاسم الكامل -->
+                            <div class="form-group full-width" id="group-name">
+                                <label for="userName">الاسم الكامل</label>
+                                <input type="text" id="userName" name="name" placeholder="أدخل اسم المستخدم">
+                                <span class="field-error" id="error-name"></span>
+                            </div>
+
+                            <!-- حقل البريد الإلكتروني -->
+                            <div class="form-group" id="group-email">
+                                <label for="userEmail">البريد الإلكتروني</label>
+                                <input type="email" id="userEmail" name="email" placeholder="example@company.com">
+                                <span class="field-error" id="error-email"></span>
+                            </div>
+
+                            <!-- حقل رقم الجوال -->
+                            <div class="form-group" id="group-phone">
+                                <label for="userPhone">رقم الجوال</label>
+                                <input type="tel" id="userPhone" name="phone" class="id-input" placeholder="05XXXXXXXX">
+                                <span class="field-error" id="error-phone"></span>
+                            </div>
+
+                            <!-- حقل كلمة المرور -->
+                            <div class="form-group" id="group-password">
+                                <label for="userPassword">كلمة المرور</label>
+                                <input type="password" id="userPassword" name="password" placeholder="8 أحرف على الأقل">
+                                <span class="field-error" id="error-password"></span>
+                            </div>
+
+                            <!-- حقل تأكيد كلمة المرور -->
+                            <div class="form-group" id="group-password_confirm">
+                                <label for="userPasswordConfirm">تأكيد كلمة المرور</label>
+                                <input type="password" id="userPasswordConfirm" name="password_confirm" placeholder="أعد إدخال كلمة المرور">
+                                <span class="field-error" id="error-password_confirm"></span>
+                            </div>
+
+                            <!-- حقل الدور / الصلاحية -->
+                            <div class="form-group" id="group-role">
+                                <label for="userRole">الدور / الصلاحية</label>
+                                <select id="userRole" name="role">
+                                    <option value="" disabled selected>اختر الصلاحية</option>
+                                    <option value="super_admin">مدير عام النظام</option>
+                                    <option value="admin">مسؤول</option>
+                                    <option value="company">مسؤول شركة</option>
+                                    <option value="employee">موظف</option>
+                                </select>
+                                <span class="field-error" id="error-role"></span>
+                            </div>
+
+                            <!-- حقل الحالة -->
+                            <div class="form-group" id="group-status">
+                                <label for="userStatus">الحالة</label>
+                                <select id="userStatus" name="status">
+                                    <option value="" disabled selected>اختر الحالة</option>
+                                    <option value="active">نشط</option>
+                                    <option value="inactive">غير نشط</option>
+                                </select>
+                                <span class="field-error" id="error-status"></span>
+                            </div>
+
+                        </div>
+
+                        <!-- أزرار الإجراءات -->
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-submit" data-perm="add:users">حفظ</button>
+                            <button type="button" id="btnCancel" class="btn btn-cancel">إلغاء</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- استدعاء ملفات تشغيل المنطق البرمجي والمحاكاة بالتوالي -->
+    <script src="../../bootstrap/permissions.js?v=8"></script>
+    <script src="../../bootstrap/app-core.js"></script>
+    <script src="../shared/sidebar.js?v=3"></script>
+    <script src="../shared/navbar.js"></script>
+    <!-- ربط ملف العمليات الخارجي -->
+    <script src="../scripts/add_user.js?v=2"></script>
+
+</body>
+</html>

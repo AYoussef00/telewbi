@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="brandName">بصمة الأعمال - لوحة التحكم</title>
+
+    <!-- FIX: Removed the broken jsdelivr line entirely -->
+
+    <!-- FIX: Corrected Google Fonts preconnect hostnames to prevent 404 connection errors -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- استدعاء حزمة سوبابيس الرسمية عبر خادم unpkg المباشر والمستقر -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="../../config/supabase.js"></script>
+    <script src="../../routes/routes.js"></script>
+    <script src="../shared/icons.js"></script>
+
+    <link rel="stylesheet" href="../../resources/css/dashboard.css">
+    <link rel="stylesheet" href="../../resources/css/global-layout.css?v=2">
+    <link rel="stylesheet" href="../../resources/css/sidebar.css?v=2">
+    <link rel="stylesheet" href="../../resources/css/navbar.css">
+    <!-- تُعاد استخدامهما هنا فقط من أجل تنسيقات بطاقات إحصائيات المهام وجدولها
+         (.tasks-stats-grid / .task-stat-card / .companies-table وغيرها) —
+         نفس التنسيقات المستخدمة أصلاً بشاشة "إدارة المهام" — تُطبَّق على لوحة
+         تحكم الموظف الجديدة أسفل الصفحة -->
+    <link rel="stylesheet" href="../../resources/css/employees.css">
+    <link rel="stylesheet" href="../../resources/css/tasks.css">
+</head>
+<body>
+
+    <!-- 🔄 شاشة التحميل بشعار الشركة — تُخفى تلقائياً بعد اكتمال تحميل السايدبار وشريط التنقل (app-core.js) -->
+    <div id="pageLoader" class="page-loader">
+        <div class="loader-ring"></div>
+        <img src="../../resources/images/logo.png" alt="شعار شركة بصمة الأعمال" class="loader-logo">
+    </div>
+
+    <!-- Target injection layout placeholder anchor point -->
+  <div class="app-container">
+
+        <!-- Target injection layout placeholder anchor point -->
+        <div id="sidebar-container"></div>    <!-- 2. مساحة المحتوى والبيانات الرئيسية (Main Content Workspace) -->
+    <main class="main-content" >
+
+<div id="navbar-container"></div>
+        <!-- لوحة التحكم الإحصائية والبيانية الداخلية -->
+        <div class="dashboard-container">
+
+            <!-- ==================================================================
+                 لوحة المسؤول العامة (super_admin / admin وأي دور آخر غير "company")
+                 ================================================================== -->
+            <!-- ⚠️ مخفية افتراضياً (display:none) بنفس أسلوب لوحتي الشركة والموظف
+                 أدناه تماماً — بدونها كانت هذه اللوحة (لوحة المسؤول العامة) هي
+                 الوحيدة الظاهرة فعلياً بالـ HTML الخام قبل أي تنفيذ لجافاسكريبت،
+                 بينما شاشة التحميل (#pageLoader) تُخفى فقط بعد اكتمال حقن
+                 السايدبار وشريط التنقل (app-core.js) — وهذان لا علاقة لهما زمنياً
+                 بانتهاء تحديد دور المستخدم الفعلي بـ dashboard.js (طلب إضافي
+                 لقاعدة البيانات). فكانت شاشة التحميل تختفي غالباً *قبل* أن ينتهي
+                 dashboard.js من تحديد أن المستخدم "موظف"، فتظهر للحظة لوحة
+                 المسؤول العامة كاملة قبل أن يستبدلها الكود بلوحة تحكم الموظف —
+                 وهو الوميض (Flash) المُبلَّغ عنه. الآن تبقى الشاشة فارغة (بيضاء)
+                 خلف شاشة التحميل حتى ينتهي dashboard.js فعلياً من تحديد الدور
+                 ويُظهر اللوحة الصحيحة له مباشرة عبر render*DashboardView()
+                 (كل مسار تنفيذ بالدالة، بما فيها معالجة الأخطاء، يستدعي دوماً
+                 واحدة من الدوال الثلاث فيُظهر لوحة واحدة بلا استثناء). -->
+            <div id="adminDashboardView" style="display:none;">
+                <div class="page-header">
+                    <div class="header-title">
+                        <h1 data-i18n="dashboardTitle">لوحة التحكم</h1>
+                        <!-- ⚠️ التاريخ/الوقت هنا لم يعد نصاً ثابتاً — يُحسب فعلياً عند كل
+                             تحميل للصفحة عبر renderDashboardDateTime() بملف dashboard.js
+                             (كان سابقاً تاريخاً مكتوباً يدوياً "14 يوليو 2026" لا يتغيّر أبداً) -->
+                        <p class="dashboard-subtitle-line">
+                            <span data-i18n="dashboardSubtitle">أهلاً بك المسؤول، التاريخ: </span><span id="dashboardCurrentDateTime" class="dashboard-datetime"></span>
+                        </p>
+                    </div>
+                    <div class="time-filter">
+                        <select id="daysFilter">
+                            <option value="30" data-i18n="filterLast30">آخر 30 يوماً</option>
+                            <option value="60" data-i18n="filterLast60">آخر 60 يوماً</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- شبكة البطاقات الإحصائية الأربعة العلوية -->
+                <section class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="card-header">
+                            <span class="trend-badge red-trend">↘ 74%</span>
+                            <span class="card-icon blue-icon" data-icon="building"></span>
+                        </div>
+                        <div class="metric-info">
+                            <div class="metric-label" data-i18n="companiesLabel">إجمالي الشركات</div>
+                            <div class="metric-value" id="companiesCounter">0</div>
+                        </div>
+                        <div class="card-footer" data-i18n="compareLastMonth">مقارنة بالشهر الماضي</div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="card-header">
+                            <span class="trend-badge red-trend">↘ 75%</span>
+                            <span class="card-icon purple-icon" data-icon="people"></span>
+                        </div>
+                        <div class="metric-info">
+                            <div class="metric-label" data-i18n="employeesLabel">إجمالي الموظفين</div>
+                            <div class="metric-value" id="employeesCounter">0</div>
+                        </div>
+                        <div class="card-footer" data-i18n="compareLastMonth">مقارنة بالشهر الماضي</div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="card-header">
+                            <span class="trend-badge red-trend">↘ 80%</span>
+                            <span class="card-icon pink-icon" data-icon="link"></span>
+                        </div>
+                        <div class="metric-info">
+                            <div class="metric-label" data-i18n="employeeLinksTotalLabel">إجمالي ربط الموظفين</div>
+                            <div class="metric-value" id="employeeLinksCounter">0</div>
+                        </div>
+                        <div class="card-footer" data-i18n="compareLastMonth">مقارنة بالشهر الماضي</div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="card-header">
+                            <span class="badge-status-completed"><span class="badge-icon" data-icon="check-circle"></span><span data-i18n="completedTasksLabel">المهام المكتملة</span></span>
+                            <span class="card-icon green-icon" data-icon="clipboard"></span>
+                        </div>
+                        <div class="metric-info">
+                            <div class="metric-label" data-i18n="completedTasksLabel">المهام المكتملة</div>
+                            <div class="metric-value" id="completedTasksCounter">0</div>
+                        </div>
+                        <div class="card-footer-tags">
+                            <span class="tag purple-tag"><span class="tag-icon" data-icon="hourglass"></span> 2 <span data-i18n="routineTasks">روتينية</span></span>
+                            <span class="tag blue-tag"><span class="tag-icon" data-icon="tag-dot"></span> 12 <span data-i18n="documentTasks">مستندة</span></span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- الرسوم البيانية الوسطى والسفلية -->
+                <section class="charts-grid">
+                    <div class="chart-card pie-chart-box">
+                        <div class="chart-title"><span class="title-with-icon"><span class="title-icon" data-icon="chart-pie"></span><span data-i18n="chartCompaniesDistribution">توزيع الشركات</span></span></div>
+                        <div class="pie-placeholder">
+                            <div class="circle-chart"></div>
+                            <div class="pie-label">Basic</div>
+                        </div>
+                    </div>
+
+                    <div class="chart-card line-chart-box">
+                        <div class="chart-title">
+                            <span class="title-with-icon"><span class="title-icon" data-icon="chart-up"></span><span data-i18n="chartGrowth">النمو</span></span>
+                            <span class="subtitle" data-i18n="employeesLabel">إجمالي الموظفين</span>
+                        </div>
+                        <!-- تُعبَّأ ديناميكياً من dashboard.js: نمو إجمالي عدد الموظفين التراكمي
+                             خلال المدة المختارة أعلى الصفحة (آخر 30/60 يوماً) -->
+                        <div class="line-chart-placeholder" id="growthChartContainer">
+                            <div class="chart-loading">جاري تحميل بيانات النمو...</div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="bottom-grid">
+                    <div class="chart-card activity-box">
+                        <div class="chart-title"><span class="title-with-icon"><span class="title-icon" data-icon="bell"></span><span data-i18n="recentActivity">النشاط الأخير</span></span></div>
+                        <!-- تُعبَّأ ديناميكياً من dashboard.js: خط زمني مدمج من أحدث الأحداث
+                             عبر جداول الشركات/الموظفين/ربط الموظفين/المهام (لا يوجد جدول
+                             "سجل نشاط" مخصص بقاعدة البيانات) -->
+                        <div class="activity-list" id="recentActivityList">
+                            <div class="bar-chart-loading">جاري تحميل النشاط الأخير...</div>
+                        </div>
+                    </div>
+
+                    <div class="chart-card bar-chart-box">
+                        <div class="chart-title">
+                            <span class="title-with-icon"><span class="title-icon" data-icon="top"></span><span data-i18n="topCompanies">أفضل الشركات</span></span>
+                            <span class="subtitle" data-i18n="employeesPerCompany">الموظفون لكل شركة</span>
+                        </div>
+                        <!-- تُعبَّأ ديناميكياً من dashboard.js: أفضل 5 شركات وفق العدد الفعلي
+                             للموظفين المرتبطين بها بجدول employees (company_id) -->
+                        <div class="bar-chart-container" id="topCompaniesBarChart">
+                            <div class="bar-chart-loading">جاري تحميل بيانات الشركات...</div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- ==================================================================
+                 لوحة تحكم الشركة (دور company فقط) — إحصائيات مخصّصة لشركة/شركات
+                 المستخدم الحالي المالكة لها فقط (مخفية افتراضياً؛ dashboard.js
+                 يُظهرها بدل اللوحة العامة أعلاه حين يكون دور المستخدم "company")
+                 ================================================================== -->
+            <div id="companyDashboardView" style="display:none;">
+                <div class="page-header">
+                    <div class="header-title">
+                        <h1 data-i18n="companyDashboardTitle">لوحة تحكم الشركة</h1>
+                        <p id="companyDashboardSubtitle" data-i18n="companyDashboardSubtitle">تابع أداء شركتك اليوم</p>
+                    </div>
+                </div>
+
+                <!-- بطاقة الإحصائيات الأربع الخاصة بشركة/شركات المستخدم الحالي -->
+                <section class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="card-header">
+                            <span class="card-icon purple-icon" data-icon="people"></span>
+                        </div>
+                        <div class="metric-info">
+                            <div class="metric-label" data-i18n="companyEmployeesLabel">إجمالي الموظفين</div>
+                            <div class="metric-value" id="companyEmployeesCounter">0</div>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="card-header">
+                            <span class="card-icon green-icon" data-icon="check-circle"></span>
+                        </div>
+                        <div class="metric-info">
+                            <div class="metric-label" data-i18n="companyPresentTodayLabel">إجمالي الحضور اليوم</div>
+                            <div class="metric-value" id="companyPresentTodayCounter">0</div>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="card-header">
+                            <span class="card-icon pink-icon" data-icon="close"></span>
+                        </div>
+                        <div class="metric-info">
+                            <div class="metric-label" data-i18n="companyAbsentTodayLabel">إجمالي الغياب اليوم</div>
+                            <div class="metric-value" id="companyAbsentTodayCounter">0</div>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="card-header">
+                            <span class="card-icon blue-icon" data-icon="clipboard"></span>
+                        </div>
+                        <div class="metric-info">
+                            <div class="metric-label" data-i18n="companyTasksTodayLabel">مهام موزعة اليوم</div>
+                            <div class="metric-value" id="companyTasksTodayCounter">0</div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="bottom-grid">
+                    <!-- بطاقة الشركات التابعة للمستخدم الحالي -->
+                    <div class="chart-card">
+                        <div class="chart-title"><span class="title-with-icon"><span class="title-icon" data-icon="building"></span><span data-i18n="companyMyCompaniesLabel">الشركات التابعة لك</span></span></div>
+                        <div class="activity-list" id="companyListContainer">
+                            <div class="bar-chart-loading">جاري تحميل الشركات...</div>
+                        </div>
+                    </div>
+
+                    <!-- بطاقة آخر 5 عمليات تسجيل دخول لحساب المستخدم الحالي -->
+                    <div class="chart-card">
+                        <div class="chart-title"><span class="title-with-icon"><span class="title-icon" data-icon="clock"></span><span data-i18n="companyRecentLoginsLabel">آخر عمليات تسجيل الدخول</span></span></div>
+                        <div class="activity-list" id="companyRecentLoginsList">
+                            <div class="bar-chart-loading">جاري تحميل السجل...</div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- ==================================================================
+                 لوحة تحكم الموظف (دور employee فقط) — إحصائيات وجدول مهام هذا
+                 الموظف فقط (آخر 14 يوماً)، مخفية افتراضياً؛ dashboard.js يُظهرها
+                 بدل اللوحتين أعلاه حين يكون دور المستخدم الحالي "employee"
+                 ================================================================== -->
+            <div id="employeeDashboardView" style="display:none;">
+                <div class="page-header">
+                    <div class="header-title">
+                        <h1>لوحة تحكم الموظف</h1>
+                        <p id="employeeDashboardSubtitle">تابع مهامك خلال آخر 14 يوماً</p>
+                    </div>
+                </div>
+
+                <!-- بطاقات إحصائيات مهام الموظف الحالي فقط (آخر 14 يوماً) -->
+                <section class="tasks-stats-grid">
+                    <div class="task-stat-card task-stat-completed">
+                        <div class="task-stat-label">المكتملة</div>
+                        <div class="task-stat-value" id="empStatCompleted">0</div>
+                    </div>
+                    <div class="task-stat-card task-stat-inprogress">
+                        <div class="task-stat-label">قيد التنفيذ</div>
+                        <div class="task-stat-value" id="empStatInProgress">0</div>
+                    </div>
+                    <div class="task-stat-card task-stat-pending">
+                        <div class="task-stat-label">قيد الانتظار</div>
+                        <div class="task-stat-value" id="empStatPending">0</div>
+                    </div>
+                    <div class="task-stat-card task-stat-total">
+                        <div class="task-stat-label">إجمالي المهام</div>
+                        <div class="task-stat-value" id="empStatTotal">0</div>
+                    </div>
+                </section>
+
+                <!-- جدول مهام الموظف الحالي فقط (آخر 14 يوماً) -->
+                <section class="chart-card" style="margin-top:16px;">
+                    <div class="chart-title"><span class="title-with-icon"><span class="title-icon" data-icon="clipboard"></span><span>مهامي (آخر 14 يوماً)</span></span></div>
+                    <div class="table-container" style="margin-top: 12px;">
+                        <table class="companies-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 32%;">عنوان المهمة</th>
+                                    <th style="width: 13%;">النوع</th>
+                                    <th style="width: 20%;">الشركة</th>
+                                    <th style="width: 15%;">تاريخ الاستحقاق</th>
+                                    <th style="width: 20%; text-align:center;">الحالة</th>
+                                </tr>
+                            </thead>
+                            <tbody id="employeeTasksTableBody">
+                                <tr><td colspan="5" class="table-loading-state">جاري تحميل المهام...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+        </div>
+    </main>
+  </div>
+    <!-- Link the external dynamic JS script logic controller -->
+    <!-- ⚠️ رقم إصدار (?v=) مضاف عمداً بنهاية رابطي app-core.js وdashboard.js
+         تحديداً (نفس أسلوب login.html/script.js): يجبر المتصفح على تحميل
+         النسخة الجديدة فوراً بدل الاكتفاء بنسخة قديمة مخزَّنة مؤقتاً بذاكرة
+         التصفح رغم استبدال الملف فعلياً على السيرفر — وهذا الملفان تحديداً
+         تغيّرا للتو لإصلاح وميض لوحة التحكم عند دخول الموظف. عند أي تحديث
+         مستقبلي لأي منهما، غيّر رقمه (مثال: ?v=3) لضمان وصول التحديث فوراً. -->
+    <script src="../../bootstrap/permissions.js?v=8"></script>
+    <script src="../../bootstrap/app-core.js?v=2"></script>
+    <script src="../scripts/dashboard.js?v=2"></script>
+    <script src="../shared/navbar.js"></script>
+    <script src="../shared/sidebar.js?v=3"></script>
+</body>
+</html>

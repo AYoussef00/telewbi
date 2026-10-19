@@ -1,0 +1,58 @@
+/* ==========================================================================
+   تنسيقات إضافية خاصة بشاشة "عرض بيانات الموظف" (للقراءة فقط)
+   تُستخدم فوق تنسيقات add_employee.css الأساسية للحفاظ على نفس الطراز
+   ========================================================================== */
+
+/* حقول القراءة فقط تبدو بنفس تصميم فورم "إضافة موظف" لكن بمظهر معطّل واضح */
+.form-group input:disabled {
+    background-color: #f8fafc;
+    color: #1e293b;
+    cursor: default;
+    opacity: 1;
+    border-color: #e2e8f0;
+}
+
+/* شبكة عرض روابط المستندات الرسمية */
+.view-docs-grid {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.doc-view-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 48px;
+    padding: 0 16px;
+    border: 1px solid #dcdcdc;
+    border-radius: 8px;
+    background-color: #f8fafc;
+    color: #e65c00;
+    font-weight: 700;
+    font-size: 14px;
+    text-decoration: none;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.doc-view-link:hover {
+    background-color: #fff5ec;
+    border-color: #e65c00;
+}
+
+.doc-view-missing {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 48px;
+    padding: 0 16px;
+    border: 1.5px dashed #cbd5e1;
+    border-radius: 8px;
+    color: #94a3b8;
+    font-size: 13.5px;
+    font-weight: 600;
+    text-align: center;
+}
+
+/* شاشات الجوال */
+@media (max-width: 768px) {
+    .view-docs-grid { grid-template-columns: 1fr; }
+}

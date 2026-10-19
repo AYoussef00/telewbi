@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="notifications">تفضيلات الإشعارات - بصمة الأعمال</title>
+
+    <link rel="preconnect" href="https://googleapis.com">
+    <link rel="preconnect" href="https://gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="../../config/supabase.js"></script>
+    <script src="../../routes/routes.js"></script>
+    <script src="../shared/icons.js"></script>
+
+    <link rel="stylesheet" href="../../resources/css/global-layout.css?v=2">
+    <link rel="stylesheet" href="../../resources/css/sidebar.css?v=2">
+    <link rel="stylesheet" href="../../resources/css/navbar.css">
+    <link rel="stylesheet" href="../../resources/css/profile.css">
+    <link rel="stylesheet" href="../../resources/css/notifications.css">
+</head>
+<body>
+    <div class="app-container">
+
+        <div id="sidebar-container"></div>
+
+        <main class="main-content">
+            <div id="navbar-container"></div>
+
+            <div class="page-container">
+                <div class="profile-container">
+
+                    <div class="page-header">
+                        <div class="header-title">
+                            <nav class="breadcrumb-nav" aria-label="breadcrumb">
+                                <span class="title-icon">🔔</span>
+                                <span class="breadcrumb-current" data-i18n="notifications">تفضيلات الإشعارات</span>
+                            </nav>
+                            <p class="view-subtitle">تحكّم في نوع الإشعارات التي تصلك داخل النظام</p>
+                        </div>
+                    </div>
+
+                    <div id="notifFormAlert" class="form-alert" style="display:none;"></div>
+
+                    <!-- بطاقة تفعيل/تعطيل الكل دفعة واحدة -->
+                    <div class="notif-master-card">
+                        <div class="notif-master-text">
+                            <h3>🔔 تفعيل جميع الإشعارات</h3>
+                            <p>مفتاح سريع لتفعيل أو تعطيل كل الفئات أدناه دفعة واحدة</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="notifMasterToggle">
+                            <span class="toggle-switch-track"></span>
+                        </label>
+                    </div>
+
+                    <!-- بطاقة فئات الإشعارات -->
+                    <div class="form-card" style="max-width: 640px;">
+                        <h3 class="card-title">📋 فئات الإشعارات</h3>
+
+                        <div class="notif-pref-row">
+                            <div class="notif-pref-text">
+                                <span class="notif-pref-title">✅ إشعارات المهام</span>
+                                <span class="notif-pref-desc">إسناد مهمة جديدة إليك، أو تغيّر حالة إحدى مهامك</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="notifTasks" class="notif-pref-checkbox">
+                                <span class="toggle-switch-track"></span>
+                            </label>
+                        </div>
+
+                        <div class="notif-pref-row">
+                            <div class="notif-pref-text">
+                                <span class="notif-pref-title">⏰ إشعارات الحضور والانصراف</span>
+                                <span class="notif-pref-desc">تسجيل غياب أو تأخير على أحد الموظفين التابعين لك</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="notifAttendance" class="notif-pref-checkbox">
+                                <span class="toggle-switch-track"></span>
+                            </label>
+                        </div>
+
+                        <div class="notif-pref-row">
+                            <div class="notif-pref-text">
+                                <span class="notif-pref-title">🎧 إشعارات الدعم الفني</span>
+                                <span class="notif-pref-desc">رد جديد من فريق الدعم على تذكرتك، أو تذكرة جديدة واردة</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="notifSupport" class="notif-pref-checkbox">
+                                <span class="toggle-switch-track"></span>
+                            </label>
+                        </div>
+
+                        <div class="notif-pref-row">
+                            <div class="notif-pref-text">
+                                <span class="notif-pref-title">🛠️ إشعارات النظام العامة</span>
+                                <span class="notif-pref-desc">تنبيهات وتحديثات عامة متعلقة بالمنصة</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="notifSystem" class="notif-pref-checkbox">
+                                <span class="toggle-switch-track"></span>
+                            </label>
+                        </div>
+
+                        <button type="button" class="btn-save-notif-prefs" id="btnSaveNotifPrefs">حفظ التفضيلات</button>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../../bootstrap/permissions.js?v=8"></script>
+    <script src="../../bootstrap/app-core.js"></script>
+    <script src="../shared/sidebar.js?v=3"></script>
+    <script src="../shared/navbar.js"></script>
+    <script src="../scripts/notifications.js?v=3"></script>
+</body>
+</html>

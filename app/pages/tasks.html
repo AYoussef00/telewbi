@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="menuTasksManagement">إدارة المهام</title>
+
+    <!-- خط القاهرة الرسمي المعتمد في واجهات المنصة -->
+    <link rel="preconnect" href="https://googleapis.com">
+    <link rel="preconnect" href="https://gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- استدعاء حزمة سوبابيس الرسمية عبر خادم unpkg المباشر والمستقر -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="../../config/supabase.js"></script>
+    <script src="../../routes/routes.js"></script>
+    <script src="../shared/icons.js"></script>
+
+    <!-- ملفات التنسيق الموديلار: employees.css أساس مشترك (جدول/بحث/نافذة منبثقة) -->
+    <link rel="stylesheet" href="../../resources/css/global-layout.css?v=2">
+    <link rel="stylesheet" href="../../resources/css/sidebar.css?v=2">
+    <link rel="stylesheet" href="../../resources/css/navbar.css">
+    <link rel="stylesheet" href="../../resources/css/employees.css">
+    <link rel="stylesheet" href="../../resources/css/tasks.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <div id="sidebar-container"></div>
+
+        <main class="main-content">
+            <div id="navbar-container"></div>
+
+            <div class="dashboard-container">
+
+                <div class="page-header">
+                    <div class="header-title">
+                        <h1 class="view-main-title">
+                            <span class="title-icon" data-icon="clipboard"></span>
+                            <span data-i18n="menuTasksManagement">إدارة المهام</span>
+                        </h1>
+                        <p class="view-subtitle">إدارة وتعيين المهام للموظفين عبر جميع الشركات</p>
+                    </div>
+
+                    <div class="header-actions">
+                        <button type="button" class="btn-add-task" id="btnAddTask" data-perm="add:tasks">+ إضافة مهمة</button>
+                        <button type="button" class="btn-bulk-task" id="btnBulkAddTask" data-perm="add:tasks" data-hide-for-company><span data-icon="people"></span> إضافة مهام متعددة</button>
+                        <button type="button" class="btn-bulk-task" id="btnJobTasksList" data-hide-for-company><span data-icon="card-index"></span> قائمة المهام</button>
+                        <button type="button" class="btn-bulk-task" id="btnTasksReport"><span data-icon="chart-bar"></span> تقرير المهام</button>
+                        <button type="button" class="btn-refresh-tasks" id="btnRefreshTasks" title="تحديث"><span data-icon="refresh"></span></button>
+                    </div>
+                </div>
+
+                <!-- بطاقات الإحصائيات الأربع -->
+                <section class="tasks-stats-grid">
+                    <div class="task-stat-card task-stat-completed">
+                        <div class="task-stat-label">المكتملة</div>
+                        <div class="task-stat-value" id="statCompleted">0</div>
+                    </div>
+                    <div class="task-stat-card task-stat-inprogress">
+                        <div class="task-stat-label">قيد التنفيذ</div>
+                        <div class="task-stat-value" id="statInProgress">0</div>
+                    </div>
+                    <div class="task-stat-card task-stat-pending">
+                        <div class="task-stat-label">قيد الانتظار</div>
+                        <div class="task-stat-value" id="statPending">0</div>
+                    </div>
+                    <div class="task-stat-card task-stat-total">
+                        <div class="task-stat-label">إجمالي المهام</div>
+                        <div class="task-stat-value" id="statTotal">0</div>
+                    </div>
+                </section>
+
+                <!-- شريط البحث والتصفية -->
+                <section class="companies-filter-bar tasks-filter-bar">
+                    <div class="search-box-wrapper">
+                        <span class="search-icon" data-icon="search"></span>
+                        <input type="text" id="taskSearchInput" autocomplete="off" placeholder="عنوان أو موظف...">
+                    </div>
+                    <div class="combo-box task-filter-combo" id="comboTaskCompanyFilter">
+                        <input type="text" id="taskCompanyFilterSearch" class="combo-input" placeholder="جميع الشركات" autocomplete="off">
+                        <input type="hidden" id="taskCompanyFilterId" value="all">
+                        <span class="combo-arrow">▾</span>
+                        <div class="combo-dropdown" id="taskCompanyFilterDropdown"></div>
+                    </div>
+                    <div class="combo-box task-filter-combo" id="comboTaskStatusFilter">
+                        <input type="text" id="taskStatusFilterSearch" class="combo-input" placeholder="الحالة: الكل" autocomplete="off">
+                        <input type="hidden" id="taskStatusFilterId" value="all">
+                        <span class="combo-arrow">▾</span>
+                        <div class="combo-dropdown" id="taskStatusFilterDropdown"></div>
+                    </div>
+                    <div class="att-date-wrapper">
+                        <input type="date" id="taskFromDate">
+                        <span class="att-date-label">من تاريخ</span>
+                    </div>
+                    <div class="att-date-wrapper">
+                        <input type="date" id="taskToDate">
+                        <span class="att-date-label">إلى تاريخ</span>
+                    </div>
+                </section>
+
+                <!-- جدول المهام -->
+                <section class="table-container" style="margin-top: 16px;">
+                    <table class="companies-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 26%;">عنوان المهمة</th>
+                                <th style="width: 11%;">النوع</th>
+                                <th style="width: 17%;">إسناد إلى</th>
+                                <th style="width: 15%;">الشركة</th>
+                                <th style="width: 12%;">تاريخ الاستحقاق</th>
+                                <th style="width: 11%; text-align:center;">الحالة</th>
+                                <th style="width: 8%; text-align:center;">إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tasksTableBody">
+                            <tr><td colspan="7" class="table-loading-state">جاري تحميل المهام...</td></tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <div id="tasksPagination" class="pagination-container"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- نافذة إضافة/تعديل مهمة -->
+    <div class="modal-overlay" id="taskModal">
+        <div class="modal-content-box">
+            <div class="modal-header-section">
+                <h2 class="modal-title" id="taskModalTitle">إضافة مهمة جديدة</h2>
+                <button type="button" class="btn-close-x" id="btnCloseTaskModal">×</button>
+            </div>
+
+            <form id="taskForm" novalidate>
+                <input type="hidden" id="taskId">
+                <div class="form-alert" id="taskFormAlert" style="display:none;"></div>
+
+                <div class="form-fields-grid">
+                    <div class="input-field-group width-full-row" id="group-title">
+                        <label for="taskTitle">عنوان المهمة</label>
+                        <input type="text" id="taskTitle" required>
+                        <span class="field-error" id="error-title"></span>
+                    </div>
+
+                    <div class="input-field-group width-full-row" id="group-notes">
+                        <label for="taskNotes">ملاحظات <span class="optional-tag">(اختياري)</span></label>
+                        <textarea id="taskNotes" placeholder="تفاصيل إضافية عن المهمة..."></textarea>
+                    </div>
+
+                    <div class="input-field-group" id="group-type">
+                        <label for="taskType">النوع</label>
+                        <select id="taskType">
+                            <option value="مسندة">مسندة</option>
+                            <option value="مستقلة">مستقلة</option>
+                            <option value="روتينية">روتينية</option>
+                        </select>
+                    </div>
+
+                    <div class="input-field-group" id="group-status">
+                        <label for="taskStatus">الحالة</label>
+                        <select id="taskStatus">
+                            <option value="قيد الانتظار">قيد الانتظار</option>
+                            <option value="قيد التنفيذ">قيد التنفيذ</option>
+                            <option value="مكتملة">مكتملة</option>
+                        </select>
+                    </div>
+
+                    <div class="input-field-group" id="group-company_id">
+                        <label for="taskCompanySearch">الشركة</label>
+                        <div class="combo-box" id="comboTaskCompany">
+                            <input type="text" id="taskCompanySearch" class="combo-input" placeholder="ابحث عن شركة..." autocomplete="off">
+                            <input type="hidden" id="taskCompanyId">
+                            <span class="combo-arrow">▾</span>
+                            <div class="combo-dropdown" id="taskCompanyDropdown"></div>
+                        </div>
+                        <span class="field-error" id="error-company_id"></span>
+                    </div>
+
+                    <div class="input-field-group" id="group-assigned_to">
+                        <label for="taskAssigneeSearch">إسناد إلى <span class="optional-tag">(اختياري)</span></label>
+                        <div class="combo-box" id="comboTaskAssignee">
+                            <input type="text" id="taskAssigneeSearch" class="combo-input" placeholder="اختر الشركة أولاً..." autocomplete="off" disabled>
+                            <input type="hidden" id="taskAssignedTo">
+                            <span class="combo-arrow">▾</span>
+                            <div class="combo-dropdown" id="taskAssigneeDropdown"></div>
+                        </div>
+                    </div>
+
+                    <div class="input-field-group" id="group-start_date">
+                        <label for="taskStartDate">من تاريخ <span class="optional-tag">(اختياري)</span></label>
+                        <input type="date" id="taskStartDate">
+                        <span class="field-error" id="error-start_date"></span>
+                    </div>
+
+                    <div class="input-field-group" id="group-due_date">
+                        <label for="taskDueDate">إلى تاريخ <span class="optional-tag">(اختياري)</span></label>
+                        <input type="date" id="taskDueDate">
+                        <span class="field-error" id="error-due_date"></span>
+                    </div>
+                </div>
+
+                <div class="modal-footer-buttons">
+                    <button type="button" class="btn-modal-cancel" id="btnCancelTaskModal">إلغاء</button>
+                    <button type="submit" class="btn-modal-save" id="btnSaveTask" data-perm="edit:tasks">حفظ المهمة</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../../bootstrap/permissions.js?v=8"></script>
+    <script src="../../bootstrap/app-core.js"></script>
+    <script src="../shared/sidebar.js?v=3"></script>
+    <script src="../shared/navbar.js"></script>
+    <!-- 🔄 v=3: تحديث كسر ذاكرة التخزين المؤقت للمتصفح/السيرفر — أُضيف لاحقاً
+         (بعد v=2) قيد "الأشهر المدفوعة فقط" لمسؤول الشركة (getPaidMonthsMapForCompanies
+         بملف tasks.js) دون أن يُرفَق برقم إصدار جديد بحينها؛ أي متصفح كان قد
+         حمّل tasks.js?v=2 سابقاً كان سيستمر بتقديم تلك النسخة المخبأة (بلا قيد
+         الأشهر المدفوعة) رغم رفع محتوى الملف الجديد فعلياً على السيرفر — لأن
+         عنوان الملف (URL) بنفس رقم الإصدار لم يتغيّر. -->
+    <script src="../scripts/tasks.js?v=3"></script>
+</body>
+</html>

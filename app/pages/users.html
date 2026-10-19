@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="usersTitle">المستخدمين</title>
+
+    <!-- خط القاهرة الرسمي المعتمد في واجهات المنصة -->
+    <link rel="preconnect" href="https://googleapis.com">
+    <link rel="preconnect" href="https://gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- استدعاء حزمة سوبابيس الرسمية عبر خادم unpkg المباشر والمستقر -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="../../config/supabase.js"></script>
+    <script src="../../routes/routes.js"></script>
+    <script src="../shared/icons.js"></script>
+
+    <!-- ملفات التنسيق الموديلار المفصولة والمنظمة -->
+    <link rel="stylesheet" href="../../resources/css/global-layout.css?v=2">
+    <link rel="stylesheet" href="../../resources/css/sidebar.css?v=2">
+    <link rel="stylesheet" href="../../resources/css/navbar.css">
+    <link rel="stylesheet" href="../../resources/css/users.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- 1. القائمة الجانبية المظلمة الاحترافية (Sidebar) -->
+        <div id="sidebar-container"></div>
+
+        <!-- مساحة العمل الرئيسية -->
+        <main class="main-content">
+            <!-- الشريط العلوي المستقر مع حسابات المستخدم واللغات -->
+            <div id="navbar-container"></div>
+
+            <!-- Main Interactive Component Workspace View -->
+            <div class="dashboard-container">
+                <div class="page-header">
+                    <div class="header-title">
+                        <h1 class="view-main-title">
+                            <span class="title-icon" data-icon="person"></span>
+                            <span data-i18n="usersTitle">المستخدمين</span>
+                        </h1>
+                        <p class="view-subtitle" data-i18n="usersSubtitle">قائمة مستخدمي النظام</p>
+                    </div>
+
+                    <div class="header-actions">
+                        <button class="btn-add-user" data-perm="add:users" data-i18n="btnAddUser">+ إضافة مستخدم جديد</button>
+                    </div>
+                </div>
+
+                <!-- شريط البحث والتصفية -->
+                <section class="companies-filter-bar">
+                    <div class="search-box-wrapper">
+                        <span class="search-icon" data-icon="search"></span>
+                        <input type="text" id="userSearchInput" oninput="handleFilterChange()" placeholder="بحث..." data-i18n="searchCompanyPlaceholder">
+                    </div>
+                    <div class="filter-dropdown-wrapper">
+                        <select id="roleFilter" onchange="handleFilterChange()">
+                            <option value="all" data-i18n="allFilter">الكل</option>
+                            <option value="super_admin">مدير عام النظام</option>
+                            <option value="admin">مسؤول</option>
+                            <option value="company">مسؤول شركة</option>
+                            <option value="employee">موظف</option>
+                        </select>
+                    </div>
+                    <div class="filter-dropdown-wrapper">
+                        <select id="statusFilter" onchange="handleFilterChange()">
+                            <option value="all" data-i18n="allFilter">الكل</option>
+                            <option value="active" data-i18n="statusActive">نشط</option>
+                            <option value="inactive" data-i18n="statusInactive">غير نشط</option>
+                        </select>
+                    </div>
+                </section>
+
+                <!-- جدول استعراض المستخدمين -->
+                <section class="table-container">
+                    <table class="companies-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 22%;" data-i18n="thUserName">الاسم</th>
+                                <th style="width: 22%;" data-i18n="thUserEmail">البريد الإلكتروني</th>
+                                <th style="width: 15%;" data-i18n="thUserPhone">رقم الجوال</th>
+                                <th style="width: 16%;" data-i18n="thUserRole">الدور</th>
+                                <th style="width: 10%; text-align: center;" data-i18n="thEmpStatus">الحالة</th>
+                                <th style="width: 15%; text-align: center;" data-i18n="thEmpActions">الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <tr>
+                                <td colspan="6" class="table-loading-state">
+                                    جاري جلب قائمة المستخدمين والمزامنة الحية...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <!-- 📄 أزرار التنقل بين صفحات المستخدمين -->
+                <div id="usersPagination" class="pagination-container"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- حاوية النافذة المنبثقة لتعديل بيانات المستخدم -->
+    <div class="modal-overlay" id="editUserModal">
+        <div class="modal-content-box">
+            <div class="modal-header-section">
+                <h2 class="modal-title" id="editUserModalTitle">تعديل بيانات المستخدم</h2>
+                <button type="button" class="btn-close-x" onclick="closeUserModal()">×</button>
+            </div>
+
+            <form id="editUserForm" onsubmit="handleUserSubmission(event)">
+                <div class="form-fields-grid">
+                    <div class="input-field-group">
+                        <label data-i18n="thUserName">الاسم الكامل</label>
+                        <input type="text" id="modalUserName" required>
+                    </div>
+                    <div class="input-field-group">
+                        <label data-i18n="thUserEmail">البريد الإلكتروني</label>
+                        <input type="email" id="modalUserEmail" required>
+                    </div>
+                    <div class="input-field-group">
+                        <label data-i18n="thUserPhone">رقم الجوال</label>
+                        <input type="tel" id="modalUserPhone">
+                    </div>
+                    <div class="input-field-group">
+                        <label data-i18n="thUserRole">الدور / الصلاحية</label>
+                        <select id="modalUserRole" required>
+                            <option value="super_admin">مدير عام النظام</option>
+                            <option value="admin">مسؤول</option>
+                            <option value="company">مسؤول شركة</option>
+                            <option value="employee">موظف</option>
+                        </select>
+                    </div>
+                    <div class="input-field-group">
+                        <label data-i18n="thEmpStatus">الحالة</label>
+                        <select id="modalUserStatus" required>
+                            <option value="active">نشط</option>
+                            <option value="inactive">غير نشط</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="modal-footer-buttons">
+                    <button type="button" class="btn-modal-cancel" onclick="closeUserModal()" data-i18n="cancelBtn">إلغاء</button>
+                    <button type="submit" class="btn-modal-save" data-perm="edit:users" data-i18n="saveBtn">حفظ التعديلات</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../../bootstrap/permissions.js?v=8"></script>
+    <script src="../../bootstrap/app-core.js"></script>
+    <script src="../shared/sidebar.js?v=3"></script>
+    <script src="../shared/navbar.js"></script>
+    <script src="../scripts/users.js?v=2"></script>
+</body>
+</html>

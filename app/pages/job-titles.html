@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="menuProfessions">بصمة الأعمال - المسميات الوظيفية</title>
+
+    <!-- خط القاهرة الرسمي المعتمد في واجهات المنصة -->
+    <link rel="preconnect" href="https://googleapis.com">
+    <link rel="preconnect" href="https://gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- استدعاء حزمة سوبابيس الرسمية عبر خادم unpkg المباشر والمستقر -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="../../config/supabase.js"></script>
+    <script src="../../routes/routes.js"></script>
+    <script src="../shared/icons.js"></script>
+
+    <link rel="stylesheet" href="../../resources/css/global-layout.css?v=2">
+    <link rel="stylesheet" href="../../resources/css/sidebar.css?v=2">
+    <link rel="stylesheet" href="../../resources/css/navbar.css">
+    <link rel="stylesheet" href="../../resources/css/job-titles.css">
+</head>
+<body>
+    <div class="app-container">
+
+        <!-- 1. القائمة الجانبية المظلمة الاحترافية (Sidebar) -->
+        <div id="sidebar-container"></div>
+
+        <!-- مساحة العمل الرئيسية -->
+        <main class="main-content">
+            <!-- الشريط العلوي المستقر مع حسابات المستخدم واللغات -->
+            <div id="navbar-container"></div>
+
+            <div class="dashboard-container">
+                <div class="page-header">
+                    <div class="header-title">
+                        <h1 class="view-main-title">
+                            <span class="title-icon" data-icon="tag"></span>
+                            <span data-i18n="menuProfessions">المسميات الوظيفية</span>
+                        </h1>
+                        <p class="view-subtitle" data-i18n="professionsSubtitle">قائمة المسميات الوظيفية المعتمدة بالنظام</p>
+                    </div>
+
+                    <div class="header-actions">
+                        <button class="btn-add-job" data-perm="add:job_titles" data-i18n="btnAddJobTitle">+ إضافة مسمى وظيفي</button>
+                    </div>
+                </div>
+
+                <!-- شريط البحث -->
+                <section class="companies-filter-bar">
+                    <div class="search-box-wrapper">
+                        <span class="search-icon" data-icon="search"></span>
+                        <input type="text" id="jobSearchInput" oninput="handleProfessionFilterChange()" placeholder="بحث..." data-i18n="searchCompanyPlaceholder">
+                    </div>
+                </section>
+
+                <!-- جدول استعراض المسميات الوظيفية -->
+                <section class="table-container">
+                    <table class="companies-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 35%;" data-i18n="thJobNameAr">المسمى الوظيفي بالعربي</th>
+                                <th style="width: 35%;" data-i18n="thJobNameEn">المسمى الوظيفي بالإنجليزي</th>
+                                <th style="width: 18%;" data-i18n="thJobCreatedAt">تاريخ الإضافة</th>
+                                <th style="width: 12%; text-align: center;" data-i18n="thEmpActions">الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="professionsTableBody">
+                            <tr>
+                                <td colspan="4" class="table-loading-state">
+                                    جاري تحميل قائمة المسميات الوظيفية...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <!-- 📄 أزرار التنقل بين الصفحات -->
+                <div id="professionsPagination" class="pagination-container"></div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../../bootstrap/permissions.js?v=8"></script>
+    <script src="../../bootstrap/app-core.js"></script>
+    <script src="../shared/sidebar.js?v=3"></script>
+    <script src="../shared/navbar.js"></script>
+    <script src="../scripts/job-titles.js?v=2"></script>
+</body>
+</html>

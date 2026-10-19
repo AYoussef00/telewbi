@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="companiesTitle">الشركات</title>
+
+    <!-- خط القاهرة الرسمي المعتمد في واجهات المنصة -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+       <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- استدعاء حزمة سوبابيس الرسمية عبر خادم unpkg المباشر والمستقر -->
+     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+     <script src="../../config/supabase.js"></script>
+    <script src="../../routes/routes.js"></script>
+    <script src="../shared/icons.js"></script>
+
+         <link rel="stylesheet" href="../../resources/css/global-layout.css?v=2">
+        <link rel="stylesheet" href="../../resources/css/companies.css">
+        <link rel="stylesheet" href="../../resources/css/sidebar.css?v=2">
+        <link rel="stylesheet" href="../../resources/css/navbar.css">
+
+
+</head>
+<body>
+
+        <div class="app-container">
+
+<div id="sidebar-container"></div>
+
+    <!-- مساحة العمل الرئيسية -->
+    <main class="main-content">
+             <!-- الشريط العلوي المستقر مع حسابات المستخدم واللغات -->
+            <div id="navbar-container"></div>
+        <div class="dashboard-container">
+            <div class="page-header">
+                <div class="header-title">
+                    <h1 style="color: #d97706; font-size: 24px;"><span style="margin-left:8px;" data-icon="building"></span><span data-i18n="companiesTitle">الشركات</span></h1>
+                    <p style="color: #64748b; font-size: 13px;" data-i18n="companiesSubtitle">قائمة الشركات</p>
+                </div>
+      <!-- الجهة اليسرى: زر إضافة شركة جديدة الذهبي المعتمد -->
+    <div class="header-actions">
+        <button class="btn-add-company" id="openAddCompanyModal" data-perm="add:companies" data-i18n="btnAddCompany">+ إضافة شركة</button>
+    </div>
+            </div>
+
+            <!-- شريط البحث والتصفية الموضح بالصورة -->
+            <section class="companies-filter-bar">
+                <div class="search-box-wrapper">
+                    <span class="search-icon" data-icon="search"></span>
+                    <input type="text" id="companySearchInput" oninput="searchCompanies()" placeholder="بحث..." data-i18n="searchCompanyPlaceholder">
+                </div>
+                <div class="filter-dropdown-wrapper">
+                    <select id="planFilter" onchange="searchCompanies()">
+                        <option value="all" data-i18n="allFilter">الكل</option>
+                    </select>
+                </div>
+                <div class="filter-dropdown-wrapper">
+                    <select id="statusFilter" onchange="searchCompanies()">
+                        <option value="all">الحالة (الكل)</option>
+                        <option value="active">نشط</option>
+                        <option value="inactive">غير نشط</option>
+                    </select>
+                </div>
+            </section>
+
+  <!-- جدول استعراض الشركات المتطابق بصرياً مع التصميم -->
+<section class="table-container">
+    <table class="companies-table">
+        <thead>
+            <tr>
+                <th data-i18n="thCompanyName">اسم الشركة</th>
+                <th>رقم هوية المنشأة</th>
+                <th>رقم جوال الشخص المفوض</th>
+                <th>نوع العقد</th>
+                <th>تاريخ العقد</th>
+                <th>قيمة الاشتراك</th>
+                <th style="text-align: center;">الحالة</th>
+                <th style="text-align: center;" data-i18n="thActions">إجراءات</th>
+            </tr>
+        </thead>
+        <tbody id="companiesTableBody">
+            <tr>
+                <td colspan="8" style="text-align: center; padding: 40px; color: #94a3b8;">
+                    جاري جلب قائمة الشركات والمزامنة الحية...
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+
+<!-- 📄 أزرار التنقل بين الصفحات المضافة حديثاً -->
+<div id="paginationControls" class="pagination-container" style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 15px; direction: ltr;"></div>
+
+        </div>
+    </main>
+
+    <script src="../../bootstrap/permissions.js?v=8"></script>
+    <script src="../../bootstrap/app-core.js"></script>
+    <script src="../shared/sidebar.js?v=3"></script>
+    <script src="../shared/navbar.js"></script>
+    <!-- 🔄 row-actions.js: أزرار الإجراءات المشتركة (أيقونة عين + ⋮) وصفوف قابلة للنقر -->
+    <script src="../shared/row-actions.js?v=1"></script>
+    <script src="../scripts/companies.js?v=3"></script>
+
+        </div>
+</body>
+</html>

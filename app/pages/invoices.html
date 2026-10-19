@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="invoicesTitle">الفواتير</title>
+
+    <!-- خط القاهرة الرسمي المعتمد في واجهات المنصة -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- استدعاء حزمة سوبابيس الرسمية عبر خادم unpkg المباشر والمستقر -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="../../config/supabase.js"></script>
+    <script src="../../routes/routes.js"></script>
+    <script src="../shared/icons.js"></script>
+
+    <link rel="stylesheet" href="../../resources/css/global-layout.css?v=2">
+    <link rel="stylesheet" href="../../resources/css/companies.css">
+    <link rel="stylesheet" href="../../resources/css/invoices.css">
+    <link rel="stylesheet" href="../../resources/css/sidebar.css?v=2">
+    <link rel="stylesheet" href="../../resources/css/navbar.css">
+
+</head>
+<body>
+
+    <div class="app-container">
+
+        <div id="sidebar-container"></div>
+
+        <!-- مساحة العمل الرئيسية -->
+        <main class="main-content">
+            <!-- الشريط العلوي المستقر مع حسابات المستخدم واللغات -->
+            <div id="navbar-container"></div>
+            <div class="dashboard-container">
+                <div class="page-header">
+                    <div class="header-title">
+                        <h1 style="color: #d97706; font-size: 24px;"><span class="title-icon" data-icon="receipt" style="margin-left:8px;"></span><span data-i18n="invoicesTitle">الفواتير</span></h1>
+                        <p style="color: #64748b; font-size: 13px;" data-i18n="invoicesSubtitle">قائمة الفواتير الصادرة للشركات</p>
+                    </div>
+                    <!-- الجهة اليسرى: زر إصدار فاتورة جديدة -->
+                    <div class="header-actions">
+                        <button class="btn-add-company" id="btnGoToIssueInvoice" data-perm="add:invoice_issuing" data-i18n="btnIssueInvoice">+ إصدار فاتورة</button>
+                    </div>
+                </div>
+
+                <!-- شريط البحث والتصفية -->
+                <section class="companies-filter-bar">
+                    <div class="search-box-wrapper">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="invoiceSearchInput" oninput="searchInvoices()" placeholder="بحث باسم الشركة أو رقم الفاتورة...">
+                    </div>
+                    <div class="filter-dropdown-wrapper">
+                        <select id="invoiceStatusFilter" onchange="searchInvoices()">
+                            <option value="all">الحالة (الكل)</option>
+                            <option value="unpaid">غير مدفوعة</option>
+                            <option value="paid">مدفوعة</option>
+                            <option value="overdue">متأخرة</option>
+                        </select>
+                    </div>
+                </section>
+
+                <!-- جدول استعراض الفواتير -->
+                <section class="table-container">
+                    <table class="companies-table">
+                        <thead>
+                            <tr>
+                                <th>رقم الفاتورة</th>
+                                <th>الشركة</th>
+                                <th>تاريخ الفاتورة</th>
+                                <th style="text-align: center;">الإجمالي شامل الضريبة</th>
+                                <th style="text-align: center;">الحالة</th>
+                                <th style="text-align: center;" data-i18n="thActions">إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="invoicesTableBody">
+                            <tr>
+                                <td colspan="6" style="text-align: center; padding: 40px; color: #94a3b8;">
+                                    جاري جلب قائمة الفواتير...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <!-- 📄 أزرار التنقل بين الصفحات -->
+                <div id="invoicesPaginationControls" class="pagination-container" style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 15px; direction: ltr;"></div>
+
+            </div>
+        </main>
+
+    </div>
+
+    <script src="../../bootstrap/permissions.js?v=8"></script>
+    <script src="../../bootstrap/app-core.js"></script>
+    <script src="../shared/sidebar.js?v=3"></script>
+    <script src="../shared/navbar.js"></script>
+    <script src="../scripts/invoices.js?v=3"></script>
+</body>
+</html>

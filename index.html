@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title data-i18n="page_title">بصمة الأعمال</title>
+
+        <!-- خط القاهرة الرسمي المعتمد في واجهات المنصة -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- استدعاء حزمة سوبابيس الرسمية عبر خادم unpkg المباشر والمستقر -->
+     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="resources/css/homepage.css">
+</head>
+<body>
+    <!-- Main Navigation Bar -->
+    <header class="main-navbar">
+        <div class="navbar">
+            <div class="nav-right">
+                <a class="logo">
+            <span class="logo-circle"><img src="resources/images/logo.png" width="25px"  alt="أيقونة"></span>
+            <strong data-i18n="logo_text">بصمة الأعمال</strong>
+                </a>
+            </div>
+        <div class="nav-actions">
+            <!-- زر تبديل اللغة -->
+            <a href="#" id="langToggle" class="lang-switch">English</a>
+            <a href="login-employee.html" class="btn btn-register" data-i18n="btn_employee_login">دخول موظف</a>
+            <a href="login-companies.html" class="btn btn-login" data-i18n="btn_login">تسجيل دخول الشركات</a>
+        </div>
+        </div>
+    </header>
+
+
+    <!-- قسم الهيرو / الواجهة الرئيسية -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1 data-i18n="hero_title">المنصة المحلية الرائدة للاستشارات الإدارية للشركات</h1>
+            <p data-i18n="hero_desc">نقدّم حلولاً رقمية متكاملة لإدارة الموارد البشرية والعمليات الإدارية اليومية لشركتك، بأعلى معايير الكفاءة والاحترافية.</p>
+        </div>
+        <div class="hero-image">
+            <div class="image-placeholder">
+                <!-- تم إصلاح أبعاد الصورة هنا وتمريرها عبر الـ CSS منعاً لخطأ الـ Expression المعياري -->
+                <img src="resources/images/logos/a.jpg" alt="صورة توضيحية للخدمات والاستشارات الإدارية" class="hero-vector" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+        </div>
+    </section>
+
+    <!-- قسم "رؤيتنا": Our Vision، فوق قسم "رسالتنا" مباشرة (نفس تخطيط قسم "من نحن": نص يميناً وصورة يساراً) -->
+    <section class="about-highlight">
+        <div class="about-text">
+            <h2 data-i18n="vision_title">رؤيتنا</h2>
+            <span class="about-underline" aria-hidden="true"></span>
+            <p data-i18n="vision_p1">نطمح في "بصمة الأعمال" إلى تحقيق الريادة في مجال الخدمات والاستشارات الإدارية الرقمية، من خلال تقديم حلول مبتكرة وشاملة تُمكّن الشركات من إدارة مواردها بكفاءة عالية ووفق أفضل الممارسات العالمية.</p>
+            <p data-i18n="vision_p2">نسعى لأن نكون الشريك الأمثل لعملائنا من خلال خدمات متميزة تسهم في نمو أعمالهم وتحقيق التنمية المستدامة، داخل المملكة العربية السعودية وخارجها.</p>
+        </div>
+        <div class="about-image">
+            <img src="resources/images/logos/vision.jpg" alt="رؤيتنا - بصمة الأعمال" class="about-img">
+        </div>
+    </section>
+
+    <!-- قسم "رسالتنا": Our Mission -->
+    <section class="mission-highlight">
+        <div class="mission-visual" aria-hidden="true">
+            <img src="resources/images/logos/mission.jpg" alt="رسالتنا - بصمة الأعمال" class="mission-img">
+        </div>
+        <div class="mission-text">
+            <h2 data-i18n="mission_title">رسالتنا</h2>
+            <span class="about-underline" aria-hidden="true"></span>
+            <p data-i18n="mission_p1">انطلاقاً من إيماننا العميق بأهمية الإدارة الفعّالة، نقدّم حلولاً متكاملة لإدارة الموارد البشرية والعمليات الإدارية وفق أعلى معايير الجودة العالمية، معتمدين على فرق عمل مدرَّبة وأحدث التقنيات. نركّز على رضا عملائنا ونسعى دائماً لتطوير خدماتنا لمواكبة التطورات التقنية وتلبية احتياجات السوق المتنوعة.</p>
+        </div>
+    </section>
+
+    <!-- قسم الشركات الموثوقة -->
+<section class="companies">
+  <h2 data-i18n="companies_title">شركات تثق بمنصة بصمة الأعمال</h2>
+  <p class="subtitle" data-i18n="companies_subtitle">أكثر من 300+ شركة ناشئة وصغيرة ومتوسطة وكبرى في جميع أنحاء المملكة</p>
+
+  <div class="logo-grid">
+    <div class="logo-item"><img src="resources/images/logos/deepConcept_black.png" alt="المفهوم العميق" data-i18n="[alt]comp_half_m"></div>
+    <div class="logo-item"><img src="resources/images/logos/raz.svg" alt="راز الطبية" data-i18n="[alt]comp_vox"></div>
+    <div class="logo-item"><img src="resources/images/logos/run.png" alt="رن اكس" data-i18n="[alt]comp_noon"></div>
+    <div class="logo-item"><img src="resources/images/logos/delta.jpeg" alt="شركة دلتاالسعودية للصناعات الكيماوية" data-i18n="[alt]comp_floward"></div>
+    <div class="logo-item"><img src="resources/images/logos/imar_overseas.jpeg" alt="شركة اعمار اوفرسيز السعودية" data-i18n="[alt]comp_whites"></div>
+
+</div>
+</section>
+
+
+    <!-- قسم "من نحن": نبذة عن بصمة الأعمال كشركة خدمات واستشارات إدارية (استبدل قسم الفرص الوظيفية القديم) -->
+    <section class="about-highlight about-highlight--muted">
+        <div class="about-text">
+            <h2 data-i18n="about_title">من نحن</h2>
+            <span class="about-underline" aria-hidden="true"></span>
+            <p data-i18n="about_p1">"بصمة الأعمال" شركة سعودية متخصصة في تقديم الخدمات والاستشارات الإدارية، نساعد الشركات على إدارة مواردها البشرية وعملياتها اليومية بكفاءة عالية من خلال منصة رقمية متكاملة تواكب أعلى معايير الجودة.</p>
+            <p data-i18n="about_p2">نغطي إدارة الموظفين، الحضور والانصراف، توزيع ومتابعة المهام، وإصدار التقارير الإدارية الدقيقة، مع تركيزنا الدائم على الابتكار والدقة لتمكين الشركات من اتخاذ قرارات أفضل.</p>
+            <p data-i18n="about_p3">بفضل فريقنا المتخصص وأحدث التقنيات، نسعى دائماً لأن نكون الخيار الأمثل للشركات والمؤسسات الراغبة في تطوير إدارتها وتعزيز إنتاجيتها داخل المملكة العربية السعودية وخارجها.</p>
+        </div>
+        <div class="about-image">
+            <img src="resources/images/logos/b.jpg" alt="فريق عمل بصمة الأعمال" class="about-img">
+        </div>
+    </section>
+
+
+    <!-- قسم التذييل / الفوتر -->
+    <footer class="main-footer">
+        <div class="footer-container">
+            <!-- عمود الهوية (الشعار، الوصف، وسائل التواصل) -->
+            <div class="footer-brand">
+                <div class="footer-brand-top">
+                    <span class="footer-logo-circle"><img src="resources/images/logo.png" alt="شعار بصمة الأعمال"></span>
+                    <div>
+                        <strong class="footer-brand-name" data-i18n="footer_col1_title">بصمة الأعمال</strong>
+                        <span class="footer-brand-tagline" data-i18n="footer_brand_tagline">للخدمات والاستشارات الإدارية الرقمية</span>
+                    </div>
+                </div>
+                <p class="footer-brand-desc" data-i18n="footer_brand_desc">نساعد الشركات على إدارة مواردها البشرية وعملياتها اليومية من خلال منصة رقمية متكاملة تواكب أعلى معايير الجودة والاحترافية.</p>
+                <p class="footer-brand-highlight" data-i18n="footer_brand_highlight">نساعد شركتك على النمو ببناء أنظمة إدارية أكثر كفاءة واستدامة.</p>
+                <div class="social-icons">
+                    <a href="#" class="icon-link" aria-label="LinkedIn">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M6.94 8.5H3.56V20h3.38V8.5zM5.25 3.5a1.96 1.96 0 1 0 0 3.92 1.96 1.96 0 0 0 0-3.92zM20.44 20h-3.37v-5.6c0-1.34-.03-3.06-1.87-3.06-1.87 0-2.16 1.46-2.16 2.96V20H9.68V8.5h3.24v1.57h.05c.45-.85 1.55-1.75 3.2-1.75 3.42 0 4.05 2.25 4.05 5.18V20z"/></svg>
+                    </a>
+                    <a href="#" class="icon-link" aria-label="X">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true"><path d="M18.9 2H22l-7.2 8.2L23.3 22h-6.8l-5.3-6.9L5.1 22H2l7.7-8.8L1 2h7l4.8 6.3L18.9 2zm-1.2 18h1.9L7.4 3.9H5.4L17.7 20z"/></svg>
+                    </a>
+                    <a href="#" class="icon-link" aria-label="Instagram">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none"/></svg>
+                    </a>
+                    <a href="#" class="icon-link" aria-label="TikTok">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true"><path d="M16.6 5.8c-.8-.9-1.3-2-1.4-3.3h-3.1v14.2a2.6 2.6 0 1 1-2.6-2.7c.3 0 .5 0 .8.1V10.9a5.7 5.7 0 0 0-.8-.1A5.7 5.7 0 1 0 15.2 16V9.1a8.3 8.3 0 0 0 4.8 1.5V7.5a5 5 0 0 1-3.4-1.7z"/></svg>
+                    </a>
+                </div>
+            </div>
+
+            <!-- عمود الشركة -->
+            <div class="footer-column">
+                <h3 data-i18n="footer_heading_company">الشركة</h3>
+                <ul>
+                    <li><a href="login.html" data-i18n="footer_emp_login">دخول الموظفين</a></li>
+                    <li><a href="login-companies.html" data-i18n="footer_link_company_login">تسجيل دخول الشركات</a></li>
+                </ul>
+            </div>
+
+            <!-- عمود مزايا المنصة -->
+            <div class="footer-column">
+                <h3 data-i18n="footer_heading_features">مزايا المنصة</h3>
+                <ul class="footer-feature-list">
+                    <li><span class="bullet-dot" aria-hidden="true"></span><span data-i18n="footer_feature_employees">إدارة الموظفين</span></li>
+                    <li><span class="bullet-dot" aria-hidden="true"></span><span data-i18n="footer_feature_attendance">الحضور والانصراف</span></li>
+                    <li><span class="bullet-dot" aria-hidden="true"></span><span data-i18n="footer_feature_tasks">إدارة المهام وتوزيعها</span></li>
+                    <li><span class="bullet-dot" aria-hidden="true"></span><span data-i18n="footer_feature_companies">إدارة الشركات المشتركة</span></li>
+                    <li><span class="bullet-dot" aria-hidden="true"></span><span data-i18n="footer_feature_reports">التقارير الإدارية الدقيقة</span></li>
+                </ul>
+            </div>
+
+            <!-- عمود التواصل -->
+            <div class="footer-column">
+                <h3 data-i18n="footer_heading_contact">تواصل معنا</h3>
+                <ul class="footer-contact-list">
+                    <li>
+                        <span class="contact-icon-badge" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 6.5-9 12-9 12s-9-5.5-9-12a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
+                        <a href="https://maps.app.goo.gl/e4wGszkoqNZotkTq8" target="_blank" rel="noopener" data-i18n="footer_address">الرياض - طريق الصحابة - حي إشبيلية - مجمع الحمراء سيتي - الطابق الثالث، مكتب رقم 301</a>
+                    </li>
+                    <li>
+                        <span class="contact-icon-badge" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v2.6a2 2 0 0 1-2.2 2 19.6 19.6 0 0 1-8.5-3 19.3 19.3 0 0 1-6-6 19.6 19.6 0 0 1-3-8.6A2 2 0 0 1 4.3 2h2.6a2 2 0 0 1 2 1.7c.1.9.4 1.9.7 2.7a2 2 0 0 1-.4 2.1L8 9.9a16 16 0 0 0 6 6l1.4-1.2a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.8 2z"/></svg></span>
+                        <a href="tel:+966114508452" dir="ltr">+966 11 450 8452</a>
+                    </li>
+                    <li>
+                        <span class="contact-icon-badge" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></span>
+                        <a href="mailto:info@business-imprint.com" dir="ltr">info@business-imprint.com</a>
+                    </li>
+                </ul>
+                <div class="footer-contact-actions">
+                    <a href="tel:+966114508452" class="btn-footer-call">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v2.6a2 2 0 0 1-2.2 2 19.6 19.6 0 0 1-8.5-3 19.3 19.3 0 0 1-6-6 19.6 19.6 0 0 1-3-8.6A2 2 0 0 1 4.3 2h2.6a2 2 0 0 1 2 1.7c.1.9.4 1.9.7 2.7a2 2 0 0 1-.4 2.1L8 9.9a16 16 0 0 0 6 6l1.4-1.2a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.8 2z"/></svg>
+                        <span data-i18n="footer_btn_call">اتصل الآن</span>
+                    </a>
+                    <a href="mailto:info@business-imprint.com" class="btn-footer-msg">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+                        <span data-i18n="footer_btn_email">راسلنا بالبريد</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- الشريط السفلي للفوتر -->
+        <div class="footer-bottom">
+            <div class="bottom-left">
+                <span data-i18n="footer_copy">© 2026 بصمة الأعمال</span>
+                <span data-i18n="footer_vat">الرقم الضريبي: 1234567890</span>
+            </div>
+            <div class="bottom-right">
+                <a href="privacy-policy.html" data-i18n="footer_privacy">سياسة الخصوصية</a>
+                <a href="terms.html" data-i18n="footer_terms">الشروط والأحكام</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ربط السكربت الخارجي للترجمة والتلاشي السلس -->
+    <script src="config/supabase.js"></script>
+    <script src="routes/routes.js"></script>
+    <script src="app/scripts/site/homepage.js?v=2"></script>
+</body>
+</html>

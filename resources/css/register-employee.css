@@ -1,0 +1,311 @@
+/* =========================================================================
+   شاشة "إنشاء حساب موظف" — تسجيل ذاتي عام (قبل تسجيل الدخول)
+   تبني نفس الهوية البصرية لشاشتي دخول الموظفين/الشركات (login-companies.css)
+   لكن ببطاقة أوسع تتّسع لنموذج بيانات كامل + رفع مستندات
+   ========================================================================= */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Cairo', sans-serif;
+}
+
+body {
+    background-color: #FAFAFA;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* الشريط العلوي: شعار الشركة (يعيد للصفحة الرئيسية) */
+.top-nav {
+    width: 100%;
+    padding: 20px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #FFFFFF;
+}
+.logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #1A1A1A; }
+.logo-circle {
+    width: 36px; height: 36px; border-radius: 50%; background-color: #FDEDE9;
+    display: flex; justify-content: center; align-items: center; overflow: hidden;
+}
+.logo-circle img { width: 22px; height: 22px; object-fit: contain; }
+.logo strong { font-size: 16px; font-weight: 700; color: #1A1A1A; }
+
+.top-nav-back-link {
+    color: #64748b;
+    font-size: 13.5px;
+    font-weight: 600;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.top-nav-back-link:hover { color: #E05236; }
+
+/* حاوية النموذج المركزية */
+.register-wrapper {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 36px 20px 60px;
+}
+
+.register-card {
+    background: #FFFFFF;
+    width: 100%;
+    max-width: 860px;
+    border-radius: 16px;
+    padding: 40px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+}
+
+.card-header { text-align: center; margin-bottom: 30px; }
+.brand-logo img { height: 50px; object-fit: contain; margin-bottom: 14px; }
+.main-title { font-size: 25px; font-weight: 700; color: #1A1A1A; margin-bottom: 8px; }
+.card-subtitle { font-size: 14px; color: #757575; max-width: 520px; margin: 0 auto; line-height: 1.8; }
+
+/* -------------------------------------------------------------------------
+   حالة "الميزة غير متاحة" (عند إخفائها من لوحة الإدارة) وشاشة النجاح النهائية
+   ------------------------------------------------------------------------- */
+.register-status-screen {
+    text-align: center;
+    padding: 50px 20px;
+}
+.register-status-icon {
+    width: 76px; height: 76px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 20px; font-size: 32px;
+}
+.register-status-icon.icon-success { background: #EAFAF1; color: #1E8449; }
+.register-status-icon.icon-info { background: #FFF4E5; color: #B45309; }
+.register-status-title { font-size: 20px; font-weight: 700; color: #1e293b; margin-bottom: 10px; }
+.register-status-text { font-size: 14px; color: #64748b; line-height: 1.9; max-width: 460px; margin: 0 auto 26px; }
+
+/* -------------------------------------------------------------------------
+   أقسام النموذج
+   ------------------------------------------------------------------------- */
+.form-section-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #334155;
+    margin: 28px 0 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.form-section-title:first-of-type { margin-top: 0; }
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 22px;
+}
+
+.form-group { display: flex; flex-direction: column; }
+.form-group.full-width { grid-column: span 2; }
+
+.form-group label {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #4a4a4a;
+    margin-bottom: 8px;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    height: 48px;
+    padding: 0 16px;
+    border: 1px solid #E0E0E0;
+    border-radius: 8px;
+    font-size: 14.5px;
+    background-color: #fff;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    font-family: inherit;
+}
+.form-group input:focus, .form-group select:focus {
+    border-color: #E05236;
+    box-shadow: 0 0 0 3px rgba(224, 82, 54, 0.1);
+}
+.form-group input::placeholder { color: #C2C2C2; }
+
+.optional-tag { font-size: 12px; font-weight: 500; color: #94a3b8; margin-inline-start: 4px; }
+.required-tag { font-size: 12px; font-weight: 600; color: #E05236; margin-inline-start: 6px; }
+
+/* رقم الجوال بمقدمة +966 ثابتة */
+.phone-input-group {
+    display: flex;
+    border: 1px solid #E0E0E0;
+    border-radius: 8px;
+    overflow: hidden;
+    direction: ltr;
+    transition: border-color 0.2s ease;
+}
+.phone-input-group:focus-within { border-color: #E05236; }
+.phone-country-code {
+    display: flex; align-items: center; gap: 6px;
+    background-color: #FAFAFA; padding: 0 16px;
+    border-inline-end: 1px solid #E0E0E0;
+    font-size: 14.5px; font-weight: 700; color: #444;
+}
+.phone-input-group input {
+    flex: 1; border: none; height: 46px; padding: 0 14px;
+    font-size: 15px; outline: none; direction: ltr; text-align: right;
+}
+
+/* حقل كلمة المرور مع زر إظهار/إخفاء */
+.password-field-wrapper { position: relative; }
+.password-toggle-btn {
+    position: absolute;
+    left: 12px;
+    top: 38px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #7f8c8d;
+}
+.password-toggle-btn svg { width: 19px; height: 19px; }
+.password-toggle-btn:hover { color: #E05236; }
+
+/* -------------------------------------------------------------------------
+   قائمة قابلة للبحث (Searchable Combobox) — الشركة / المسمى الوظيفي
+   ------------------------------------------------------------------------- */
+.combo-box { position: relative; }
+.combo-input { padding-inline-end: 38px !important; cursor: text; }
+.combo-input:disabled { background-color: #f1f5f9; cursor: not-allowed; color: #94a3b8; }
+.combo-arrow {
+    position: absolute; inset-inline-end: 14px; top: 50%; transform: translateY(-50%);
+    font-size: 12px; color: #94a3b8; pointer-events: none;
+}
+.combo-dropdown {
+    position: absolute; top: calc(100% + 6px); inset-inline-start: 0; inset-inline-end: 0;
+    max-height: 220px; overflow-y: auto; background-color: #ffffff;
+    border: 1px solid #e2e8f0; border-radius: 8px;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12); z-index: 40; display: none;
+}
+.combo-dropdown.open { display: block; }
+.combo-item { padding: 10px 16px; font-size: 14px; color: #334155; cursor: pointer; transition: background-color 0.12s ease; }
+.combo-item:hover { background-color: #fff5f2; color: #E05236; }
+.combo-item.selected { background-color: #fff0ea; color: #E05236; font-weight: 700; }
+.combo-empty { padding: 14px 16px; font-size: 13px; color: #94a3b8; text-align: center; }
+
+/* -------------------------------------------------------------------------
+   حقول رفع الملفات
+   ------------------------------------------------------------------------- */
+.file-group { position: relative; }
+.file-drop-input {
+    position: relative;
+    height: 48px;
+    border: 1.5px dashed #cbd5e1;
+    border-radius: 8px;
+    background-color: #f8fafc;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+.file-drop-input:hover { border-color: #E05236; background-color: #fff8f5; }
+.file-drop-input input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; height: 100%; width: 100%; }
+.file-drop-text { font-size: 13.5px; color: #94a3b8; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.file-drop-text.has-file { color: #059669; }
+
+/* -------------------------------------------------------------------------
+   رسائل الأخطاء والتنبيهات
+   ------------------------------------------------------------------------- */
+.field-error { color: #ef4444; font-size: 12px; margin-top: 6px; min-height: 16px; display: block; }
+.form-group.has-error input,
+.form-group.has-error select { border-color: #ef4444; background-color: #fef2f2; }
+.form-group.has-error .file-drop-input,
+.form-group.has-error .phone-input-group,
+.form-group.has-error .combo-box .combo-input { border-color: #ef4444; background-color: #fef2f2; }
+
+.form-alert {
+    padding: 14px 18px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-weight: 600;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    line-height: 1.8;
+}
+.form-alert.alert-error { background-color: #FDECEA; color: #C0392B; border: 1px solid #F5C6C0; }
+.form-alert.alert-success { background-color: #EAFAF1; color: #1E8449; border: 1px solid #C8ECD9; }
+
+.field-hint {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: 8px;
+    line-height: 1.6;
+}
+
+/* -------------------------------------------------------------------------
+   أزرار الإجراء
+   ------------------------------------------------------------------------- */
+.form-actions { margin-top: 36px; display: flex; gap: 14px; }
+
+.btn-submit {
+    flex: 1;
+    height: 50px;
+    background-color: #E05236;
+    border: none;
+    border-radius: 25px;
+    color: #FFFFFF;
+    font-size: 15.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+.btn-submit:hover:not(:disabled) { background-color: #C7431F; }
+.btn-submit:disabled { background-color: #FCD6CE; cursor: not-allowed; }
+
+.btn-spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-top-color: #FFFFFF;
+    border-radius: 50%;
+    display: inline-block;
+    animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.btn-back-to-login {
+    background-color: #0f172a;
+    color: #ffffff;
+    text-decoration: none;
+    padding: 12px 30px;
+    border-radius: 25px;
+    font-size: 14.5px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+.btn-back-to-login:hover { background-color: #1e293b; }
+
+.terms-text { font-size: 12px; color: #757575; line-height: 1.8; margin-top: 24px; text-align: center; }
+.terms-text a { color: #E05236; text-decoration: none; font-weight: 600; }
+
+@media (max-width: 700px) {
+    .top-nav { padding: 15px 20px; }
+    .register-card { padding: 24px 18px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .form-group.full-width { grid-column: span 1; }
+    .form-actions { flex-direction: column; }
+}
