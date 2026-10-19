@@ -466,6 +466,36 @@ async function fetchAllAttendanceRows(fromDate, toDate) {
     return allRows;
 }
 
+// =========================================================================
+// 🆕 إصلاح ظهور "موظف محذوف" لموظفين موجودين فعلاً: كان جدول employees يُحمَّل
+// بطلب واحد (select id, name) يُقتطع صامتاً عند حد 1000 صف الذي تفرضه سوبابيس
+// (PostgREST)، فأي موظف يقع خارج أول 1000 صف لا يوجد باسمه بالخريطة employeeById
+// فيُعرض بالتقرير كـ"موظف محذوف" رغم أنه موجود. الدالة أدناه تجلب بعد تحميل
+// سجلات الحضور أسماء الموظفين الناقصين فقط (على دفعات صغيرة عبر .in('id', ...))
+// وتضيفهم للخريطة. الموظف الذي لا يعود له سجل حتى بعد هذا الطلب (محذوف فعلاً
+// أو لا يملك المستخدم صلاحية قراءته) هو وحده الذي يظهر "موظف محذوف".
+// =========================================================================
+async function loadMissingEmployeesForRows(attendanceRows) {
+    const missingIds = new Set();
+    (attendanceRows || []).forEach(r => {
+        if (r.employee_id != null && !employeeById.has(String(r.employee_id))) missingIds.add(r.employee_id);
+    });
+    if (missingIds.size === 0) return;
+
+    const ids = Array.from(missingIds);
+    const CHUNK = 150;
+    for (let i = 0; i < ids.length; i += CHUNK) {
+        const chunk = ids.slice(i, i + CHUNK);
+        try {
+            const { data, error } = await dbClient.from('employees').select('id, name').in('id', chunk);
+            if (error) throw error;
+            (data || []).forEach(e => employeeById.set(String(e.id), e));
+        } catch (error) {
+            console.error('تعذّر جلب أسماء بعض الموظفين:', error.message);
+        }
+    }
+}
+
 async function loadAttendanceReportData() {
     const tableBody = document.getElementById('reportTableBody');
     const fromDate = document.getElementById('reportFromDateInput').value;
@@ -494,6 +524,10 @@ async function loadAttendanceReportData() {
 
         const attendanceRows = await fetchAllAttendanceRows(fromDate, toDate);
         if (isStale()) return; // طلب أحدث (نطاق تاريخ مختلف) بدأ بعد هذا — أهمل نتيجته
+
+        // 🆕 جلب أسماء الموظفين الذين لم يُحمَّلوا ضمن الطلب الأول (حد 1000 صف)
+        await loadMissingEmployeesForRows(attendanceRows);
+        if (isStale()) return;
 
         let mappedDataset = (attendanceRows || []).map(record => {
             const employee = record.employee_id != null ? employeeById.get(String(record.employee_id)) : null;
