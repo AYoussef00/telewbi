@@ -273,6 +273,7 @@ function getErrorMessages() {
         email_invalid: 'صيغة البريد الإلكتروني غير صحيحة.',
         existing_account_required: 'الرجاء اختيار الحساب المطلوب الربط به.',
         subscription_value_invalid: 'الرجاء إدخال قيمة اشتراك صحيحة (رقم موجب) أو ترك الحقل فارغاً.',
+        company_refund_invalid: 'الرجاء إدخال قيمة مسترد صحيحة (رقم موجب أو صفر).',
         file_too_large: 'حجم الملف أكبر من الحد المسموح (5MB).'
     };
 }
@@ -314,6 +315,14 @@ function validateField(fieldName, form, msgs) {
             if (isNaN(num) || num < 0) return msgs.subscription_value_invalid;
             return null;
         }
+        case 'company_refund': {
+            // اختياري: الفراغ يُعامل كـ 0، فقط نتحقق من صحة الصيغة إن أُدخلت قيمة
+            const val = get('companyRefund').value.trim();
+            if (val === '') return null;
+            const num = parseFloat(val);
+            if (isNaN(num) || num < 0) return msgs.company_refund_invalid;
+            return null;
+        }
         default:
             return null; // باقي الحقول (الهاتف، السجل التجاري، الرقم الضريبي، المدينة، العنوان، نوع العقد، تاريخ العقد، رقم المنشأة، رقم هوية المنشأة، الشخص المفوض ورقم جواله، اسم المندوب، الحالة، ملاحظة الحالة) اختيارية بلا تحقق صيغة
     }
@@ -343,7 +352,7 @@ function setFieldError(fieldName, message) {
 
 function validateAllFields(form) {
     const msgs = getErrorMessages();
-    const fieldNames = ['name', 'email', 'existing_account', 'subscription_value'];
+    const fieldNames = ['name', 'email', 'existing_account', 'subscription_value', 'company_refund'];
     const fileFieldMap = {
         logo_file: 'companyLogoFile',
         contract_file: 'companyContractFile',
@@ -507,7 +516,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     const blurFieldIdsMap = {
         companyName: 'name',
         companyEmail: 'email',
-        companySubscriptionValue: 'subscription_value'
+        companySubscriptionValue: 'subscription_value',
+        companyRefund: 'company_refund'
     };
 
     Object.keys(blurFieldIdsMap).forEach((inputId) => {
@@ -560,6 +570,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         const contractDate = contractDateRaw || null;
         const subscriptionValueRaw = document.getElementById('companySubscriptionValue').value.trim();
         const subscriptionValue = subscriptionValueRaw === '' ? null : parseFloat(subscriptionValueRaw);
+        const companyRefundRaw = document.getElementById('companyRefund').value.trim();
+        const companyRefund = companyRefundRaw === '' ? 0 : parseFloat(companyRefundRaw);
         const establishmentNumber = document.getElementById('companyEstablishmentNumber').value.trim() || null;
         const establishmentNationalId = document.getElementById('companyEstablishmentId').value.trim() || null;
         const authorizedPerson = document.getElementById('companyAuthorizedPerson').value.trim() || null;
@@ -716,6 +728,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 contract_date: contractDate,
                 subscription_value: subscriptionValue,
                 vat_included: vatIncluded,
+                company_refund: companyRefund,
                 establishment_number: establishmentNumber,
                 establishment_national_id: establishmentNationalId,
                 authorized_person: authorizedPerson,

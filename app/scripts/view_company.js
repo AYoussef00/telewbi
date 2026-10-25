@@ -124,6 +124,9 @@ function renderCompanyDetails(company, isEnglish) {
         document.getElementById('viewCompanySubscriptionValue').textContent = notSet;
     }
 
+    // مسترد الشركة: القيمة الافتراضية 0 إن لم تُسجَّل
+    document.getElementById('viewCompanyRefund').textContent = formatCurrencyValue(company.company_refund) || '0.00';
+
     document.getElementById('viewCompanyEstablishmentNumber').textContent = company.establishment_number || notSet;
     document.getElementById('viewCompanyEstablishmentId').textContent = company.establishment_national_id || notSet;
     document.getElementById('viewCompanyAuthorizedPerson').textContent = company.authorized_person || notSet;

@@ -336,6 +336,7 @@ function populateFormWithCompany(company) {
     document.getElementById('modalCompanyContractDate').value = company.contract_date ? String(company.contract_date).split('T')[0] : '';
     document.getElementById('modalCompanySubscriptionValue').value = company.subscription_value != null ? company.subscription_value : '';
     document.getElementById('modalCompanyVatIncluded').checked = !!company.vat_included;
+    document.getElementById('modalCompanyRefund').value = company.company_refund != null ? company.company_refund : 0;
     document.getElementById('modalCompanyEstablishmentNumber').value = company.establishment_number || '';
     document.getElementById('modalCompanyEstablishmentId').value = company.establishment_national_id || '';
     document.getElementById('modalCompanyAuthorizedPerson').value = company.authorized_person || '';
@@ -434,6 +435,7 @@ async function handleEditCompanySubmit(event) {
     const contractDate = contractDateRaw || null;
     const subscriptionValueRaw = document.getElementById('modalCompanySubscriptionValue').value.trim();
     const vatIncluded = document.getElementById('modalCompanyVatIncluded').checked;
+    const companyRefundRaw = document.getElementById('modalCompanyRefund').value.trim();
     const establishmentNumber = document.getElementById('modalCompanyEstablishmentNumber').value.trim() || null;
     const establishmentNationalId = document.getElementById('modalCompanyEstablishmentId').value.trim() || null;
     const authorizedPerson = document.getElementById('modalCompanyAuthorizedPerson').value.trim() || null;
@@ -447,6 +449,7 @@ async function handleEditCompanySubmit(event) {
 
     setFieldError('group-name', false);
     setFieldError('group-subscription_value', false);
+    setFieldError('group-company_refund', false);
     setFieldError('group-relink_existing_account', false);
 
     let hasError = false;
@@ -464,6 +467,18 @@ async function handleEditCompanySubmit(event) {
             hasError = true;
         } else {
             subscriptionValue = num;
+        }
+    }
+
+    // مسترد الشركة: الفراغ يُعامل كـ 0، وإلا يجب أن يكون رقماً موجباً أو صفراً
+    let companyRefund = 0;
+    if (companyRefundRaw !== '') {
+        const num = parseFloat(companyRefundRaw);
+        if (isNaN(num) || num < 0) {
+            setFieldError('group-company_refund', true);
+            hasError = true;
+        } else {
+            companyRefund = num;
         }
     }
 
@@ -563,6 +578,7 @@ async function handleEditCompanySubmit(event) {
             contract_date: contractDate,
             subscription_value: subscriptionValue,
             vat_included: vatIncluded,
+            company_refund: companyRefund,
             establishment_number: establishmentNumber,
             establishment_national_id: establishmentNationalId,
             authorized_person: authorizedPerson,

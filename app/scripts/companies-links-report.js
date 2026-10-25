@@ -218,7 +218,7 @@ async function loadLinksReportData() {
         const todayStr = getTodayDateStringForLinks();
         const links = await fetchAllRows((from, to) => {
             let query = dbClient.from('employee_links')
-                .select('id, link_status, link_status_note, employees(name, national_id, mobile_number, email), companies(name)')
+                .select('id, link_status, link_status_note, basic_salary_value, net_salary_value, employees(name, national_id, mobile_number), companies(name, company_refund)')
                 .or(`link_end_date.is.null,link_end_date.gte.${todayStr}`)
                 .order('id', { ascending: true });
             if (currentUserScope.companyIds !== null) query = query.in('company_id', currentUserScope.companyIds);
@@ -237,7 +237,9 @@ async function loadLinksReportData() {
                 employee_name: (link.employees && link.employees.name) || '----',
                 national_id: (link.employees && link.employees.national_id) || '----',
                 mobile_number: (link.employees && link.employees.mobile_number) || '----',
-                email: (link.employees && link.employees.email) || '----',
+                basic_salary: formatLinksReportMoney(link.basic_salary_value, '----'),
+                net_fee: formatLinksReportMoney(link.net_salary_value, '----'),
+                refund_fee: formatLinksReportMoney(link.companies && link.companies.company_refund, '0.00'),
                 link_status: linkStatus,
                 // 🏷️ عمود "الحالة" المعروض: يُظهر ملاحظة حالة الربط لو كانت الحالة
                 // "قيد المعالجة" (أو نص "قيد المعالجة" نفسه لو لم تُكتب ملاحظة)،
@@ -258,7 +260,7 @@ async function loadLinksReportData() {
     } catch (error) {
         console.error("فشل تحميل بيانات تقرير ربط الشركات:", error);
         if (tableBody) {
-            tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل بيانات التقرير: ${(error && error.message) || 'خطأ غير معروف'}</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل بيانات التقرير: ${(error && error.message) || 'خطأ غير معروف'}</td></tr>`;
         }
     }
 }
@@ -303,7 +305,7 @@ function renderLinksReportTable(data) {
     }
 
     if (!data || data.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:#94a3b8;">لا توجد بيانات مطابقة لخيارات البحث الحالية.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:#94a3b8;">لا توجد بيانات مطابقة لخيارات البحث الحالية.</td></tr>`;
         setupLinksReportPaginationControls(0);
         return;
     }
@@ -317,17 +319,29 @@ function renderLinksReportTable(data) {
     setupLinksReportPaginationControls(data.length);
 }
 
+// تنسيق مبلغ بأرقام إنجليزية ومنزلتين عشريتين؛ القيمة الفارغة تُعاد كنص بديل
+function formatLinksReportMoney(value, emptyText) {
+    if (value === null || value === undefined || value === '') return emptyText;
+    const num = parseFloat(value);
+    if (isNaN(num)) return emptyText;
+    return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num);
+}
+
 function buildLinksReportRowHtml(row) {
     const isPending = row.link_status === 'قيد المعالجة';
     const statusColor = isPending ? '#b45309' : '#15803d';
 
     return `
         <tr>
-            <td style="color:#334155; font-weight:500;">${row.company_name}</td>
-            <td><strong style="color:#1e293b;">${row.employee_name}</strong></td>
+            <td>
+                <strong style="color:#1e293b;">${row.employee_name}</strong>
+                <div style="color:#64748b; font-size:0.82rem; font-weight:500; margin-top:2px;">${row.company_name}</div>
+            </td>
             <td style="color:#475569; font-family: monospace; font-size:0.95rem;">${row.national_id}</td>
             <td style="color:#475569; font-family: monospace; font-size:0.95rem;">${row.mobile_number}</td>
-            <td style="color:#475569; font-family: monospace; font-size:0.9rem;">${row.email}</td>
+            <td style="text-align:center; color:#334155; font-family: monospace; font-size:0.95rem;">${row.basic_salary}</td>
+            <td style="text-align:center; color:#334155; font-family: monospace; font-size:0.95rem;">${row.net_fee}</td>
+            <td style="text-align:center; color:#334155; font-family: monospace; font-size:0.95rem;">${row.refund_fee}</td>
             <td style="text-align:center; color:${statusColor}; font-weight:600;">${row.status_display}</td>
         </tr>
     `;
@@ -385,14 +399,16 @@ function exportLinksReportToExcel() {
         return;
     }
 
-    const headers = ['الشركة', 'اسم الموظف', 'رقم الهوية', 'رقم الجوال', 'البريد الإلكتروني', 'الحالة'];
+    const headers = ['الشركة', 'اسم الموظف', 'رقم الهوية', 'رقم الجوال', 'الراتب', 'رسوم الموظف (الصافي)', 'رسوم الاسترداد', 'الحالة'];
 
     const rows = filteredLinksReportDataset.map(row => [
         row.company_name,
         row.employee_name,
         row.national_id,
         row.mobile_number,
-        row.email,
+        row.basic_salary,
+        row.net_fee,
+        row.refund_fee,
         row.status_display
     ]);
 
@@ -400,7 +416,7 @@ function exportLinksReportToExcel() {
     const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
 
     worksheet['!cols'] = [
-        { wch: 22 }, { wch: 22 }, { wch: 15 }, { wch: 15 }, { wch: 26 }, { wch: 24 }
+        { wch: 22 }, { wch: 22 }, { wch: 15 }, { wch: 15 }, { wch: 14 }, { wch: 20 }, { wch: 16 }, { wch: 24 }
     ];
 
     const workbook = XLSX.utils.book_new();
@@ -423,7 +439,9 @@ const COMPANY_LINKS_REPORT_COLUMNS = [
     { key: 'employee_name', label: 'اسم الموظف', align: 'right' },
     { key: 'national_id', label: 'رقم الهوية', align: 'center' },
     { key: 'mobile_number', label: 'رقم الجوال', align: 'center' },
-    { key: 'email', label: 'البريد الإلكتروني', align: 'center' },
+    { key: 'basic_salary', label: 'الراتب', align: 'center' },
+    { key: 'net_fee', label: 'رسوم الموظف (الصافي)', align: 'center' },
+    { key: 'refund_fee', label: 'رسوم الاسترداد', align: 'center' },
     { key: 'status_display', label: 'الحالة', align: 'center' }
 ];
 
@@ -461,7 +479,9 @@ async function printLinksReport() {
         employee_name: row.employee_name,
         national_id: row.national_id,
         mobile_number: row.mobile_number,
-        email: row.email,
+        basic_salary: row.basic_salary,
+        net_fee: row.net_fee,
+        refund_fee: row.refund_fee,
         status_display: row.status_display
     }));
 
