@@ -75,6 +75,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const statusFilter = document.getElementById('reportStatusFilter');
     if (statusFilter) statusFilter.addEventListener('change', applyLinksReportFilters);
+    const linkTypeFilter = document.getElementById('reportLinkTypeFilter');
+    if (linkTypeFilter) linkTypeFilter.addEventListener('change', applyLinksReportFilters);
 
     const btnExport = document.getElementById('btnExportExcel');
     if (btnExport) btnExport.addEventListener('click', exportLinksReportToExcel);
@@ -218,7 +220,7 @@ async function loadLinksReportData() {
         const todayStr = getTodayDateStringForLinks();
         const links = await fetchAllRows((from, to) => {
             let query = dbClient.from('employee_links')
-                .select('id, link_status, link_status_note, basic_salary_value, net_salary_value, employees(name, national_id, mobile_number), companies(name, company_refund)')
+                .select('id, link_type, link_status, link_status_note, basic_salary_value, net_salary_value, employees(name, national_id, mobile_number), companies(name, company_refund)')
                 .or(`link_end_date.is.null,link_end_date.gte.${todayStr}`)
                 .order('id', { ascending: true });
             if (currentUserScope.companyIds !== null) query = query.in('company_id', currentUserScope.companyIds);
@@ -240,6 +242,7 @@ async function loadLinksReportData() {
                 basic_salary: formatLinksReportMoney(link.basic_salary_value, '----'),
                 net_fee: formatLinksReportMoney(link.net_salary_value, '----'),
                 refund_fee: formatLinksReportMoney(link.companies && link.companies.company_refund, '0.00'),
+                link_type: link.link_type || '',
                 link_status: linkStatus,
                 // 🏷️ عمود "الحالة" المعروض: يُظهر ملاحظة حالة الربط لو كانت الحالة
                 // "قيد المعالجة" (أو نص "قيد المعالجة" نفسه لو لم تُكتب ملاحظة)،
@@ -270,12 +273,14 @@ function distinctSorted(values) {
 }
 
 // =========================================================================
-// 3. تطبيق الفلاتر: اسم الموظف + اسم الشركة + حالة الربط
+// 3. تطبيق الفلاتر: اسم الموظف + اسم الشركة + حالة الربط + نوع الربط
 // =========================================================================
 function applyLinksReportFilters() {
     const employeeQuery = (document.getElementById('reportEmployeeSearchInput')?.value || '').toLowerCase().trim();
     const companyQuery = (document.getElementById('reportCompanySearchInput')?.value || '').toLowerCase().trim();
     const statusValue = document.getElementById('reportStatusFilter')?.value || 'all';
+    // نوع الربط (اضافة / استضافة) محفوظ على ربط كل موظف بالشركة، وليس على الشركة نفسها
+    const linkTypeValue = document.getElementById('reportLinkTypeFilter')?.value || 'all';
 
     filteredLinksReportDataset = fullLinksReportDataset.filter(row => {
         const matchesEmployee = !employeeQuery || row.employee_name.toLowerCase().includes(employeeQuery);
@@ -285,7 +290,9 @@ function applyLinksReportFilters() {
             (statusValue === 'assigned' && row.link_status === 'تم التعيين') ||
             (statusValue === 'pending' && row.link_status === 'قيد المعالجة');
 
-        return matchesEmployee && matchesCompany && matchesStatus;
+        const matchesLinkType = linkTypeValue === 'all' || row.link_type === linkTypeValue;
+
+        return matchesEmployee && matchesCompany && matchesStatus && matchesLinkType;
     });
 
     currentLinksReportPage = 1;
