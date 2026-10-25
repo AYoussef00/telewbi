@@ -227,7 +227,12 @@ function buildGenericRowHtml(row, columns) {
     const cells = columns.map(col => {
         const raw = row[col.key];
         const display = (raw === null || raw === undefined || raw === '') ? '—' : raw;
-        return `<td class="${col.align === 'right' ? 'col-name' : 'col-center'}"${totalCellStyle}>${escapeHtml(display)}</td>`;
+        // سطر ثانوي اختياري تحت القيمة الرئيسية (col.subKey): مثلاً اسم الشركة تحت اسم الموظف
+        const subRaw = col.subKey ? row[col.subKey] : null;
+        const subHtml = (subRaw !== null && subRaw !== undefined && subRaw !== '' && subRaw !== '----')
+            ? `<div style="font-size:0.85em;font-weight:500;color:#64748b;margin-top:2px;">${escapeHtml(subRaw)}</div>`
+            : '';
+        return `<td class="${col.align === 'right' ? 'col-name' : 'col-center'}"${totalCellStyle}>${escapeHtml(display)}${subHtml}</td>`;
     });
     return `<tr>${cells.join('')}</tr>`;
 }

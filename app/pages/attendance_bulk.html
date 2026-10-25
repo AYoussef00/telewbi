@@ -121,6 +121,24 @@
                             </div>
                         </div>
 
+                        <!-- عدد أيام الغياب والتأخير لكل موظف -->
+                        <h3 class="form-section-title range-section-title">الغياب والتأخير (لكل موظف)</h3>
+                        <div class="form-grid">
+                            <div class="form-group" id="group-absent_days">
+                                <label for="bulkAbsentDays">عدد أيام الغياب</label>
+                                <input type="number" id="bulkAbsentDays" min="0" step="1" value="0" inputmode="numeric">
+                                <span class="field-error" id="error-absent_days"></span>
+                            </div>
+                            <div class="form-group" id="group-late_days">
+                                <label for="bulkLateDays">عدد أيام التأخير</label>
+                                <input type="number" id="bulkLateDays" min="0" step="1" value="0" inputmode="numeric">
+                                <span class="field-error" id="error-late_days"></span>
+                            </div>
+                            <div class="form-group full-width">
+                                <small style="color:#64748b;">تُوزَّع هذه الأيام عشوائياً على أيام كل موظف ضمن الفترة. إذا كانت القيمتان صفراً يُسجَّل الحضور للفترة كاملة بلا غياب ولا تأخير.</small>
+                            </div>
+                        </div>
+
                         <!-- الحالة -->
                         <div class="form-grid">
                             <div class="form-group full-width" id="group-status">
@@ -149,6 +167,6 @@
     <script src="../../bootstrap/app-core.js"></script>
     <script src="../shared/sidebar.js?v=3"></script>
     <script src="../shared/navbar.js"></script>
-    <script src="../scripts/attendance_bulk.js?v=2"></script>
+    <script src="../scripts/attendance_bulk.js?v=3"></script>
 </body>
 </html>

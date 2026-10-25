@@ -442,8 +442,8 @@ function exportLinksReportToExcel() {
 //    تعريف أعمدة هذا التقرير تحديداً.
 // =========================================================================
 const COMPANY_LINKS_REPORT_COLUMNS = [
-    { key: 'company_name', label: 'الشركة', align: 'right' },
-    { key: 'employee_name', label: 'اسم الموظف', align: 'right' },
+    // اسم الشركة يظهر تحت اسم الموظف (subKey) بدل عمود مستقل
+    { key: 'employee_name', label: 'اسم الموظف', align: 'right', subKey: 'company_name' },
     { key: 'national_id', label: 'رقم الهوية', align: 'center' },
     { key: 'mobile_number', label: 'رقم الجوال', align: 'center' },
     { key: 'basic_salary', label: 'الراتب', align: 'center' },
@@ -477,8 +477,14 @@ async function printLinksReport() {
     // يوجد حينها اسم شركة واحد محدد بالترويسة، فيصبح العمود ضرورياً لتمييز
     // كل صف). ⚠️ هذا يخص نسخة الطباعة/رمز QR فقط — عمود "الشركة" بجدول الشاشة
     // نفسه وبملف تصدير Excel يبقيان كما هما دائماً بلا أي تغيير.
+    // (تحديث: اسم الشركة لم يعد عموداً مستقلاً بل سطراً ثانوياً تحت اسم الموظف؛
+    //  وحين تخص النتائج شركة واحدة فقط نُسقط هذا السطر لأن اسمها بالترويسة.)
     const printColumns = singleCompanyLabel
-        ? COMPANY_LINKS_REPORT_COLUMNS.filter(col => col.key !== 'company_name')
+        ? COMPANY_LINKS_REPORT_COLUMNS.map(col => {
+            if (!col.subKey) return col;
+            const { subKey, ...rest } = col;
+            return rest;
+        })
         : COMPANY_LINKS_REPORT_COLUMNS;
 
     const printRows = filteredLinksReportDataset.map(row => ({

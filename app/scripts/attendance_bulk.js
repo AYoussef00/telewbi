@@ -252,32 +252,42 @@ function distributeTimesInRange(fromMin, toMin, n) {
 }
 
 // =========================================================================
-// 3ب. اختيار أيام غياب عشوائية لكل موظف (محاكاة واقعية لسجل الحضور، بدل أن
-//     يكون الجميع حاضرين طوال الفترة بلا استثناء): 3 أو 4 أيام عشوائية لكل
-//     موظف من ضمن أيام العمل المؤهلة له فعلياً (على ألا تسبق تاريخ ربطه
-//     بالشركة). لا تُطبَّق على فترات قصيرة جداً (أقل من 5 أيام عمل مؤهلة)
-//     حتى لا تتحول غالبية الفترة إلى غياب.
+// 3ب. اختيار أيام الغياب وأيام التأخير لكل موظف عشوائياً حسب العددين اللذين
+//     يحدّدهما المستخدم في النموذج. تُختار من أيام العمل المؤهلة للموظف فعلياً
+//     (لا تسبق تاريخ ربطه بالشركة، ولا يوجد له سجل فيها مسبقاً)، ولا يتكرر
+//     اليوم نفسه بين الغياب والتأخير. إن كان عدد الأيام المؤهلة أقل من المطلوب
+//     يُكتفى بالمتاح (ويُنبَّه المستخدم لذلك في رسالة النتيجة). إن كان العددان
+//     صفراً فلا غياب ولا تأخير: حضور كامل للفترة.
 // =========================================================================
-const MIN_ELIGIBLE_DAYS_FOR_RANDOM_ABSENCE = 5;
-
-function buildRandomAbsentDatesByEmployee(employees, workingDays, linkDateByEmployeeId) {
+function buildAbsenceAndLatenessByEmployee(employees, workingDays, linkDateByEmployeeId, existingKeys, absentCount, lateCount) {
     const absentDatesByEmployeeId = new Map();
+    const lateDatesByEmployeeId = new Map();
+    let cappedEmployees = 0;
 
     employees.forEach(emp => {
         const employeeLinkDate = linkDateByEmployeeId.get(emp.id);
-        const eligibleDays = employeeLinkDate
-            ? workingDays.filter(d => d >= employeeLinkDate)
-            : workingDays;
+        const eligibleDays = workingDays.filter(d =>
+            (!employeeLinkDate || d >= employeeLinkDate) && !existingKeys.has(`${emp.id}|${d}`)
+        );
 
-        const absentCount = eligibleDays.length >= MIN_ELIGIBLE_DAYS_FOR_RANDOM_ABSENCE
-            ? Math.min(eligibleDays.length, Math.random() < 0.5 ? 3 : 4)
-            : 0;
+        const shuffled = shuffleArray(eligibleDays);
+        const absentTake = Math.min(absentCount, shuffled.length);
+        const lateTake = Math.min(lateCount, shuffled.length - absentTake);
+        if (absentTake < absentCount || lateTake < lateCount) cappedEmployees++;
 
-        const chosenAbsentDays = absentCount > 0 ? shuffleArray(eligibleDays).slice(0, absentCount) : [];
-        absentDatesByEmployeeId.set(emp.id, new Set(chosenAbsentDays));
+        absentDatesByEmployeeId.set(emp.id, new Set(shuffled.slice(0, absentTake)));
+        lateDatesByEmployeeId.set(emp.id, new Set(shuffled.slice(absentTake, absentTake + lateTake)));
     });
 
-    return absentDatesByEmployeeId;
+    return { absentDatesByEmployeeId, lateDatesByEmployeeId, cappedEmployees };
+}
+
+// وقت دخول متأخر: بعد نهاية نطاق الدخول الطبيعي بـ 15–60 دقيقة، وبشرط أن يسبق وقت الخروج
+function pickLateCheckInTime(checkInToMin, checkOutTimeStr) {
+    const checkOutMin = timeToMinutes(checkOutTimeStr);
+    let lateMin = checkInToMin + 15 + Math.floor(Math.random() * 46);
+    if (lateMin >= checkOutMin) lateMin = Math.max(checkInToMin + 1, checkOutMin - 30);
+    return minutesToTimeStr(lateMin);
 }
 
 // =========================================================================
@@ -324,9 +334,13 @@ document.addEventListener('DOMContentLoaded', async function() {
         const checkOutTo = document.getElementById('bulkCheckOutTo').value;
         const status = document.getElementById('bulkStatus').value;
         const offDays = getSelectedOffDays();
+        const absentRaw = document.getElementById('bulkAbsentDays').value.trim();
+        const lateRaw = document.getElementById('bulkLateDays').value.trim();
+        const absentCount = absentRaw === '' ? 0 : Number(absentRaw);
+        const lateCount = lateRaw === '' ? 0 : Number(lateRaw);
 
         // --- تحقق أساسي من الحقول ---
-        ['company_id', 'from_date', 'to_date', 'off_days', 'checkin_from', 'checkin_to', 'checkout_from', 'checkout_to'].forEach(f => setFieldError(f, null));
+        ['company_id', 'from_date', 'to_date', 'off_days', 'checkin_from', 'checkin_to', 'checkout_from', 'checkout_to', 'absent_days', 'late_days'].forEach(f => setFieldError(f, null));
         let hasError = false;
 
         if (!companyId) { setFieldError('company_id', 'الرجاء اختيار الشركة.'); hasError = true; }
@@ -336,6 +350,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (offDays.length >= 7) { setFieldError('off_days', 'لا يمكن اعتبار كل أيام الأسبوع إجازة — الرجاء ترك يوم عمل واحد على الأقل.'); hasError = true; }
         if (checkInFrom && checkInTo && timeToMinutes(checkInFrom) > timeToMinutes(checkInTo)) { setFieldError('checkin_to', 'يجب أن يكون وقت النهاية بعد وقت البداية.'); hasError = true; }
         if (checkOutFrom && checkOutTo && timeToMinutes(checkOutFrom) > timeToMinutes(checkOutTo)) { setFieldError('checkout_to', 'يجب أن يكون وقت النهاية بعد وقت البداية.'); hasError = true; }
+
+        if (!Number.isInteger(absentCount) || absentCount < 0) { setFieldError('absent_days', 'أدخل عدداً صحيحاً صفراً أو أكثر.'); hasError = true; }
+        if (!Number.isInteger(lateCount) || lateCount < 0) { setFieldError('late_days', 'أدخل عدداً صحيحاً صفراً أو أكثر.'); hasError = true; }
 
         if (hasError) {
             showFormAlert('الرجاء تصحيح الحقول المظللة أدناه.', 'error');
@@ -410,13 +427,19 @@ document.addEventListener('DOMContentLoaded', async function() {
 
             const existingKeys = new Set((existingRows || []).map(r => `${r.employee_id}|${r.date}`));
 
-            // 3ب. اختيار أيام الغياب العشوائية لكل موظف (3 أو 4 أيام) — محاكاة واقعية
-            //     لسجل الحضور بدل أن يكون الجميع حاضرين طوال الفترة بلا استثناء
-            const absentDatesByEmployeeId = buildRandomAbsentDatesByEmployee(employees, workingDays, linkDateByEmployeeId);
+            // 3ب. اختيار أيام الغياب وأيام التأخير لكل موظف حسب العددين المحدّدين
+            //     (صفر = حضور كامل للفترة بلا غياب ولا تأخير)
+            if (absentCount + lateCount > workingDays.length) {
+                setFieldError('absent_days', `مجموع أيام الغياب والتأخير (${absentCount + lateCount}) أكبر من عدد أيام العمل بالفترة (${workingDays.length}).`);
+                showFormAlert('الرجاء تصحيح الحقول المظللة أدناه.', 'error');
+                return;
+            }
+            const { absentDatesByEmployeeId, lateDatesByEmployeeId, cappedEmployees } =
+                buildAbsenceAndLatenessByEmployee(employees, workingDays, linkDateByEmployeeId, existingKeys, absentCount, lateCount);
 
             // 4. تأكيد المستخدم قبل التوليد الفعلي
             const totalPossible = employees.length * workingDays.length;
-            const confirmMsg = `سيتم إنشاء سجلات حضور لـ ${employees.length} موظف عبر ${workingDays.length} يوم عمل (الحد الأقصى ${totalPossible} سجل، مع تجاهل أي سجل موجود مسبقاً لنفس الموظف والتاريخ، وأي تاريخ يسبق تاريخ ربط الموظف بالشركة). سيتم أيضاً اختيار 3 أو 4 أيام عشوائية لكل موظف وتسجيلها تلقائياً كـ"غائب" لمحاكاة سجل حضور واقعي. هل تريد المتابعة؟`;
+            const confirmMsg = `سيتم إنشاء سجلات حضور لـ ${employees.length} موظف عبر ${workingDays.length} يوم عمل (الحد الأقصى ${totalPossible} سجل، مع تجاهل أي سجل موجود مسبقاً لنفس الموظف والتاريخ، وأي تاريخ يسبق تاريخ ربط الموظف بالشركة).${absentCount > 0 || lateCount > 0 ? ` سيُسجَّل لكل موظف ${absentCount} يوم غياب و${lateCount} يوم تأخير موزعة عشوائياً.` : ' ولن يُسجَّل أي غياب أو تأخير (حضور كامل للفترة).'} هل تريد المتابعة؟`;
             if (!confirm(confirmMsg)) {
                 submitBtn.disabled = false;
                 submitBtn.textContent = originalText;
@@ -437,6 +460,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             let skippedExisting = 0;
             let skippedBeforeLinkDate = 0;
             let randomAbsentGenerated = 0;
+            let lateGenerated = 0;
 
             workingDays.forEach(date => {
                 const shuffledEmployees = shuffleArray(employees);
@@ -473,8 +497,10 @@ document.addEventListener('DOMContentLoaded', async function() {
                         return;
                     }
 
-                    const checkIn = checkInTimes[idx];
                     const checkOut = checkOutTimes[idx];
+                    const isLateDay = !!lateDatesByEmployeeId.get(emp.id)?.has(date);
+                    const checkIn = isLateDay ? pickLateCheckInTime(checkInToMin, checkOut) : checkInTimes[idx];
+                    if (isLateDay) lateGenerated++;
 
                     payloads.push({
                         employee_id: emp.id,
@@ -482,7 +508,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                         check_in: checkIn,
                         check_out: checkOut,
                         hours: computeWorkedHours(checkIn, checkOut),
-                        status,
+                        status: isLateDay ? 'متأخر' : status,
                         // created_at يُحفظ بتاريخ ووقت خروج كل سجل بدل وقت الحفظ الفعلي بالخادم
                         created_at: buildCreatedAtFromDateAndTime(date, checkOut)
                     });
@@ -506,7 +532,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (skippedExisting > 0) skippedNotes.push(`${skippedExisting} سجل كان موجوداً مسبقاً`);
             if (skippedBeforeLinkDate > 0) skippedNotes.push(`${skippedBeforeLinkDate} سجل كان بتاريخ يسبق تاريخ ربط الموظف بالشركة`);
             const skippedNote = skippedNotes.length ? ` (تم تجاهل ${skippedNotes.join(' و')})` : '';
-            const absentNote = randomAbsentGenerated > 0 ? ` وشملت ${randomAbsentGenerated} سجل غياب عشوائي.` : '';
+            const absentNote = (randomAbsentGenerated > 0 ? ` وشملت ${randomAbsentGenerated} سجل غياب` : '') + (lateGenerated > 0 ? `${randomAbsentGenerated > 0 ? ' و' : ' وشملت '}${lateGenerated} سجل تأخير` : '') + ((randomAbsentGenerated > 0 || lateGenerated > 0) ? '.' : '') + (cappedEmployees > 0 ? ` (لدى ${cappedEmployees} موظف لم تتوفر أيام كافية فاكتُفي بالمتاح).` : '');
 
             showFormAlert(`تم إنشاء ${payloads.length} سجل حضور بنجاح!${skippedNote}${absentNote} جاري التحويل...`, 'success');
             setTimeout(() => { window.location.href = Routes.url('attendance'); }, 1800);
