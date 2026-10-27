@@ -74,7 +74,7 @@
                         <input type="text" id="reportCompanySearchInput" class="search-combo-input" placeholder="ابحث باسم الشركة..." autocomplete="off">
                         <div class="combo-dropdown" id="reportCompanyDropdown"></div>
                     </div>
-                    <div class="filter-dropdown-wrapper">
+                    <div class="filter-dropdown-wrapper" id="reportLinkTypeFilterWrapper">
                         <select id="reportLinkTypeFilter">
                             <option value="all">نوع الربط (الكل)</option>
                             <option value="اضافة">اضافة</option>
@@ -99,11 +99,11 @@
                             <tr>
                                 <th style="width: 20%;">اسم الموظف</th>
                                 <th style="width: 13%;">رقم الهوية</th>
-                                <th style="width: 10%; text-align: center;">الراتب</th>
-                                <th style="width: 11%; text-align: center;">رسوم الموظف (الصافي)</th>
-                                <th style="width: 11%; text-align: center;">رسوم الاسترداد</th>
-                                <th style="width: 10%; text-align: center;">العمولة</th>
-                                <th style="width: 12%; text-align: center;">صافي الدخل</th>
+                                <th data-fin-col style="width: 10%; text-align: center;">الراتب</th>
+                                <th data-fin-col style="width: 11%; text-align: center;">رسوم الموظف (الصافي)</th>
+                                <th data-fin-col style="width: 11%; text-align: center;">رسوم الاسترداد</th>
+                                <th data-fin-col style="width: 10%; text-align: center;">العمولة</th>
+                                <th data-fin-col style="width: 12%; text-align: center;">صافي الدخل</th>
                                 <th style="width: 13%; text-align: center;">الحالة</th>
                             </tr>
                         </thead>
@@ -129,6 +129,6 @@
     <script src="../shared/sidebar.js?v=3"></script>
     <script src="../shared/navbar.js"></script>
     <script src="../shared/company-finance.js?v=2"></script>
-    <script src="../scripts/companies-links-report.js?v=8"></script>
+    <script src="../scripts/companies-links-report.js?v=10"></script>
 </body>
 </html>

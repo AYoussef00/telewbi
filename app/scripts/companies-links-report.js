@@ -26,6 +26,28 @@ async function loadCurrentUserScope() {
     }
 }
 
+// 🛡️ مسؤول الشركة (role='company') لا يرى الأعمدة المالية (الراتب، رسوم الموظف، رسوم الاسترداد،
+// العمولة، صافي الدخل) ولا فلتر نوع الربط ولا خيارات اختيار أعمدة الطباعة، ولا تُجلب هذه
+// البيانات أصلاً من قاعدة البيانات له (ولا تُصدَّر في Excel).
+function isCompanyRoleUser() {
+    return currentUserScope.role === 'company';
+}
+
+function applyCompanyRoleRestrictions() {
+    if (!isCompanyRoleUser()) return;
+    document.querySelectorAll('th[data-fin-col]').forEach(th => th.remove());
+    const linkTypeWrapper = document.getElementById('reportLinkTypeFilterWrapper');
+    if (linkTypeWrapper) linkTypeWrapper.remove();
+    // أعمدة الجدول المتبقية (الموظف، الهوية، الحالة): نعيد توزيع العرض
+    const widths = ['40%', '30%', '30%'];
+    document.querySelectorAll('.companies-table thead th').forEach((th, i) => { if (widths[i]) th.style.width = widths[i]; });
+    document.querySelectorAll('.table-loading-state').forEach(td => td.setAttribute('colspan', String(getLinksReportColumnCount())));
+}
+
+function getLinksReportColumnCount() {
+    return isCompanyRoleUser() ? 3 : 8;
+}
+
 // مخزن بيانات التقرير الكامل (بعد الربط بين الجداول) ونسخة الفلترة الحالية
 let fullLinksReportDataset = [];
 let filteredLinksReportDataset = [];
@@ -85,6 +107,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (btnPrint) btnPrint.addEventListener('click', printLinksReport);
 
     await loadCurrentUserScope();
+    applyCompanyRoleRestrictions();
     await loadLinksReportData();
 });
 
@@ -220,7 +243,9 @@ async function loadLinksReportData() {
         const todayStr = getTodayDateStringForLinks();
         const links = await fetchAllRows((from, to) => {
             let query = dbClient.from('employee_links')
-                .select('id, link_type, link_status, link_status_note, basic_salary_value, net_salary_value, employees(name, national_id, mobile_number), companies(name, company_refund, company_refund_type, company_commission, company_commission_type, income_mode, company_net_income, company_net_income_type)')
+                .select(isCompanyRoleUser()
+                    ? 'id, link_status, link_status_note, employees(name, national_id, mobile_number), companies(name)'
+                    : 'id, link_type, link_status, link_status_note, basic_salary_value, net_salary_value, employees(name, national_id, mobile_number), companies(name, company_refund, company_refund_type, company_commission, company_commission_type, income_mode, company_net_income, company_net_income_type)')
                 .or(`link_end_date.is.null,link_end_date.gte.${todayStr}`)
                 .order('id', { ascending: true });
             if (currentUserScope.companyIds !== null) query = query.in('company_id', currentUserScope.companyIds);
@@ -233,7 +258,9 @@ async function loadLinksReportData() {
             const linkStatus = link.link_status || 'تم التعيين';
             const isPending = linkStatus === 'قيد المعالجة';
             // رسوم الاسترداد والعمولة وصافي الدخل: النسبة تُحسب من صافي هذا الربط تحديداً
-            const fin = window.CompanyFinance.compute(link.net_salary_value, link.companies);
+            const fin = isCompanyRoleUser()
+                ? { refund: null, commission: null, income: null }
+                : window.CompanyFinance.compute(link.net_salary_value, link.companies);
 
             return {
                 id: link.id,
@@ -241,8 +268,8 @@ async function loadLinksReportData() {
                 employee_name: (link.employees && link.employees.name) || '----',
                 national_id: (link.employees && link.employees.national_id) || '----',
                 mobile_number: (link.employees && link.employees.mobile_number) || '----',
-                basic_salary: formatLinksReportMoney(link.basic_salary_value, '----'),
-                net_fee: formatLinksReportMoney(link.net_salary_value, '----'),
+                basic_salary: isCompanyRoleUser() ? '' : formatLinksReportMoney(link.basic_salary_value, '----'),
+                net_fee: isCompanyRoleUser() ? '' : formatLinksReportMoney(link.net_salary_value, '----'),
                 refund_fee: formatLinksReportMoney(fin.refund, '----'),
                 commission_fee: formatLinksReportMoney(fin.commission, '----'),
                 net_income: formatLinksReportMoney(fin.income, '----'),
@@ -254,6 +281,13 @@ async function loadLinksReportData() {
                 status_display: isPending ? (link.link_status_note || 'قيد المعالجة') : 'تم التعيين'
             };
         });
+
+        // ترتيب البيانات حسب اسم الشركة (أبجدياً)، ثم حسب اسم الموظف داخل كل شركة.
+        // الفلترة لا تغيّر الترتيب، فينطبق على الشاشة والطباعة وتصدير Excel معاً.
+        const arCollator = new Intl.Collator('ar', { sensitivity: 'base', numeric: true });
+        fullLinksReportDataset.sort((a, b) =>
+            arCollator.compare(a.company_name, b.company_name) || arCollator.compare(a.employee_name, b.employee_name)
+        );
 
         filteredLinksReportDataset = fullLinksReportDataset;
         currentLinksReportPage = 1;
@@ -267,7 +301,7 @@ async function loadLinksReportData() {
     } catch (error) {
         console.error("فشل تحميل بيانات تقرير ربط الشركات:", error);
         if (tableBody) {
-            tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل بيانات التقرير: ${(error && error.message) || 'خطأ غير معروف'}</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="${getLinksReportColumnCount()}" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل بيانات التقرير: ${(error && error.message) || 'خطأ غير معروف'}</td></tr>`;
         }
     }
 }
@@ -316,7 +350,7 @@ function renderLinksReportTable(data) {
     }
 
     if (!data || data.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:#94a3b8;">لا توجد بيانات مطابقة لخيارات البحث الحالية.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="${getLinksReportColumnCount()}" style="text-align:center; padding:30px; color:#94a3b8;">لا توجد بيانات مطابقة لخيارات البحث الحالية.</td></tr>`;
         setupLinksReportPaginationControls(0);
         return;
     }
@@ -352,11 +386,12 @@ function buildLinksReportRowHtml(row) {
                 ${row.national_id}
                 <div style="color:#64748b; font-size:0.85rem; margin-top:2px;">${row.mobile_number}</div>
             </td>
+            ${isCompanyRoleUser() ? '' : `
             <td style="text-align:center; color:#334155; font-family: monospace; font-size:0.95rem;">${row.basic_salary}</td>
             <td style="text-align:center; color:#334155; font-family: monospace; font-size:0.95rem;">${row.net_fee}</td>
             <td style="text-align:center; color:#334155; font-family: monospace; font-size:0.95rem;">${row.refund_fee}</td>
             <td style="text-align:center; color:#334155; font-family: monospace; font-size:0.95rem;">${row.commission_fee}</td>
-            <td style="text-align:center; color:#0f172a; font-weight:700; font-family: monospace; font-size:0.95rem;">${row.net_income}</td>
+            <td style="text-align:center; color:#0f172a; font-weight:700; font-family: monospace; font-size:0.95rem;">${row.net_income}</td>`}
             <td style="text-align:center; color:${statusColor}; font-weight:600;">${row.status_display}</td>
         </tr>
     `;
@@ -414,27 +449,33 @@ function exportLinksReportToExcel() {
         return;
     }
 
-    const headers = ['الشركة', 'اسم الموظف', 'رقم الهوية', 'رقم الجوال', 'الراتب', 'رسوم الموظف (الصافي)', 'رسوم الاسترداد', 'العمولة', 'صافي الدخل', 'الحالة'];
+    // مسؤول الشركة: بلا الأعمدة المالية في ملف Excel أيضاً
+    const companyRole = isCompanyRoleUser();
+    const headers = companyRole
+        ? ['الشركة', 'اسم الموظف', 'رقم الهوية', 'رقم الجوال', 'الحالة']
+        : ['الشركة', 'اسم الموظف', 'رقم الهوية', 'رقم الجوال', 'الراتب', 'رسوم الموظف (الصافي)', 'رسوم الاسترداد', 'العمولة', 'صافي الدخل', 'الحالة'];
 
-    const rows = filteredLinksReportDataset.map(row => [
-        row.company_name,
-        row.employee_name,
-        row.national_id,
-        row.mobile_number,
-        row.basic_salary,
-        row.net_fee,
-        row.refund_fee,
-        row.commission_fee,
-        row.net_income,
-        row.status_display
-    ]);
+    const rows = filteredLinksReportDataset.map(row => companyRole
+        ? [row.company_name, row.employee_name, row.national_id, row.mobile_number, row.status_display]
+        : [
+            row.company_name,
+            row.employee_name,
+            row.national_id,
+            row.mobile_number,
+            row.basic_salary,
+            row.net_fee,
+            row.refund_fee,
+            row.commission_fee,
+            row.net_income,
+            row.status_display
+        ]);
 
     const worksheetData = [headers, ...rows];
     const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
 
-    worksheet['!cols'] = [
-        { wch: 22 }, { wch: 22 }, { wch: 15 }, { wch: 15 }, { wch: 14 }, { wch: 20 }, { wch: 16 }, { wch: 14 }, { wch: 16 }, { wch: 24 }
-    ];
+    worksheet['!cols'] = companyRole
+        ? [{ wch: 22 }, { wch: 22 }, { wch: 15 }, { wch: 15 }, { wch: 24 }]
+        : [{ wch: 22 }, { wch: 22 }, { wch: 15 }, { wch: 15 }, { wch: 14 }, { wch: 20 }, { wch: 16 }, { wch: 14 }, { wch: 16 }, { wch: 24 }];
 
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'تقرير ربط الشركات');
@@ -586,6 +627,11 @@ function printLinksReport() {
         alert('لا توجد بيانات لطباعتها بناءً على خيارات البحث الحالية.');
         return;
     }
+    // مسؤول الشركة: طباعة مباشرة بلا نافذة اختيار أعمدة، وبالأعمدة غير المالية فقط
+    if (isCompanyRoleUser()) {
+        runLinksReportPrint(['employee', 'company', 'national_id', 'mobile', 'status_display']);
+        return;
+    }
     openLinksPrintColumnsDialog(ids => { runLinksReportPrint(ids); });
 }
 
@@ -618,11 +664,14 @@ async function runLinksReportPrint(selectedIds) {
         employee_name: row.employee_name,
         national_id: row.national_id,
         mobile_number: row.mobile_number,
-        basic_salary: row.basic_salary,
-        net_fee: row.net_fee,
-        refund_fee: row.refund_fee,
-        commission_fee: row.commission_fee,
-        net_income: row.net_income,
+        // الأعمدة المالية لا تدخل نسخة الطباعة/QR لمسؤول الشركة إطلاقاً
+        ...(isCompanyRoleUser() ? {} : {
+            basic_salary: row.basic_salary,
+            net_fee: row.net_fee,
+            refund_fee: row.refund_fee,
+            commission_fee: row.commission_fee,
+            net_income: row.net_income
+        }),
         status_display: row.status_display
     }));
 

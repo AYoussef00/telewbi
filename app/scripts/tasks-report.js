@@ -42,16 +42,16 @@ async function getPaidMonthsMapForCompanies(companyIds) {
         while (true) {
             const { data, error } = await dbClient
                 .from('invoices')
-                .select('invoice_date, company_id')
+                .select('invoice_date, company_id, items')
                 .eq('status', 'paid')
                 .in('company_id', companyIds)
                 .range(from, from + TASKS_FETCH_PAGE_SIZE - 1);
             if (error) throw error;
-            (data || []).forEach(row => {
-                if (!row.invoice_date || row.company_id == null) return;
-                const key = String(row.company_id);
+            // الأشهر المفتوحة = الأشهر التي تغطيها فترة الفاتورة (من وصف البنود)،
+            // وإلا شهر invoice_date — انظر app/shared/invoice-periods.js
+            InvoicePeriods.buildPaidMonthsMap(data).forEach((set, key) => {
                 if (!map.has(key)) map.set(key, new Set());
-                map.get(key).add(String(row.invoice_date).slice(0, 7));
+                set.forEach(month => map.get(key).add(month));
             });
             if (!data || data.length < TASKS_FETCH_PAGE_SIZE) break;
             from += TASKS_FETCH_PAGE_SIZE;

@@ -59,17 +59,14 @@ async function getPaidMonthsMapForCompanies(companyIds) {
     try {
         const rows = await fetchAllRows((from, to) =>
             dbClient.from('invoices')
-                .select('invoice_date, company_id')
+                .select('invoice_date, company_id, items')
                 .eq('status', 'paid')
                 .in('company_id', companyIds)
                 .range(from, to)
         );
-        (rows || []).forEach(row => {
-            if (!row.invoice_date || row.company_id == null) return;
-            const key = String(row.company_id);
-            if (!map.has(key)) map.set(key, new Set());
-            map.get(key).add(String(row.invoice_date).slice(0, 7));
-        });
+        // الأشهر المفتوحة = الأشهر التي تغطيها فترة الفاتورة (من وصف البنود)،
+        // وإلا شهر invoice_date — انظر app/shared/invoice-periods.js
+        InvoicePeriods.buildPaidMonthsMap(rows).forEach((set, key) => map.set(key, set));
     } catch (error) {
         console.error('تعذّر تحديد الأشهر المدفوعة لكل شركة:', error.message);
     }

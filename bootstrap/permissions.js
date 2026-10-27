@@ -141,10 +141,9 @@ const COMPANY_ROLE_FIXED_VIEW_SECTIONS = new Set([
     'attendance',
     'reports_employees',
     'reports_companies',
-    // 🆕 مسؤول الشركة يرى دائماً تقرير ربط الشركات أيضاً (يخص فقط شركته/شركاته
-    // المملوكة بفضل نطاق الرؤية المطبَّق داخل companies-links-report.js نفسه)،
-    // بنفس فلسفة إتاحة "تقرير الشركات" له دائماً أعلاه.
-    'reports_company_links',
+    // 🚫 'reports_company_links' (تقرير ربط الشركات) غير موجود هنا عمداً: مسؤول الشركة
+    // لا يرى هذا التقرير إطلاقاً (لا بالقائمة الجانبية ولا عبر الرابط المباشر)،
+    // بمعزل عن أي إعداد يُحفظ لدوره من شاشة "الأدوار والصلاحيات".
     'reports_attendance',
     'reports_tasks',
     'finance_invoices',
