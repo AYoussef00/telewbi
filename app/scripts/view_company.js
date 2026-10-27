@@ -19,6 +19,28 @@ function hideViewAlert() {
 }
 
 // 💰 تنسيق القيم المالية بمنزلتين عشريتين بأرقام إنجليزية دائماً
+// 💰 مجاميع المسترد والعمولة وصافي الدخل لموظفي الشركة الحاليين (روابط نشطة)، لكل ربط على حدة حسب طريقة حساب الشركة
+async function fetchCompanyNetIncomeSummary(company) {
+    const d = new Date();
+    const todayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const { data: links, error } = await dbClient
+        .from('employee_links')
+        .select('net_salary_value')
+        .eq('company_id', company.id)
+        .or(`link_end_date.is.null,link_end_date.gte.${todayStr}`)
+        .limit(5000);
+    if (error) throw new Error(error.message);
+
+    const totals = { refund: 0, commission: 0, income: 0, linksCount: (links || []).length };
+    (links || []).forEach(l => {
+        const r = window.CompanyFinance.compute(l.net_salary_value, company);
+        if (r.refund !== null) totals.refund += r.refund;
+        if (r.commission !== null) totals.commission += r.commission;
+        if (r.income !== null) totals.income += r.income;
+    });
+    return totals;
+}
+
 function formatCurrencyValue(value) {
     if (value === null || value === undefined || value === '') return null;
     const num = parseFloat(value);
@@ -125,7 +147,33 @@ function renderCompanyDetails(company, isEnglish) {
     }
 
     // مسترد الشركة: القيمة الافتراضية 0 إن لم تُسجَّل
-    document.getElementById('viewCompanyRefund').textContent = formatCurrencyValue(company.company_refund) || '0.00';
+    // صافي الدخل = الصافي (من ربط كل موظف) − المسترد − العمولة. حسب طريقة الحساب بالشركة يكون
+    // أحدهما (المسترد أو صافي الدخل) مُدخَلاً فيُعرض كما هو، والآخر محسوباً فيُعرض مجموعه لموظفي الشركة الحاليين
+    const fin = window.CompanyFinance;
+    const incomeMode = company.income_mode === 'income_input';
+    document.getElementById('viewCompanyIncomeMode').textContent = incomeMode
+        ? 'أُدخل صافي الدخل، ويُحسب المسترد'
+        : 'أُدخل المسترد، ويُحسب صافي الدخل';
+    const refundEl = document.getElementById('viewCompanyRefund');
+    const commissionEl = document.getElementById('viewCompanyCommission');
+    const netIncomeEl = document.getElementById('viewCompanyNetIncome');
+    commissionEl.textContent = fin.describe(company.company_commission, company.company_commission_type);
+    if (incomeMode) {
+        netIncomeEl.textContent = fin.describe(company.company_net_income, company.company_net_income_type);
+        refundEl.textContent = '...';
+    } else {
+        refundEl.textContent = fin.describe(company.company_refund, company.company_refund_type);
+        netIncomeEl.textContent = '...';
+    }
+    fetchCompanyNetIncomeSummary(company).then(s => {
+        const text = s.linksCount === 0
+            ? 'لا يوجد موظفون مرتبطون حالياً'
+            : null;
+        if (incomeMode) refundEl.textContent = text || (fin.formatMoney(s.refund, notSet) + ` (محسوب، لـ ${s.linksCount} موظف)`);
+        else netIncomeEl.textContent = text || (fin.formatMoney(s.income, notSet) + ` (محسوب، لـ ${s.linksCount} موظف)`);
+    }).catch(() => {
+        if (incomeMode) refundEl.textContent = notSet; else netIncomeEl.textContent = notSet;
+    });
 
     document.getElementById('viewCompanyEstablishmentNumber').textContent = company.establishment_number || notSet;
     document.getElementById('viewCompanyEstablishmentId').textContent = company.establishment_national_id || notSet;

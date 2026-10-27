@@ -159,12 +159,66 @@
                                         <span>شامل قيمة الضريبة المضافة</span>
                                     </label>
                                 </div>
-                                <!-- مسترد الشركة (القيمة الافتراضية 0) -->
+                                <!-- طريقة حساب المسترد وصافي الدخل -->
+                                <div class="input-field-group" id="group-income_mode">
+                                    <label for="modalCompanyIncomeMode">طريقة الحساب</label>
+                                    <select id="modalCompanyIncomeMode">
+                                        <option value="refund_input" selected>أُدخل المسترد، ويُحسب صافي الدخل</option>
+                                        <option value="income_input">أُدخل صافي الدخل، ويُحسب المسترد</option>
+                                    </select>
+                                    <small style="color:#64748b;">صافي الدخل = الصافي (من بيانات الربط) − المسترد − العمولة، ويُحسب لكل موظف</small>
+                                </div>
+
+                                <!-- مسترد الشركة (مُدخل) -->
                                 <div class="input-field-group" id="group-company_refund">
                                     <label for="modalCompanyRefund">مسترد الشركة</label>
-                                    <input type="number" id="modalCompanyRefund" min="0" step="0.01" value="0" placeholder="0.00">
+                                    <div style="display:flex; gap:8px;">
+                                        <input type="number" id="modalCompanyRefund" min="0" step="0.01" value="0" placeholder="0.00" style="flex:1; min-width:0;">
+                                        <select id="modalCompanyRefundType" style="width:110px;">
+                                            <option value="fixed" selected>مبلغ</option>
+                                            <option value="percent">نسبة %</option>
+                                        </select>
+                                    </div>
+                                    <span class="field-error" id="error-company_refund"></span>
                                 </div>
-                                <!-- 10. رقم المنشأة (اختياري) -->
+                                <!-- مسترد الشركة (محسوب) -->
+                                <div class="input-field-group" id="group-refund_calc" style="display:none;">
+                                    <label>مسترد الشركة</label>
+                                    <input type="text" id="modalCompanyRefundCalcInfo" value="يُحسب = الصافي − صافي الدخل − العمولة" readonly disabled>
+                                </div>
+
+                                <!-- العمولة (مبلغ ثابت أو نسبة من الصافي في ربط كل موظف) -->
+                                <div class="input-field-group" id="group-company_commission">
+                                    <label for="modalCompanyCommission">العمولة</label>
+                                    <div style="display:flex; gap:8px;">
+                                        <input type="number" id="modalCompanyCommission" min="0" step="0.01" value="0" placeholder="0.00" style="flex:1; min-width:0;">
+                                        <select id="modalCompanyCommissionType" style="width:110px;">
+                                            <option value="fixed" selected>مبلغ</option>
+                                            <option value="percent">نسبة %</option>
+                                        </select>
+                                    </div>
+                                    <span class="field-error" id="error-company_commission"></span>
+                                </div>
+
+                                <!-- صافي الدخل (محسوب) -->
+                                <div class="input-field-group" id="group-net_income_calc">
+                                    <label for="modalCompanyNetIncomeInfo">صافي الدخل</label>
+                                    <input type="text" id="modalCompanyNetIncomeInfo" value="يُحسب عند ربط كل موظف" readonly disabled>
+                                </div>
+                                <!-- صافي الدخل (مُدخل) -->
+                                <div class="input-field-group" id="group-company_net_income" style="display:none;">
+                                    <label for="modalCompanyNetIncome">صافي الدخل</label>
+                                    <div style="display:flex; gap:8px;">
+                                        <input type="number" id="modalCompanyNetIncome" min="0" step="0.01" value="0" placeholder="0.00" style="flex:1; min-width:0;">
+                                        <select id="modalCompanyNetIncomeType" style="width:110px;">
+                                            <option value="fixed" selected>مبلغ</option>
+                                            <option value="percent">نسبة %</option>
+                                        </select>
+                                    </div>
+                                    <span class="field-error" id="error-company_net_income"></span>
+                                </div>
+
+                                                                <!-- 10. رقم المنشأة (اختياري) -->
                                 <div class="input-field-group" id="group-establishment_number">
                                     <label for="modalCompanyEstablishmentNumber">رقم المنشأة <span class="optional-tag">(اختياري)</span></label>
                                     <input type="text" id="modalCompanyEstablishmentNumber">
@@ -269,6 +323,7 @@
     <script src="../../bootstrap/app-core.js"></script>
     <script src="../shared/sidebar.js?v=3"></script>
     <script src="../shared/navbar.js"></script>
-    <script src="../scripts/edit_company.js?v=4"></script>
+    <script src="../shared/company-finance.js?v=2"></script>
+    <script src="../scripts/edit_company.js?v=6"></script>
 </body>
 </html>

@@ -273,7 +273,10 @@ function getErrorMessages() {
         email_invalid: 'صيغة البريد الإلكتروني غير صحيحة.',
         existing_account_required: 'الرجاء اختيار الحساب المطلوب الربط به.',
         subscription_value_invalid: 'الرجاء إدخال قيمة اشتراك صحيحة (رقم موجب) أو ترك الحقل فارغاً.',
-        company_refund_invalid: 'الرجاء إدخال قيمة مسترد صحيحة (رقم موجب أو صفر).',
+        company_refund_invalid: 'الرجاء إدخال قيمة مسترد صحيحة (رقم موجب أو صفر، والنسبة بين 0 و100).',
+        company_net_income_invalid: 'الرجاء إدخال قيمة صافي دخل صحيحة (رقم موجب أو صفر، والنسبة بين 0 و100).',
+        company_commission_invalid: 'الرجاء إدخال قيمة عمولة صحيحة (رقم موجب أو صفر، والنسبة بين 0 و100).',
+        company_percent_total: 'مجموع نسبتي المسترد والعمولة يجب ألا يتجاوز 100%.',
         file_too_large: 'حجم الملف أكبر من الحد المسموح (5MB).'
     };
 }
@@ -316,11 +319,40 @@ function validateField(fieldName, form, msgs) {
             return null;
         }
         case 'company_refund': {
+            // يُتحقَّق منه فقط حين يكون المسترد هو المُدخَل (طريقة الحساب الافتراضية)
+            if (get('companyIncomeMode').value === 'income_input') return null;
             // اختياري: الفراغ يُعامل كـ 0، فقط نتحقق من صحة الصيغة إن أُدخلت قيمة
             const val = get('companyRefund').value.trim();
             if (val === '') return null;
             const num = parseFloat(val);
             if (isNaN(num) || num < 0) return msgs.company_refund_invalid;
+            if (get('companyRefundType').value === 'percent' && num > 100) return msgs.company_refund_invalid;
+            return null;
+        }
+        case 'company_commission': {
+            const val = get('companyCommission').value.trim();
+            if (val === '') return null;
+            const num = parseFloat(val);
+            if (isNaN(num) || num < 0) return msgs.company_commission_invalid;
+            if (get('companyCommissionType').value === 'percent' && num > 100) return msgs.company_commission_invalid;
+            // مجموع النسبتين (إن كانتا نسبتين) لا يتجاوز 100% — النسبة الأخرى هي المسترد أو صافي الدخل حسب الطريقة
+            const incomeInput = get('companyIncomeMode').value === 'income_input';
+            const otherValueId = incomeInput ? 'companyNetIncome' : 'companyRefund';
+            const otherTypeId = incomeInput ? 'companyNetIncomeType' : 'companyRefundType';
+            if (get('companyCommissionType').value === 'percent' && get(otherTypeId).value === 'percent') {
+                const otherNum = parseFloat(get(otherValueId).value.trim()) || 0;
+                if (otherNum + num > 100) return msgs.company_percent_total;
+            }
+            return null;
+        }
+        case 'company_net_income': {
+            // يُتحقَّق منه فقط حين يكون صافي الدخل هو المُدخَل
+            if (get('companyIncomeMode').value !== 'income_input') return null;
+            const val = get('companyNetIncome').value.trim();
+            if (val === '') return null;
+            const num = parseFloat(val);
+            if (isNaN(num) || num < 0) return msgs.company_net_income_invalid;
+            if (get('companyNetIncomeType').value === 'percent' && num > 100) return msgs.company_net_income_invalid;
             return null;
         }
         default:
@@ -352,7 +384,7 @@ function setFieldError(fieldName, message) {
 
 function validateAllFields(form) {
     const msgs = getErrorMessages();
-    const fieldNames = ['name', 'email', 'existing_account', 'subscription_value', 'company_refund'];
+    const fieldNames = ['name', 'email', 'existing_account', 'subscription_value', 'company_refund', 'company_commission', 'company_net_income'];
     const fileFieldMap = {
         logo_file: 'companyLogoFile',
         contract_file: 'companyContractFile',
@@ -517,8 +549,22 @@ document.addEventListener('DOMContentLoaded', async function() {
         companyName: 'name',
         companyEmail: 'email',
         companySubscriptionValue: 'subscription_value',
-        companyRefund: 'company_refund'
+        companyRefund: 'company_refund',
+        companyCommission: 'company_commission',
+        companyNetIncome: 'company_net_income'
     };
+
+    // تبديل طريقة الحساب: إظهار الحقل المُدخَل وإخفاء الحقل المحسوب (المسترد ↔ صافي الدخل)
+    const incomeModeSelect = document.getElementById('companyIncomeMode');
+    function syncIncomeModeFields() {
+        const incomeInput = incomeModeSelect.value === 'income_input';
+        document.getElementById('group-company_refund').style.display = incomeInput ? 'none' : '';
+        document.getElementById('group-refund_calc').style.display = incomeInput ? '' : 'none';
+        document.getElementById('group-net_income_calc').style.display = incomeInput ? 'none' : '';
+        document.getElementById('group-company_net_income').style.display = incomeInput ? '' : 'none';
+    }
+    incomeModeSelect.addEventListener('change', syncIncomeModeFields);
+    syncIncomeModeFields();
 
     Object.keys(blurFieldIdsMap).forEach((inputId) => {
         const el = document.getElementById(inputId);
@@ -572,6 +618,14 @@ document.addEventListener('DOMContentLoaded', async function() {
         const subscriptionValue = subscriptionValueRaw === '' ? null : parseFloat(subscriptionValueRaw);
         const companyRefundRaw = document.getElementById('companyRefund').value.trim();
         const companyRefund = companyRefundRaw === '' ? 0 : parseFloat(companyRefundRaw);
+        const companyRefundType = document.getElementById('companyRefundType').value === 'percent' ? 'percent' : 'fixed';
+        const companyCommissionRaw = document.getElementById('companyCommission').value.trim();
+        const companyCommission = companyCommissionRaw === '' ? 0 : parseFloat(companyCommissionRaw);
+        const companyCommissionType = document.getElementById('companyCommissionType').value === 'percent' ? 'percent' : 'fixed';
+        const incomeMode = document.getElementById('companyIncomeMode').value === 'income_input' ? 'income_input' : 'refund_input';
+        const companyNetIncomeRaw = document.getElementById('companyNetIncome').value.trim();
+        const companyNetIncome = companyNetIncomeRaw === '' ? 0 : parseFloat(companyNetIncomeRaw);
+        const companyNetIncomeType = document.getElementById('companyNetIncomeType').value === 'percent' ? 'percent' : 'fixed';
         const establishmentNumber = document.getElementById('companyEstablishmentNumber').value.trim() || null;
         const establishmentNationalId = document.getElementById('companyEstablishmentId').value.trim() || null;
         const authorizedPerson = document.getElementById('companyAuthorizedPerson').value.trim() || null;
@@ -729,6 +783,12 @@ document.addEventListener('DOMContentLoaded', async function() {
                 subscription_value: subscriptionValue,
                 vat_included: vatIncluded,
                 company_refund: companyRefund,
+                company_refund_type: companyRefundType,
+                company_commission: companyCommission,
+                company_commission_type: companyCommissionType,
+                income_mode: incomeMode,
+                company_net_income: companyNetIncome,
+                company_net_income_type: companyNetIncomeType,
                 establishment_number: establishmentNumber,
                 establishment_national_id: establishmentNationalId,
                 authorized_person: authorizedPerson,

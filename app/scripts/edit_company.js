@@ -300,6 +300,37 @@ function validateFileField(inputId) {
 // =========================================================================
 // 3. جلب بيانات الشركة المطلوب تعديلها
 // =========================================================================
+// 💰 مجاميع المسترد والعمولة وصافي الدخل لموظفي الشركة الحاليين (روابط نشطة)، لكل ربط على حدة حسب طريقة حساب الشركة
+// تبديل طريقة الحساب: إظهار الحقل المُدخَل وإخفاء الحقل المحسوب (المسترد ↔ صافي الدخل)
+function syncEditIncomeModeFields() {
+    const incomeInput = document.getElementById('modalCompanyIncomeMode').value === 'income_input';
+    document.getElementById('group-company_refund').style.display = incomeInput ? 'none' : '';
+    document.getElementById('group-refund_calc').style.display = incomeInput ? '' : 'none';
+    document.getElementById('group-net_income_calc').style.display = incomeInput ? 'none' : '';
+    document.getElementById('group-company_net_income').style.display = incomeInput ? '' : 'none';
+}
+
+async function fetchCompanyNetIncomeSummary(company) {
+    const d = new Date();
+    const todayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const { data: links, error } = await dbClient
+        .from('employee_links')
+        .select('net_salary_value')
+        .eq('company_id', company.id)
+        .or(`link_end_date.is.null,link_end_date.gte.${todayStr}`)
+        .limit(5000);
+    if (error) throw new Error(error.message);
+
+    const totals = { refund: 0, commission: 0, income: 0, linksCount: (links || []).length };
+    (links || []).forEach(l => {
+        const r = window.CompanyFinance.compute(l.net_salary_value, company);
+        if (r.refund !== null) totals.refund += r.refund;
+        if (r.commission !== null) totals.commission += r.commission;
+        if (r.income !== null) totals.income += r.income;
+    });
+    return totals;
+}
+
 async function fetchCompanyRecord(id) {
     const { data, error } = await dbClient
         .from('companies')
@@ -337,6 +368,25 @@ function populateFormWithCompany(company) {
     document.getElementById('modalCompanySubscriptionValue').value = company.subscription_value != null ? company.subscription_value : '';
     document.getElementById('modalCompanyVatIncluded').checked = !!company.vat_included;
     document.getElementById('modalCompanyRefund').value = company.company_refund != null ? company.company_refund : 0;
+    document.getElementById('modalCompanyRefundType').value = company.company_refund_type === 'percent' ? 'percent' : 'fixed';
+    document.getElementById('modalCompanyCommission').value = company.company_commission != null ? company.company_commission : 0;
+    document.getElementById('modalCompanyCommissionType').value = company.company_commission_type === 'percent' ? 'percent' : 'fixed';
+    document.getElementById('modalCompanyIncomeMode').value = company.income_mode === 'income_input' ? 'income_input' : 'refund_input';
+    document.getElementById('modalCompanyNetIncome').value = company.company_net_income != null ? company.company_net_income : 0;
+    document.getElementById('modalCompanyNetIncomeType').value = company.company_net_income_type === 'percent' ? 'percent' : 'fixed';
+    syncEditIncomeModeFields();
+    // مجموع صافي الدخل (للقراءة فقط) — لا يمنع فشله تحميل النموذج
+    fetchCompanyNetIncomeSummary(company).then(s => {
+        const fin = window.CompanyFinance;
+        const info = s.linksCount === 0 ? 'لا يوجد موظفون مرتبطون حالياً' : null;
+        document.getElementById('modalCompanyNetIncomeInfo').value =
+            info || (fin.formatMoney(s.income, '—') + ` (محسوب، لـ ${s.linksCount} موظف)`);
+        document.getElementById('modalCompanyRefundCalcInfo').value =
+            info || (fin.formatMoney(s.refund, '—') + ` (محسوب، لـ ${s.linksCount} موظف)`);
+    }).catch(() => {
+        document.getElementById('modalCompanyNetIncomeInfo').value = '—';
+        document.getElementById('modalCompanyRefundCalcInfo').value = '—';
+    });
     document.getElementById('modalCompanyEstablishmentNumber').value = company.establishment_number || '';
     document.getElementById('modalCompanyEstablishmentId').value = company.establishment_national_id || '';
     document.getElementById('modalCompanyAuthorizedPerson').value = company.authorized_person || '';
@@ -436,6 +486,12 @@ async function handleEditCompanySubmit(event) {
     const subscriptionValueRaw = document.getElementById('modalCompanySubscriptionValue').value.trim();
     const vatIncluded = document.getElementById('modalCompanyVatIncluded').checked;
     const companyRefundRaw = document.getElementById('modalCompanyRefund').value.trim();
+    const companyRefundType = document.getElementById('modalCompanyRefundType').value === 'percent' ? 'percent' : 'fixed';
+    const companyCommissionRaw = document.getElementById('modalCompanyCommission').value.trim();
+    const companyCommissionType = document.getElementById('modalCompanyCommissionType').value === 'percent' ? 'percent' : 'fixed';
+    const incomeMode = document.getElementById('modalCompanyIncomeMode').value === 'income_input' ? 'income_input' : 'refund_input';
+    const companyNetIncomeRaw = document.getElementById('modalCompanyNetIncome').value.trim();
+    const companyNetIncomeType = document.getElementById('modalCompanyNetIncomeType').value === 'percent' ? 'percent' : 'fixed';
     const establishmentNumber = document.getElementById('modalCompanyEstablishmentNumber').value.trim() || null;
     const establishmentNationalId = document.getElementById('modalCompanyEstablishmentId').value.trim() || null;
     const authorizedPerson = document.getElementById('modalCompanyAuthorizedPerson').value.trim() || null;
@@ -450,6 +506,8 @@ async function handleEditCompanySubmit(event) {
     setFieldError('group-name', false);
     setFieldError('group-subscription_value', false);
     setFieldError('group-company_refund', false);
+    setFieldError('group-company_commission', false);
+    setFieldError('group-company_net_income', false);
     setFieldError('group-relink_existing_account', false);
 
     let hasError = false;
@@ -472,13 +530,46 @@ async function handleEditCompanySubmit(event) {
 
     // مسترد الشركة: الفراغ يُعامل كـ 0، وإلا يجب أن يكون رقماً موجباً أو صفراً
     let companyRefund = 0;
-    if (companyRefundRaw !== '') {
+    if (incomeMode === 'refund_input' && companyRefundRaw !== '') {
         const num = parseFloat(companyRefundRaw);
-        if (isNaN(num) || num < 0) {
+        if (isNaN(num) || num < 0 || (companyRefundType === 'percent' && num > 100)) {
             setFieldError('group-company_refund', true);
             hasError = true;
         } else {
             companyRefund = num;
+        }
+    }
+
+    // العمولة: نفس قواعد المسترد، ومجموع النسبتين (إن كانتا نسبتين) لا يتجاوز 100%
+    let companyCommission = 0;
+    if (companyCommissionRaw !== '') {
+        const num = parseFloat(companyCommissionRaw);
+        if (isNaN(num) || num < 0 || (companyCommissionType === 'percent' && num > 100)) {
+            setFieldError('group-company_commission', true);
+            hasError = true;
+        } else {
+            companyCommission = num;
+        }
+    }
+    // صافي الدخل (حين يكون هو المُدخَل)
+    let companyNetIncome = 0;
+    if (incomeMode === 'income_input' && companyNetIncomeRaw !== '') {
+        const num = parseFloat(companyNetIncomeRaw);
+        if (isNaN(num) || num < 0 || (companyNetIncomeType === 'percent' && num > 100)) {
+            setFieldError('group-company_net_income', true);
+            hasError = true;
+        } else {
+            companyNetIncome = num;
+        }
+    }
+    // مجموع النسبتين (المُدخَل منهما مع العمولة) لا يتجاوز 100%
+    if (!hasError && companyCommissionType === 'percent') {
+        const otherIsPercent = incomeMode === 'income_input' ? companyNetIncomeType === 'percent' : companyRefundType === 'percent';
+        const otherValue = incomeMode === 'income_input' ? companyNetIncome : companyRefund;
+        if (otherIsPercent && otherValue + companyCommission > 100) {
+            setFieldError(incomeMode === 'income_input' ? 'group-company_net_income' : 'group-company_refund', true);
+            setFieldError('group-company_commission', true);
+            hasError = true;
         }
     }
 
@@ -579,6 +670,12 @@ async function handleEditCompanySubmit(event) {
             subscription_value: subscriptionValue,
             vat_included: vatIncluded,
             company_refund: companyRefund,
+            company_refund_type: companyRefundType,
+            company_commission: companyCommission,
+            company_commission_type: companyCommissionType,
+            income_mode: incomeMode,
+            company_net_income: companyNetIncome,
+            company_net_income_type: companyNetIncomeType,
             establishment_number: establishmentNumber,
             establishment_national_id: establishmentNationalId,
             authorized_person: authorizedPerson,
@@ -628,6 +725,9 @@ async function handleEditCompanySubmit(event) {
 // 6. ربط الأحداث وتحميل بيانات الشركة عند فتح الصفحة
 // =========================================================================
 document.addEventListener('DOMContentLoaded', async function() {
+    // تبديل طريقة الحساب (المسترد مُدخَل / صافي الدخل مُدخَل)
+    const incomeModeSelectEl = document.getElementById('modalCompanyIncomeMode');
+    if (incomeModeSelectEl) incomeModeSelectEl.addEventListener('change', syncEditIncomeModeFields);
     const allowed = await Permissions.guardPage('companies');
     if (!allowed) return;
 

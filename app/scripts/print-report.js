@@ -356,10 +356,12 @@ function buildGenericReportPrintPagesHtml(opts) {
         rowsPerPage: maxRowsPerPage,
         // 🆕 اختياري (افتراضياً true): يتحكم بإظهار/إخفاء العلامة المائية
         // وعبارة "هذه الخدمة مقدمة من بصمة الأعمال" معاً — انظر الشرح أعلى الملف
-        showBranding = true
+        showBranding = true,
+        // 🆕 اختياري (افتراضياً true): إخفاء العلامة المائية وحدها مع إبقاء عبارة التذييل
+        showWatermark = true
     } = opts;
 
-    const watermarkUrl = showBranding ? buildWatermarkDataUri() : null;
+    const watermarkUrl = (showBranding && showWatermark) ? buildWatermarkDataUri() : null;
     const emptyColspan = columns.length || 1;
     const headerRowHtml = buildGenericHeaderRowHtml(columns);
     const letterheadHtml = buildLetterheadHtml({ docNumber, companyLabel, subtitleText, reportDateText, qrDataUrl });
@@ -371,7 +373,7 @@ function buildGenericReportPrintPagesHtml(opts) {
 
     return pages.map((pageRows, idx) => `
         <section class="print-page">
-            ${showBranding ? `<div class="print-watermark" style="background-image:url('${watermarkUrl}')"></div>` : ''}
+            ${(showBranding && showWatermark) ? `<div class="print-watermark" style="background-image:url('${watermarkUrl}')"></div>` : ''}
             ${idx === 0 ? letterheadHtml : ''}
             <table class="print-report-table">
                 <thead><tr>${headerRowHtml}</tr></thead>

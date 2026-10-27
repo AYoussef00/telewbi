@@ -71,7 +71,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 columns: data.columns,
                 rows: data.rows || [],
                 qrDataUrl: null, // لا حاجة لعرض رمز QR داخل الصفحة التي فتحها الرمز نفسه
-                showBranding: data.report_type !== 'tasks' // تقرير المهام تحديداً بلا علامة مائية/عبارة تذييل
+                showBranding: data.report_type !== 'tasks', // تقرير المهام تحديداً بلا علامة مائية/عبارة تذييل
+                showWatermark: data.report_type !== 'company_links' // تقرير ربط الشركات بلا علامة مائية
             })
             : window.PrintReport.buildAttendanceReportPrintPagesHtml({
                 docNumber: data.doc_number || '—',

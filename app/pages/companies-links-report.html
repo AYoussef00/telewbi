@@ -20,7 +20,7 @@
     <!-- مكتبة توليد رمز QR (يُضمَّن بترويسة صفحة الطباعة، ويشير لصفحة عرض عامة للتقرير) -->
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     <!-- وحدة بناء صفحات الطباعة الاحترافية المشتركة (ترويسة/جدول/علامة مائية/تذييل) -->
-    <script src="../scripts/print-report.js?v=5"></script>
+    <script src="../scripts/print-report.js?v=6"></script>
 
     <!-- ملفات التنسيق الموديلار المفصولة والمنظمة (نفس أساس تقرير الشركات لتطابق بصري بين صفحات التقارير) -->
     <link rel="stylesheet" href="../../resources/css/global-layout.css?v=2">
@@ -97,18 +97,19 @@
                     <table class="companies-table">
                         <thead>
                             <tr>
-                                <th style="width: 24%;">اسم الموظف</th>
+                                <th style="width: 20%;">اسم الموظف</th>
                                 <th style="width: 13%;">رقم الهوية</th>
-                                <th style="width: 13%;">رقم الجوال</th>
-                                <th style="width: 12%; text-align: center;">الراتب</th>
-                                <th style="width: 13%; text-align: center;">رسوم الموظف (الصافي)</th>
-                                <th style="width: 12%; text-align: center;">رسوم الاسترداد</th>
+                                <th style="width: 10%; text-align: center;">الراتب</th>
+                                <th style="width: 11%; text-align: center;">رسوم الموظف (الصافي)</th>
+                                <th style="width: 11%; text-align: center;">رسوم الاسترداد</th>
+                                <th style="width: 10%; text-align: center;">العمولة</th>
+                                <th style="width: 12%; text-align: center;">صافي الدخل</th>
                                 <th style="width: 13%; text-align: center;">الحالة</th>
                             </tr>
                         </thead>
                         <tbody id="reportTableBody">
                             <tr>
-                                <td colspan="7" class="table-loading-state">
+                                <td colspan="8" class="table-loading-state">
                                     جاري جلب بيانات التقرير...
                                 </td>
                             </tr>
@@ -127,6 +128,7 @@
     <script src="../../bootstrap/app-core.js"></script>
     <script src="../shared/sidebar.js?v=3"></script>
     <script src="../shared/navbar.js"></script>
-    <script src="../scripts/companies-links-report.js?v=4"></script>
+    <script src="../shared/company-finance.js?v=2"></script>
+    <script src="../scripts/companies-links-report.js?v=8"></script>
 </body>
 </html>

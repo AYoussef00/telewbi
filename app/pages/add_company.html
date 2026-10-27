@@ -198,11 +198,63 @@
                                 </label>
                             </div>
 
-                            <!-- مسترد الشركة (القيمة الافتراضية 0) -->
+                            <!-- طريقة حساب المسترد وصافي الدخل -->
+                            <div class="form-group" id="group-income_mode">
+                                <label for="companyIncomeMode">طريقة الحساب</label>
+                                <select id="companyIncomeMode">
+                                    <option value="refund_input" selected>أُدخل المسترد، ويُحسب صافي الدخل</option>
+                                    <option value="income_input">أُدخل صافي الدخل، ويُحسب المسترد</option>
+                                </select>
+                                <small style="color:#64748b;">صافي الدخل = الصافي (من بيانات الربط) − المسترد − العمولة، ويُحسب لكل موظف</small>
+                            </div>
+
+                            <!-- مسترد الشركة (مُدخل) -->
                             <div class="form-group" id="group-company_refund">
                                 <label for="companyRefund">مسترد الشركة</label>
-                                <input type="number" id="companyRefund" name="company_refund" min="0" step="0.01" value="0" placeholder="0.00">
+                                <div style="display:flex; gap:8px;">
+                                    <input type="number" id="companyRefund" min="0" step="0.01" value="0" placeholder="0.00" style="flex:1; min-width:0;">
+                                    <select id="companyRefundType" style="width:110px;">
+                                        <option value="fixed" selected>مبلغ</option>
+                                        <option value="percent">نسبة %</option>
+                                    </select>
+                                </div>
                                 <span class="field-error" id="error-company_refund"></span>
+                            </div>
+                            <!-- مسترد الشركة (محسوب) -->
+                            <div class="form-group" id="group-refund_calc" style="display:none;">
+                                <label>مسترد الشركة</label>
+                                <input type="text" value="يُحسب = الصافي − صافي الدخل − العمولة" readonly disabled>
+                            </div>
+
+                            <!-- العمولة (مبلغ ثابت أو نسبة من الصافي في ربط كل موظف) -->
+                            <div class="form-group" id="group-company_commission">
+                                <label for="companyCommission">العمولة</label>
+                                <div style="display:flex; gap:8px;">
+                                    <input type="number" id="companyCommission" min="0" step="0.01" value="0" placeholder="0.00" style="flex:1; min-width:0;">
+                                    <select id="companyCommissionType" style="width:110px;">
+                                        <option value="fixed" selected>مبلغ</option>
+                                        <option value="percent">نسبة %</option>
+                                    </select>
+                                </div>
+                                <span class="field-error" id="error-company_commission"></span>
+                            </div>
+
+                            <!-- صافي الدخل (محسوب) -->
+                            <div class="form-group" id="group-net_income_calc">
+                                <label for="companyNetIncomeInfo">صافي الدخل</label>
+                                <input type="text" id="companyNetIncomeInfo" value="يُحسب عند ربط كل موظف" readonly disabled>
+                            </div>
+                            <!-- صافي الدخل (مُدخل) -->
+                            <div class="form-group" id="group-company_net_income" style="display:none;">
+                                <label for="companyNetIncome">صافي الدخل</label>
+                                <div style="display:flex; gap:8px;">
+                                    <input type="number" id="companyNetIncome" min="0" step="0.01" value="0" placeholder="0.00" style="flex:1; min-width:0;">
+                                    <select id="companyNetIncomeType" style="width:110px;">
+                                        <option value="fixed" selected>مبلغ</option>
+                                        <option value="percent">نسبة %</option>
+                                    </select>
+                                </div>
+                                <span class="field-error" id="error-company_net_income"></span>
                             </div>
 
                             <!-- رقم المنشأة -->
@@ -302,6 +354,6 @@
     <script src="../../bootstrap/app-core.js"></script>
     <script src="../shared/sidebar.js?v=3"></script>
     <script src="../shared/navbar.js"></script>
-    <script src="../scripts/add_company.js?v=4"></script>
+    <script src="../scripts/add_company.js?v=6"></script>
 </body>
 </html>
