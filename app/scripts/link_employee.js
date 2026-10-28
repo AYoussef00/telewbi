@@ -13,15 +13,30 @@
 //      (مثال: رقم الهوية بجانب الاسم) لمساعدة المستخدم على التمييز بين
 //      الأسماء المتشابهة أثناء البحث، دون التأثير على القيمة المعروضة بالحقل.
 // =========================================================================
+// توحيد النص العربي للبحث: يتجاهل الفرق بين أ/إ/آ/ا و ة/ه و ى/ي والتشكيل والتطويل
+// والأرقام العربية/الهندية، حتى يجد البحث بـ "احمد" الاسم "أحمد" وهكذا.
+function normalizeSearchText(value) {
+    return String(value == null ? '' : value)
+        .toLowerCase()
+        .replace(/[\u064B-\u065F\u0670\u0640]/g, '')
+        .replace(/[أإآٱ]/g, 'ا')
+        .replace(/ى/g, 'ي')
+        .replace(/ة/g, 'ه')
+        .replace(/[٠-٩]/g, d => String(d.charCodeAt(0) - 0x0660))
+        .replace(/[۰-۹]/g, d => String(d.charCodeAt(0) - 0x06F0))
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
 function setupSearchableCombobox({ inputId, hiddenId, dropdownId, options, emptyText, onSelectExtra }) {
     const input = document.getElementById(inputId);
     const hidden = document.getElementById(hiddenId);
     const dropdown = document.getElementById(dropdownId);
 
     function renderOptions(filterText) {
-        const normalized = (filterText || '').trim().toLowerCase();
+        const normalized = normalizeSearchText(filterText);
         const filtered = normalized
-            ? options.filter(opt => (opt.searchText || opt.label).toLowerCase().includes(normalized))
+            ? options.filter(opt => normalizeSearchText(opt.searchText || opt.label).includes(normalized))
             : options;
 
         dropdown.innerHTML = '';
@@ -123,14 +138,27 @@ async function loadEmployeesForCombobox() {
         // يُستخدم كنص بحث إضافي (searchText) ويظهر كتلميح بجانب كل اسم بالقائمة
         // المنسدلة (sublabel)، بينما يبقى المعروض بالحقل بعد الاختيار اسم
         // الموظف فقط، تماماً كما كان سابقاً.
-        const { data, error } = await dbClient.from('employees').select('id, name, national_id').order('name', { ascending: true });
-        if (error) throw new Error(error.message);
+        // ⚠️ الجلب على دفعات (1000 صف كحد أقصى لكل طلب في Supabase) — بدونه كانت
+        // القائمة تتوقف عند أول 1000 موظف مرتبين بالاسم فلا يظهر من يبدأ اسمه بحروف
+        // متأخرة (مثل و/ي) أو الموظفون الجدد.
+        const PAGE = 1000;
+        const data = [];
+        for (let from = 0; ; from += PAGE) {
+            const { data: page, error } = await dbClient.from('employees')
+                .select('id, name, national_id')
+                .order('name', { ascending: true })
+                .order('id', { ascending: true })
+                .range(from, from + PAGE - 1);
+            if (error) throw new Error(error.message);
+            data.push(...(page || []));
+            if (!page || page.length < PAGE) break;
+        }
 
         const options = (data || []).map(emp => ({
             value: String(emp.id),
             label: emp.name,
             sublabel: emp.national_id || null,
-            searchText: `${emp.name || ''} ${emp.national_id || ''}`.toLowerCase()
+            searchText: `${emp.name || ''} ${emp.national_id || ''}`
         }));
         employeeCombobox.setOptions(options);
         employeeCombobox.enable(options.length ? 'ابحث بالاسم أو رقم الهوية أو اختر من القائمة' : 'لا يوجد موظفون مضافون بعد');
