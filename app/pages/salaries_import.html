@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>استيراد الرواتب - بصمة الأعمال</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="../../config/supabase.js"></script>
+    <script src="../../routes/routes.js"></script>
+    <script src="../shared/icons.js"></script>
+    <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <link rel="stylesheet" href="../../resources/css/global-layout.css?v=2">
+    <link rel="stylesheet" href="../../resources/css/companies.css">
+    <link rel="stylesheet" href="../../resources/css/salaries.css?v=2">
+    <link rel="stylesheet" href="../../resources/css/sidebar.css?v=2">
+    <link rel="stylesheet" href="../../resources/css/navbar.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <div id="sidebar-container"></div>
+
+        <main class="main-content">
+            <div id="navbar-container"></div>
+
+            <div class="dashboard-container">
+                <div class="page-header">
+                    <div class="header-title">
+                        <h1 style="color: #d97706; font-size: 24px;"><span class="title-icon" data-icon="bank" style="margin-left:8px;"></span><span>استيراد الرواتب</span></h1>
+                        <p style="color: #64748b; font-size: 13px;">رفع ملف الرواتب المعبّأ لشركة وشهر محددين؛ يظهر الراتب كعمود «الرصيد» في تحصيل الموظفين</p>
+                    </div>
+                </div>
+
+                <section class="salaries-card">
+                    <div class="salaries-form-grid">
+                        <div class="salaries-field">
+                            <label for="salImportCompany">الشركة</label>
+                            <div class="sal-combo">
+                                <input type="text" id="salImportCompanySearch" placeholder="جاري تحميل الشركات..." autocomplete="off" disabled>
+                                <input type="hidden" id="salImportCompany">
+                                <div class="sal-combo-dropdown" id="salImportCompanyDropdown"></div>
+                            </div>
+                        </div>
+                        <div class="salaries-field">
+                            <label for="salImportMonth">الشهر</label>
+                            <input type="month" id="salImportMonth">
+                        </div>
+                        <div class="salaries-field">
+                            <label for="salImportFile">ملف الرواتب (Excel أو CSV)</label>
+                            <input type="file" id="salImportFile" accept=".xlsx,.xls,.csv">
+                        </div>
+                    </div>
+                    <label class="salaries-check">
+                        <input type="checkbox" id="salIgnoreZero" checked>
+                        <span>تجاهل الصفوف التي راتبها 0 أو فارغ (يبقى الرصيد = الراتب الأساسي من الربط)</span>
+                    </label>
+                    <div class="salaries-msg" id="salImportMsg"></div>
+                </section>
+
+                <section class="salaries-card" id="salPreviewCard" style="display:none;">
+                    <div class="salaries-summary" id="salPreviewSummary"></div>
+                    <div class="table-container" style="max-height:480px; overflow:auto;">
+                        <table class="companies-table">
+                            <thead>
+                                <tr>
+                                    <th>اسم الموظف</th>
+                                    <th>رقم الهوية</th>
+                                    <th style="text-align:center;">الراتب بالملف</th>
+                                    <th style="text-align:center;">الحالة</th>
+                                </tr>
+                            </thead>
+                            <tbody id="salPreviewBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="salaries-actions">
+                        <button type="button" class="btn-salaries" id="btnSalImport" data-perm="add:salaries_import" disabled>استيراد الرواتب</button>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="../../bootstrap/permissions.js?v=8"></script>
+    <script src="../../bootstrap/app-core.js"></script>
+    <script src="../shared/sidebar.js?v=3"></script>
+    <script src="../shared/navbar.js"></script>
+    <script src="../shared/employee-salaries.js?v=3"></script>
+    <script src="../scripts/salaries_import.js?v=2"></script>
+</body>
+</html>

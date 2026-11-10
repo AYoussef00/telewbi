@@ -99,6 +99,18 @@ const PERMISSIONS_SECTIONS = [
             { key: 'collection_types', label: 'أنواع التحصيل', icon: 'bank' }
         ]
     },
+    // 🆕 قائمة "الرواتب": تصدير نموذج Excel (اسم الموظف/رقم الهوية/تاريخ التعيين/
+    // الراتب=0) حسب الشركة، واستيراده بعد تعبئة الرواتب — تغذّي عمود "الرصيد" بشاشة
+    // "تحصيل الموظفين" وتقريرها. ⚠️ غير موجودة عمداً ضمن COMPANY_ROLE_FIXED_VIEW_SECTIONS
+    // فلا تظهر لمسؤول الشركة إطلاقاً (لا بالقائمة ولا عبر الرابط المباشر).
+    {
+        key: 'salaries', label: 'الرواتب', icon: 'bank',
+        children: [
+            { key: 'salaries_export', label: 'تصدير الرواتب', icon: 'receipt', hiddenActions: ['add', 'edit', 'delete'] },
+            // الاستيراد يكتب بيانات: صلاحية "إضافة" هي التي تتحكم بزر "استيراد" نفسه
+            { key: 'salaries_import', label: 'استيراد الرواتب', icon: 'receipt', hiddenActions: ['edit', 'delete'] }
+        ]
+    },
     {
         key: 'reports', label: 'التقارير', icon: 'chart-bar',
         children: [

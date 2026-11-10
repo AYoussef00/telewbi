@@ -237,6 +237,8 @@ const SIDEBAR_SUBMENU_PERMISSION_MAP = {
     'add_invoice.html': { section: 'invoice_issuing', action: 'add' },
     'collections.html': 'finance_collections',
     'collection_types.html': 'collection_types',
+    'salaries_export.html': 'salaries_export',
+    'salaries_import.html': 'salaries_import',
     'employee-report.html': 'reports_employees',
     'companies-report.html': 'reports_companies',
     'companies-links-report.html': 'reports_company_links',
@@ -248,7 +250,7 @@ const SIDEBAR_SUBMENU_PERMISSION_MAP = {
 
 // المجموعات ذات القوائم الفرعية القابلة للتخصيص عنصراً بعنصر (بمعزل عن أي
 // صلاحية موحّدة على القسم الأب — القسم الأب نفسه أصبح مجرد عنوان تجميعي)
-const SIDEBAR_EXPANDABLE_GROUP_KEYS = ['finance', 'reports'];
+const SIDEBAR_EXPANDABLE_GROUP_KEYS = ['finance', 'salaries', 'reports'];
 
 /**
  * يُخفي أي عنصر رئيسي بالقائمة الجانبية لا يملك المستخدم الحالي صلاحية

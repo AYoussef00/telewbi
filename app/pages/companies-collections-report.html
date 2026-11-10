@@ -32,7 +32,7 @@
     <link rel="stylesheet" href="../../resources/css/employees.css">
     <link rel="stylesheet" href="../../resources/css/employee-report.css">
     <link rel="stylesheet" href="../../resources/css/collections.css">
-    <link rel="stylesheet" href="../../resources/css/companies-collections-report.css">
+    <link rel="stylesheet" href="../../resources/css/companies-collections-report.css?v=2">
     <link rel="stylesheet" href="../../resources/css/print-report.css">
 </head>
 <body>
@@ -58,7 +58,7 @@
                             <span class="title-icon" data-icon="bank"></span>
                             <span data-i18n="menuCompaniesCollectionsReport">تقرير تحصيل الشركات</span>
                         </h1>
-                        <p class="view-subtitle">إجمالي فواتير كل شركة، المحصَّل منها، والمتبقي، بحسب نطاق تاريخ الفواتير المحدد</p>
+                        <p class="view-subtitle">إجمالي فواتير كل شركة، المحصَّل منها، والمتبقي، بحسب نطاق أشهر الفواتير المحدد</p>
                     </div>
 
                     <div class="header-actions report-actions-bar">
@@ -94,13 +94,12 @@
                         <input type="text" id="compCollNameSearchInput" class="search-combo-input" placeholder="ابحث باسم الشركة..." autocomplete="off">
                         <div class="combo-dropdown" id="compCollNameDropdown"></div>
                     </div>
-                    <div class="att-date-wrapper">
-                        <input type="date" id="compCollFromDateInput">
-                        <span class="att-date-label">من تاريخ</span>
-                    </div>
-                    <div class="att-date-wrapper">
-                        <input type="date" id="compCollToDateInput">
-                        <span class="att-date-label">إلى تاريخ</span>
+                    <!-- نطاق الأشهر: "من" ثم حقل الشهر، ثم "إلى" ثم حقل الشهر (بالترتيب من اليمين) -->
+                    <div class="month-range-group">
+                        <label for="compCollFromDateInput" class="month-range-label">من</label>
+                        <input type="month" id="compCollFromDateInput">
+                        <label for="compCollToDateInput" class="month-range-label">إلى</label>
+                        <input type="month" id="compCollToDateInput">
                     </div>
                     <div class="filter-dropdown-wrapper">
                         <select id="compCollStatusFilter">
@@ -148,6 +147,6 @@
     <script src="../../bootstrap/app-core.js"></script>
     <script src="../shared/sidebar.js?v=3"></script>
     <script src="../shared/navbar.js"></script>
-    <script src="../scripts/companies-collections-report.js?v=3"></script>
+    <script src="../scripts/companies-collections-report.js?v=8"></script>
 </body>
 </html>

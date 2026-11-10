@@ -307,19 +307,27 @@ function computeLinkOverlapWithMonth(linkDateStr, linkEndDateStr, year, month) {
     return { overlapDays, isFullMonth };
 }
 
-// 💰 المبلغ المستحق عن الشهر المختار حتى تاريخه: كامل الصافي إن غطّى الربط
-// الشهر بالكامل (شهر منقضٍ فعلاً)، أو محسوباً تناسبياً على أساس شهر من 30
-// يوماً إن بدأ الربط أو انتهى خلال الشهر، أو إن كان الشهر الجاري لم ينتهِ
-// بعد. overlapDays = 0 يعني أنه لا شيء مستحق بعد عن هذا الشهر إطلاقاً
-function computeLinkDueForMonth(netSalaryValue, linkDateStr, linkEndDateStr, year, month) {
-    const baseValue = parseFloat(netSalaryValue) || 0;
+// 💰 معادلة "المستحق" (الرصيد ناقص خصم ثابت):
+//   • الرصيد = الراتب المستورد لذلك الشهر، وإلا الراتب الأساسي من الربط.
+//   • الربط يغطي الشهر كله:  المستحق = الرصيد − 1000
+//   • الربط يغطي جزءاً منه:  المستحق = الرصيد − (1000 ÷ عدد أيام الشهر الفعلي × الأيام المحتسبة)
+//   • الأيام المحتسبة: من الأحدث بين أول الشهر وتاريخ الربط، إلى الأقدم بين نهاية الشهر
+//     وتاريخ انتهاء الربط واليوم الفعلي (لا تُحتسب أي أيام مستقبلية).
+//   • لا يظهر الموظف إن لم يتقاطع ربطه مع الشهر. ولا ينزل المستحق عن صفر.
+const COLLECTION_FIXED_DEDUCTION = 1000;
+
+function computeLinkDueForMonth(balance, linkDateStr, linkEndDateStr, year, month) {
+    const balanceValue = parseFloat(balance) || 0;
     const { overlapDays, isFullMonth } = computeLinkOverlapWithMonth(linkDateStr, linkEndDateStr, year, month);
+    const daysInMonth = daysInCollectionCalendarMonth(year, month);
 
-    if (overlapDays <= 0) return { dueAmount: 0, overlapDays: 0, isFullMonth: false };
-    if (isFullMonth) return { dueAmount: Math.round(baseValue * 100) / 100, overlapDays, isFullMonth: true };
+    if (overlapDays <= 0) return { dueAmount: 0, overlapDays: 0, isFullMonth: false, deduction: 0, daysInMonth };
 
-    const dailyRate = baseValue / COLLECTION_PRORATION_DAYS_PER_MONTH;
-    return { dueAmount: Math.round(dailyRate * overlapDays * 100) / 100, overlapDays, isFullMonth: false };
+    const deduction = isFullMonth
+        ? COLLECTION_FIXED_DEDUCTION
+        : (COLLECTION_FIXED_DEDUCTION / daysInMonth) * overlapDays;
+    const dueAmount = Math.max(Math.round((balanceValue - deduction) * 100) / 100, 0);
+    return { dueAmount, overlapDays, isFullMonth, deduction: Math.round(deduction * 100) / 100, daysInMonth };
 }
 
 // 📊 جلب موظفي "اضافة" (الروابط النشطة) مع بيانات الموظف والشركة، ثم دمجها
@@ -334,13 +342,13 @@ async function fetchAndRenderCollections() {
     const endedTableBody = document.getElementById('endedLinksTableBody');
     if (!tableBody) return;
 
-    tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 40px; color:#94a3b8;">جاري جلب بيانات التحصيل...</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding: 40px; color:#94a3b8;">جاري جلب بيانات التحصيل...</td></tr>`;
     if (endedTableBody) endedTableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 30px; color:#94a3b8;">جاري جلب بيانات العقود المنتهية...</td></tr>`;
 
     try {
         const additionLinks = await fetchAllRows((from, to) => {
             let q = dbClient.from('employee_links')
-                .select('id, employee_id, company_id, job_title, net_salary_value, link_date, link_end_date, employees(name, national_id), companies(name)')
+                .select('id, employee_id, company_id, job_title, net_salary_value, basic_salary_value, link_date, link_end_date, employees(name, national_id), companies(name)')
                 .eq('link_type', 'اضافة')
                 .order('id', { ascending: true })
                 .range(from, to);
@@ -377,10 +385,16 @@ async function fetchAndRenderCollections() {
         const collectionByLinkId = new Map();
         collectionRows.forEach(row => collectionByLinkId.set(String(row.employee_link_id), row));
 
+        // 💵 "الرصيد": الراتب المستورد لهذا الشهر (قائمة "الرواتب ← استيراد")، وإلا
+        // الراتب الأساسي من الربط — انظر app/shared/employee-salaries.js
+        const importedSalaries = await EmployeeSalaries.fetchImportedMap(monthDateStr);
+
         localCollectionsCache = additionLinks
             .map(link => {
                 const netSalaryValue = link.net_salary_value != null ? parseFloat(link.net_salary_value) : 0;
-                const dueInfo = computeLinkDueForMonth(netSalaryValue, link.link_date, link.link_end_date, selectedYear, selectedMonthIndex);
+                // 💵 الرصيد: الراتب المستورد لهذا الشهر، وإلا الراتب الأساسي من الربط
+                const balance = EmployeeSalaries.resolveBalance(importedSalaries, link.id, link.basic_salary_value);
+                const dueInfo = computeLinkDueForMonth(balance, link.link_date, link.link_end_date, selectedYear, selectedMonthIndex);
 
                 // لا شيء مستحق بعد عن هذا الشهر (لا تداخل، أو شهر مستقبلي لم
                 // يبدأ منه شيء بعد): لا داعٍ لإظهار الموظف بجدول هذا الشهر تحديداً
@@ -399,6 +413,9 @@ async function fetchAndRenderCollections() {
                 const isPaidRecord = !!(collection && collection.status === 'paid');
                 const dueAmount = (isPaidRecord && collection.amount != null) ? parseFloat(collection.amount) : dueInfo.dueAmount;
                 const remaining = Math.max(dueAmount - receivedAmount, 0);
+                // ✅ مستحق صفر (مثلاً راتب مستورد 0، أو رصيد لا يتجاوز الخصم الثابت) ⇐ الحالة
+                // "مدفوع" تلقائياً: لا شيء مطلوب تحصيله، فلا يُترك "غير مدفوع"
+                const isAutoPaid = !isPaidRecord && dueAmount <= 0.004;
 
                 return {
                     linkId: link.id,
@@ -413,13 +430,17 @@ async function fetchAndRenderCollections() {
                     linkEndDate: link.link_end_date || null,
                     companyName: (link.companies && link.companies.name) ? link.companies.name : '----',
                     jobTitle: link.job_title || '----',
+                    balance,
+                    dueDeduction: dueInfo.deduction,
+                    daysInMonth: dueInfo.daysInMonth,
                     netSalaryValue,           // كامل الصافي الشهري المرجعي (بغض النظر عن التناسب)
                     dueAmount,                // المستحق المعروض: محفوظ (إن كان مدفوعاً ومُعدَّلاً) أو محسوب حياً
                     isFullMonth: isPaidRecord ? true : dueInfo.isFullMonth,
                     overlapDays: dueInfo.overlapDays,
                     receivedAmount,
                     remaining,
-                    status: collection ? (collection.status || 'unpaid') : 'unpaid',
+                    isAutoPaid,
+                    status: isAutoPaid ? 'paid' : (collection ? (collection.status || 'unpaid') : 'unpaid'),
                     paidAt: collection ? collection.paid_at : null,
                     notes: collection ? (collection.notes || '') : '',
                     // 🆕 طريقة التحصيل المُختارة عند تعليم هذا الشهر كمدفوع (قد تكون
@@ -454,7 +475,7 @@ async function fetchAndRenderCollections() {
 
     } catch (error) {
         console.error('تعذّر تحميل بيانات تحصيل الموظفين:', error.message);
-        tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#ef4444; padding:20px;">فشل تحميل بيانات التحصيل: ${(error && error.message) || 'خطأ غير معروف'}. تأكد من إنشاء جدول 'employee_collections' (بعمود received_amount) بقاعدة بيانات سوبابيس.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:#ef4444; padding:20px;">فشل تحميل بيانات التحصيل: ${(error && error.message) || 'خطأ غير معروف'}. تأكد من إنشاء جدول 'employee_collections' (بعمود received_amount) بقاعدة بيانات سوبابيس.</td></tr>`;
         if (endedTableBody) endedTableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل بيانات العقود المنتهية.</td></tr>`;
         return;
     }
@@ -495,7 +516,7 @@ function renderCollectionsTable(data) {
     tableBody.innerHTML = '';
 
     if (!data || data.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:#94a3b8;">لا توجد بيانات مطابقة لخيارات البحث الحالية.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:#94a3b8;">لا توجد بيانات مطابقة لخيارات البحث الحالية.</td></tr>`;
         setupCollectionsPaginationControls(0);
         return;
     }
@@ -516,7 +537,7 @@ function renderCollectionsTable(data) {
         // خلال الشهر) نعرض عدد الأيام المحتسبة تحت المبلغ، مع تلميح (title)
         // يوضّح كامل الصافي الشهري للمقارنة
         const dueTitleAttr = !row.isFullMonth
-            ? ` title="الصافي الكامل: ${formatCollectionCurrency(row.netSalaryValue)} — المستحق حتى الآن عن ${row.overlapDays} يوم من ${COLLECTION_PRORATION_DAYS_PER_MONTH}"`
+            ? ` title="الرصيد: ${formatCollectionCurrency(row.balance)} − خصم تناسبي ${formatCollectionCurrency(row.dueDeduction)} (${COLLECTION_FIXED_DEDUCTION} ÷ ${row.daysInMonth} × ${row.overlapDays} يوم)"`
             : '';
         const dueProratedNote = !row.isFullMonth
             ? `<div class="due-prorated-note">(${row.overlapDays} يوم)</div>`
@@ -534,10 +555,11 @@ function renderCollectionsTable(data) {
                 <div>${row.nationalId}</div>
                 <div class="collection-subtext" style="white-space:nowrap;">${formatCollectionDate(row.linkDate)} - ${formatCollectionDate(row.linkEndDate)}</div>
             </td>
+            <td class="collection-balance-cell" style="text-align:center;">${formatCollectionCurrency(row.balance)}</td>
             <td class="collection-net-cell"${dueTitleAttr} style="text-align:center;">${formatCollectionCurrency(row.dueAmount)}${dueProratedNote}</td>
             <td class="collection-received-cell" style="text-align:center;">${formatCollectionCurrency(row.receivedAmount)}</td>
             <td class="collection-remaining-cell ${remainingClass}" style="text-align:center;">${formatCollectionCurrency(row.remaining)}</td>
-            <td style="text-align:center;"><span class="${statusBadgeClass}">${statusLabel}</span></td>
+            <td style="text-align:center;"><span class="${statusBadgeClass}"${row.isAutoPaid ? ' title="مستحقه صفر — مدفوع تلقائياً"' : ''}>${statusLabel}</span></td>
             <td style="text-align:center;">
                 <div style="font-family: monospace;">${row.paidAt ? formatCollectionDate(row.paidAt) : '—'}</div>
                 ${row.collectionTypeName ? `<div class="collection-subtext">${row.collectionTypeName}</div>` : ''}
@@ -552,9 +574,10 @@ function renderCollectionsTable(data) {
             rowTitle: 'عرض تفاصيل الموظف ودفعات السداد',
             onView: () => { window.location.href = `${Routes.url('employee-collection-details')}?linkId=${row.linkId}`; },
             getMenuItems: () => [
-                isPaid
+                // "مدفوع تلقائياً" (مستحقه صفر): لا معنى لتعليمه/إلغاء تعليمه يدوياً
+                ...(row.isAutoPaid ? [] : [isPaid
                     ? { perm: 'edit:finance_collections', icon: ICONS.refresh, label: 'إلغاء تعليم كمدفوع', run: () => toggleCollectionStatus(row.linkId, 'unpaid') }
-                    : { perm: 'edit:finance_collections', icon: ICONS['check-circle'], label: 'تعليم كمدفوع', run: () => toggleCollectionStatus(row.linkId, 'paid') },
+                    : { perm: 'edit:finance_collections', icon: ICONS['check-circle'], label: 'تعليم كمدفوع', run: () => toggleCollectionStatus(row.linkId, 'paid') }]),
                 { perm: 'edit:finance_collections', icon: ICONS.edit, label: 'تعديل بيانات التحصيل', run: () => openEditCollectionModal(row.linkId) }
             ]
         });

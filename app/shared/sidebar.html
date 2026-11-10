@@ -114,6 +114,20 @@
         </ul>
     </li>
 
+    <!-- 💵 قائمة "الرواتب" — تصدير نموذج الرواتب حسب الشركة واستيراده؛ مخفية عن مسؤول
+         الشركة (انظر permissions.js: salaries_export / salaries_import) -->
+    <li class="menu-item has-submenu" data-menu-key="salaries">
+        <a href="#" onclick="toggleSubmenu(event)">
+            <span class="menu-icon" data-icon="bank"></span>
+            <span class="menu-label" data-i18n="menuSalaries">الرواتب</span>
+            <span class="arrow">▼</span>
+        </a>
+        <ul class="submenu">
+            <li><a href="salaries_export.html"><span class="menu-icon" data-icon="receipt"></span><span class="menu-label" data-i18n="menuSalariesExport">تصدير الرواتب</span></a></li>
+            <li><a href="salaries_import.html"><span class="menu-icon" data-icon="document"></span><span class="menu-label" data-i18n="menuSalariesImport">استيراد الرواتب</span></a></li>
+        </ul>
+    </li>
+
         <li class="menu-item has-submenu" data-menu-key="reports">
         <a href="#" onclick="toggleSubmenu(event)">
             <span class="menu-icon" data-icon="chart-bar"></span>

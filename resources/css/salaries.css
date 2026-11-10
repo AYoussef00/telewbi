@@ -1,0 +1,37 @@
+/* صفحتا "تصدير الرواتب" و"استيراد الرواتب" */
+.salaries-card { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:20px; margin-bottom:18px; }
+.salaries-form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; align-items:end; }
+.salaries-field label { display:block; font-size:13px; font-weight:600; color:#475569; margin-bottom:6px; }
+.salaries-field select, .salaries-field input[type="month"], .salaries-field input[type="file"] {
+    width:100%; padding:9px 10px; border:1px solid #e2e8f0; border-radius:6px; font-family:inherit; font-size:13px; background:#fff; box-sizing:border-box;
+}
+.salaries-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; }
+.salaries-note { font-size:13px; color:#64748b; line-height:1.9; margin:0; }
+.salaries-note ul { margin:6px 0 0; padding-inline-start:20px; }
+.salaries-msg { margin-top:14px; padding:10px 14px; border-radius:8px; font-size:13px; display:none; }
+.salaries-msg.show { display:block; }
+.salaries-msg.ok { background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; }
+.salaries-msg.err { background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; }
+.salaries-msg.info { background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; }
+.salaries-summary { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+.salaries-chip { padding:6px 12px; border-radius:20px; font-size:12.5px; font-weight:600; background:#f1f5f9; color:#334155; }
+.salaries-chip.ok { background:#f0fdf4; color:#15803d; }
+.salaries-chip.warn { background:#fffbeb; color:#b45309; }
+.salaries-chip.bad { background:#fef2f2; color:#b91c1c; }
+.salaries-check { display:flex; align-items:center; gap:8px; font-size:13px; color:#334155; margin-top:12px; }
+.sal-status-ok { color:#15803d; font-weight:600; }
+.sal-status-warn { color:#b45309; font-weight:600; }
+.sal-status-bad { color:#b91c1c; font-weight:600; }
+.btn-salaries { background:#d97706; color:#fff; border:none; border-radius:8px; padding:10px 18px; font-family:inherit; font-size:14px; font-weight:600; cursor:pointer; }
+.btn-salaries:disabled { opacity:.5; cursor:not-allowed; }
+
+/* قائمة شركات قابلة للبحث بالكتابة */
+.sal-combo { position:relative; }
+.sal-combo input[type="text"] { width:100%; padding:9px 10px; border:1px solid #e2e8f0; border-radius:6px; font-family:inherit; font-size:13px; background:#fff; box-sizing:border-box; }
+.sal-combo input[type="text"]:disabled { background:#f8fafc; color:#94a3b8; }
+.sal-combo-dropdown { display:none; position:absolute; top:calc(100% + 4px); right:0; left:0; z-index:50; max-height:240px; overflow-y:auto; background:#fff; border:1px solid #e2e8f0; border-radius:8px; box-shadow:0 8px 24px rgba(15,23,42,.12); }
+.sal-combo-dropdown.open { display:block; }
+.sal-combo-item { padding:9px 12px; font-size:13px; color:#334155; cursor:pointer; }
+.sal-combo-item:hover, .sal-combo-item.active { background:#fff7ed; color:#b45309; }
+.sal-combo-item.selected { font-weight:700; }
+.sal-combo-empty { padding:10px 12px; font-size:13px; color:#94a3b8; }

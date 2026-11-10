@@ -53,6 +53,8 @@
         "notifications": "app/pages/notifications.html",
         "profile": "app/pages/profile.html",
         "roles": "app/pages/roles.html",
+        "salaries_export": "app/pages/salaries_export.html",
+        "salaries_import": "app/pages/salaries_import.html",
         "settings": "app/pages/settings.html",
         "support": "app/pages/support.html",
         "tasks-report": "app/pages/tasks-report.html",

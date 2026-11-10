@@ -272,15 +272,27 @@ function computeReportLinkOverlapWithMonth(linkDateStr, linkEndDateStr, year, mo
     return { overlapDays, isFullMonth };
 }
 
-function computeReportLinkDueForMonth(netSalaryValue, linkDateStr, linkEndDateStr, year, month) {
-    const baseValue = parseFloat(netSalaryValue) || 0;
+// 💰 معادلة "المستحق" (الرصيد ناقص خصم ثابت):
+//   • الرصيد = الراتب المستورد لذلك الشهر، وإلا الراتب الأساسي من الربط.
+//   • الربط يغطي الشهر كله:  المستحق = الرصيد − 1000
+//   • الربط يغطي جزءاً منه:  المستحق = الرصيد − (1000 ÷ عدد أيام الشهر الفعلي × الأيام المحتسبة)
+//   • الأيام المحتسبة: من الأحدث بين أول الشهر وتاريخ الربط، إلى الأقدم بين نهاية الشهر
+//     وتاريخ انتهاء الربط واليوم الفعلي (لا تُحتسب أي أيام مستقبلية).
+//   • لا يظهر الموظف إن لم يتقاطع ربطه مع الشهر. ولا ينزل المستحق عن صفر.
+const COLLECTIONS_REPORT_FIXED_DEDUCTION = 1000;
+
+function computeReportLinkDueForMonth(balance, linkDateStr, linkEndDateStr, year, month) {
+    const balanceValue = parseFloat(balance) || 0;
     const { overlapDays, isFullMonth } = computeReportLinkOverlapWithMonth(linkDateStr, linkEndDateStr, year, month);
+    const daysInMonth = daysInCollectionsReportCalendarMonth(year, month);
 
-    if (overlapDays <= 0) return { dueAmount: 0, overlapDays: 0, isFullMonth: false };
-    if (isFullMonth) return { dueAmount: Math.round(baseValue * 100) / 100, overlapDays, isFullMonth: true };
+    if (overlapDays <= 0) return { dueAmount: 0, overlapDays: 0, isFullMonth: false, deduction: 0, daysInMonth };
 
-    const dailyRate = baseValue / COLLECTIONS_REPORT_PRORATION_DAYS_PER_MONTH;
-    return { dueAmount: Math.round(dailyRate * overlapDays * 100) / 100, overlapDays, isFullMonth: false };
+    const deduction = isFullMonth
+        ? COLLECTIONS_REPORT_FIXED_DEDUCTION
+        : (COLLECTIONS_REPORT_FIXED_DEDUCTION / daysInMonth) * overlapDays;
+    const dueAmount = Math.max(Math.round((balanceValue - deduction) * 100) / 100, 0);
+    return { dueAmount, overlapDays, isFullMonth, deduction: Math.round(deduction * 100) / 100, daysInMonth };
 }
 
 // =========================================================================
@@ -307,12 +319,12 @@ async function loadCollectionsReportData() {
         }
 
         if (tableBody) {
-            tableBody.innerHTML = `<tr><td colspan="7" class="table-loading-state">جاري جلب بيانات التقرير...</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="8" class="table-loading-state">جاري جلب بيانات التقرير...</td></tr>`;
         }
 
         const additionLinks = await fetchAllRows((from, to) => {
             let query = dbClient.from('employee_links')
-                .select('id, employee_id, company_id, job_title, net_salary_value, link_date, link_end_date, employees(name, national_id), companies(name)')
+                .select('id, employee_id, company_id, job_title, net_salary_value, basic_salary_value, link_date, link_end_date, employees(name, national_id), companies(name)')
                 .eq('link_type', 'اضافة')
                 .order('id', { ascending: true });
             if (currentUserScope.companyIds !== null) query = query.in('company_id', currentUserScope.companyIds);
@@ -337,10 +349,15 @@ async function loadCollectionsReportData() {
         const collectionByLinkId = new Map();
         collectionRows.forEach(row => collectionByLinkId.set(String(row.employee_link_id), row));
 
+        // 💵 "الرصيد": الراتب المستورد لهذا الشهر، وإلا الراتب الأساسي من الربط
+        const importedSalaries = await EmployeeSalaries.fetchImportedMap(monthDateStr);
+
         fullCollectionsReportDataset = additionLinks
             .map(link => {
                 const netSalaryValue = link.net_salary_value != null ? parseFloat(link.net_salary_value) : 0;
-                const dueInfo = computeReportLinkDueForMonth(netSalaryValue, link.link_date, link.link_end_date, reportSelectedYear, reportSelectedMonthIndex);
+                // 💵 الرصيد: الراتب المستورد لهذا الشهر، وإلا الراتب الأساسي من الربط
+                const balance = EmployeeSalaries.resolveBalance(importedSalaries, link.id, link.basic_salary_value);
+                const dueInfo = computeReportLinkDueForMonth(balance, link.link_date, link.link_end_date, reportSelectedYear, reportSelectedMonthIndex);
 
                 // لا شيء مستحق بعد عن هذا الشهر (لا تداخل بين فترة الربط والشهر
                 // المختار): لا داعٍ لإظهار الموظف بالتقرير عن هذا الشهر تحديداً
@@ -349,19 +366,26 @@ async function loadCollectionsReportData() {
                 const collection = collectionByLinkId.get(String(link.id));
                 const receivedAmount = collection && collection.received_amount != null ? parseFloat(collection.received_amount) : 0;
                 const remaining = Math.max(dueInfo.dueAmount - receivedAmount, 0);
+                // ✅ مستحق صفر ⇐ الحالة "مدفوع" تلقائياً (لا شيء مطلوب تحصيله)
+                const isAutoPaid = dueInfo.dueAmount <= 0.004;
                 return {
                     linkId: link.id,
                     employeeName: (link.employees && link.employees.name) ? link.employees.name : '----',
                     nationalId: (link.employees && link.employees.national_id) ? link.employees.national_id : '----',
                     companyName: (link.companies && link.companies.name) ? link.companies.name : '----',
                     jobTitle: link.job_title || '----',
+                    balance,
+                    dueDeduction: dueInfo.deduction,
+                    daysInMonth: dueInfo.daysInMonth,
+                    linkDateRaw: link.link_date || null,   // تاريخ الربط (لتصدير Excel)
                     netSalaryValue,               // كامل الصافي الشهري المرجعي (بغض النظر عن التناسب)
                     dueAmount: dueInfo.dueAmount,  // المستحق الفعلي عن هذا الشهر حتى تاريخه (بعد التناسب إن وُجد)
                     isFullMonth: dueInfo.isFullMonth,
                     overlapDays: dueInfo.overlapDays,
                     receivedAmount,
                     remaining,
-                    status: collection ? (collection.status || 'unpaid') : 'unpaid',
+                    isAutoPaid,
+                    status: isAutoPaid ? 'paid' : (collection ? (collection.status || 'unpaid') : 'unpaid'),
                     paidAt: collection ? collection.paid_at : null
                 };
             })
@@ -381,7 +405,7 @@ async function loadCollectionsReportData() {
     } catch (error) {
         console.error('تعذّر تحميل بيانات تقرير تحصيل الموظفين:', error);
         if (tableBody) {
-            tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل بيانات التقرير: ${(error && error.message) || 'خطأ غير معروف'}</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل بيانات التقرير: ${(error && error.message) || 'خطأ غير معروف'}</td></tr>`;
         }
     }
 }
@@ -440,7 +464,7 @@ function renderCollectionsReportTable(data) {
     }
 
     if (!data || data.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:#94a3b8;">لا توجد بيانات مطابقة لخيارات البحث الحالية.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:#94a3b8;">لا توجد بيانات مطابقة لخيارات البحث الحالية.</td></tr>`;
         setupCollectionsReportPaginationControls(0);
         return;
     }
@@ -468,7 +492,7 @@ function buildCollectionsReportRowHtml(row) {
     // ينتهِ بعد) نعرض عدد الأيام المحتسبة تحت المبلغ، مع تلميح يوضّح كامل
     // الصافي الشهري للمقارنة — نفس أسلوب شاشة "تحصيل الموظفين"
     const dueTitleAttr = !row.isFullMonth
-        ? ` title="الصافي الكامل: ${formatCollectionsReportCurrency(row.netSalaryValue)} — ${row.overlapDays} يوم من ${COLLECTIONS_REPORT_PRORATION_DAYS_PER_MONTH}"`
+        ? ` title="الرصيد: ${formatCollectionsReportCurrency(row.balance)} − خصم تناسبي ${formatCollectionsReportCurrency(row.dueDeduction)} (${COLLECTIONS_REPORT_FIXED_DEDUCTION} ÷ ${row.daysInMonth} × ${row.overlapDays} يوم)"`
         : '';
     const dueProratedNote = !row.isFullMonth
         ? `<div class="due-prorated-note">(${row.overlapDays} يوم)</div>`
@@ -484,6 +508,7 @@ function buildCollectionsReportRowHtml(row) {
                 <div>${row.nationalId}</div>
                 <div class="collection-subtext">${row.jobTitle}</div>
             </td>
+            <td class="collection-balance-cell" style="text-align:center;">${formatCollectionsReportCurrency(row.balance)}</td>
             <td class="collection-net-cell"${dueTitleAttr} style="text-align:center;">${formatCollectionsReportCurrency(row.dueAmount)}${dueProratedNote}</td>
             <td class="collection-received-cell" style="text-align:center;">${formatCollectionsReportCurrency(row.receivedAmount)}</td>
             <td class="collection-remaining-cell ${remainingClass}" style="text-align:center;">${formatCollectionsReportCurrency(row.remaining)}</td>
@@ -547,16 +572,18 @@ function exportCollectionsReportToExcel() {
         return;
     }
 
-    const headers = ['الموظف', 'رقم الهوية', 'الشركة', 'المسمى الوظيفي', 'المستحق', 'المستلم', 'المتبقي', 'الحالة', 'تاريخ التحصيل'];
+    const headers = ['الموظف', 'رقم الهوية', 'الشركة', 'المسمى الوظيفي', 'تاريخ الربط', 'الرصيد', 'المستحق', 'المستلم', 'المتبقي', 'الحالة', 'تاريخ التحصيل'];
 
     const rows = filteredCollectionsReportDataset.map(row => [
         row.employeeName,
         row.nationalId,
         row.companyName,
         row.jobTitle,
-        formatCollectionsReportCurrency(row.dueAmount),
-        formatCollectionsReportCurrency(row.receivedAmount),
-        formatCollectionsReportCurrency(row.remaining),
+        row.linkDateRaw ? formatCollectionsReportDate(row.linkDateRaw) : '—',
+        Number(row.balance) || 0,
+        Number(row.dueAmount) || 0,
+        Number(row.receivedAmount) || 0,
+        Number(row.remaining) || 0,
         getCollectionsReportStatusLabel(row.status),
         row.paidAt ? formatCollectionsReportDate(row.paidAt) : '—'
     ]);
@@ -564,8 +591,40 @@ function exportCollectionsReportToExcel() {
     const worksheetData = [headers, ...rows];
     const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
 
+    // صف "الإجمالي" أسفل البيانات تحت أعمدة: المستحق، المستلم، المتبقي — يُحسب على
+    // الصفوف المصدَّرة فقط (بعد تطبيق الفلاتر). الأعمدة تُصدَّر كأرقام حقيقية بتنسيق
+    // مبلغ، وفي الإجمالي معادلة SUM.
+    const MONEY_FMT = '#,##0.00';
+    const lastDataRow = rows.length + 1;   // رقم صف Excel (1 = العناوين)
+    const sumCols = [
+        { idx: 5, key: 'balance' },
+        { idx: 6, key: 'dueAmount' },
+        { idx: 7, key: 'receivedAmount' },
+        { idx: 8, key: 'remaining' }
+    ];
+    for (let r = 1; r < lastDataRow; r++) {
+        sumCols.forEach(({ idx }) => {
+            const cell = worksheet[XLSX.utils.encode_cell({ r, c: idx })];
+            if (cell && cell.t === 'n') cell.z = MONEY_FMT;
+        });
+    }
+    worksheet[XLSX.utils.encode_cell({ r: lastDataRow, c: 0 })] = { t: 's', v: 'الإجمالي' };
+    sumCols.forEach(({ idx, key }) => {
+        const total = filteredCollectionsReportDataset.reduce((sum, row) => sum + (Number(row[key]) || 0), 0);
+        const col = XLSX.utils.encode_col(idx);
+        worksheet[XLSX.utils.encode_cell({ r: lastDataRow, c: idx })] = {
+            t: 'n',
+            v: Math.round(total * 100) / 100,
+            f: `SUM(${col}2:${col}${lastDataRow})`,
+            z: MONEY_FMT
+        };
+    });
+    const ref = XLSX.utils.decode_range(worksheet['!ref']);
+    ref.e.r = lastDataRow;
+    worksheet['!ref'] = XLSX.utils.encode_range(ref);
+
     worksheet['!cols'] = [
-        { wch: 22 }, { wch: 15 }, { wch: 20 }, { wch: 18 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 14 }
+        { wch: 22 }, { wch: 15 }, { wch: 20 }, { wch: 18 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 14 }
     ];
 
     const workbook = XLSX.utils.book_new();
@@ -585,6 +644,7 @@ const COLLECTIONS_REPORT_COLUMNS = [
     { key: 'nationalId', label: 'رقم الهوية', align: 'center' },
     { key: 'companyName', label: 'الشركة', align: 'center' },
     { key: 'jobTitle', label: 'المسمى الوظيفي', align: 'center' },
+    { key: 'balance', label: 'الرصيد', align: 'center' },
     { key: 'netSalaryValue', label: 'المستحق', align: 'center' },
     { key: 'receivedAmount', label: 'المستلم', align: 'center' },
     { key: 'remaining', label: 'المتبقي', align: 'center' },
@@ -616,6 +676,7 @@ async function printCollectionsReport() {
         nationalId: row.nationalId,
         companyName: row.companyName,
         jobTitle: row.jobTitle,
+        balance: formatCollectionsReportCurrency(row.balance),
         // ⚠️ المفتاح يبقى "netSalaryValue" (يطابق COLLECTIONS_REPORT_COLUMNS أعلاه
         // بعمود "المستحق")، لكن القيمة المعروضة أصبحت المبلغ المستحق الفعلي بعد
         // التناسب (dueAmount) وليس كامل الصافي الشهري دائماً

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تصدير الرواتب - بصمة الأعمال</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="../../config/supabase.js"></script>
+    <script src="../../routes/routes.js"></script>
+    <script src="../shared/icons.js"></script>
+    <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <link rel="stylesheet" href="../../resources/css/global-layout.css?v=2">
+    <link rel="stylesheet" href="../../resources/css/companies.css">
+    <link rel="stylesheet" href="../../resources/css/salaries.css?v=2">
+    <link rel="stylesheet" href="../../resources/css/sidebar.css?v=2">
+    <link rel="stylesheet" href="../../resources/css/navbar.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <div id="sidebar-container"></div>
+
+        <main class="main-content">
+            <div id="navbar-container"></div>
+
+            <div class="dashboard-container">
+                <div class="page-header">
+                    <div class="header-title">
+                        <h1 style="color: #d97706; font-size: 24px;"><span class="title-icon" data-icon="bank" style="margin-left:8px;"></span><span>تصدير الرواتب</span></h1>
+                        <p style="color: #64748b; font-size: 13px;">تصدير نموذج Excel لموظفي شركة محددة (الاسم، رقم الهوية، تاريخ التعيين، الراتب = 0) لتعبئته ثم استيراده</p>
+                    </div>
+                </div>
+
+                <section class="salaries-card">
+                    <div class="salaries-form-grid">
+                        <div class="salaries-field">
+                            <label for="salExportCompany">الشركة</label>
+                            <div class="sal-combo">
+                                <input type="text" id="salExportCompanySearch" placeholder="جاري تحميل الشركات..." autocomplete="off" disabled>
+                                <input type="hidden" id="salExportCompany">
+                                <div class="sal-combo-dropdown" id="salExportCompanyDropdown"></div>
+                            </div>
+                        </div>
+                        <div class="salaries-field">
+                            <label for="salExportMonth">الشهر</label>
+                            <input type="month" id="salExportMonth">
+                        </div>
+                    </div>
+                    <div class="salaries-actions">
+                        <button type="button" class="btn-salaries" id="btnSalExport" disabled>تصدير ملف Excel</button>
+                    </div>
+                    <div class="salaries-msg" id="salExportMsg"></div>
+                </section>
+
+                <section class="salaries-card">
+                    <p class="salaries-note">
+                        ملاحظات:
+                    </p>
+                    <ul class="salaries-note">
+                        <li>يضم الملف موظفي «الإضافة» المرتبطين بالشركة خلال الشهر المختار (نفس موظفي شاشة تحصيل الموظفين لذلك الشهر).</li>
+                        <li>الأعمدة: اسم الموظف، رقم الهوية، تاريخ التعيين (تاريخ الربط)، الراتب — وقيمته 0 في الملف المصدَّر.</li>
+                        <li>عبّئ عمود «الراتب» ثم ارفع الملف من «الرواتب ← استيراد الرواتب». لا تغيّر عناوين الأعمدة ولا أرقام الهوية.</li>
+                    </ul>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="../../bootstrap/permissions.js?v=8"></script>
+    <script src="../../bootstrap/app-core.js"></script>
+    <script src="../shared/sidebar.js?v=3"></script>
+    <script src="../shared/navbar.js"></script>
+    <script src="../shared/employee-salaries.js?v=3"></script>
+    <script src="../scripts/salaries_export.js?v=3"></script>
+</body>
+</html>

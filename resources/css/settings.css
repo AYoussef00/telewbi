@@ -80,3 +80,34 @@
     justify-content: center;
 }
 .btn-goto-profile:hover { background-color: #0f172a; }
+/* ==========================================================================
+   بطاقة "مستندات المنشأة" (مدير عام النظام) — تمتد على عرض الشبكة كاملاً
+   ========================================================================== */
+.facility-docs-card { grid-column: 1 / -1; }
+.facility-docs-list { display: flex; flex-direction: column; }
+.facility-docs-loading { font-size: 13px; color: #94a3b8; padding: 10px 0; }
+.facility-doc-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
+    padding: 14px 0; border-bottom: 1px solid #f1f5f9;
+}
+.facility-doc-row:last-child { border-bottom: none; }
+.facility-doc-title { font-size: 14px; font-weight: 700; color: #1e293b; }
+.facility-doc-meta { font-size: 12.5px; color: #94a3b8; margin-top: 3px; word-break: break-all; }
+.facility-doc-meta.has-file { color: #15803d; }
+.facility-doc-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.facility-doc-btn {
+    height: 36px; padding: 0 16px; border-radius: 8px; font-size: 13px; font-weight: 700;
+    font-family: 'Cairo', sans-serif; cursor: pointer; text-decoration: none;
+    display: inline-flex; align-items: center; justify-content: center; border: 1.5px solid #e2e8f0;
+    background: #fff; color: #475569;
+}
+.facility-doc-btn.view:hover { background: #f1f5f9; }
+.facility-doc-btn.upload { background: #e65c00; border-color: #e65c00; color: #fff; }
+.facility-doc-btn.upload:hover { background: #c2410c; }
+.facility-doc-btn.delete { color: #b91c1c; border-color: #fecaca; }
+.facility-doc-btn.delete:hover { background: #fef2f2; }
+.facility-docs-msg { display: none; margin-top: 12px; padding: 10px 14px; border-radius: 8px; font-size: 13px; }
+.facility-docs-msg.show { display: block; }
+.facility-docs-msg.ok { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+.facility-docs-msg.err { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+.facility-docs-msg.info { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }

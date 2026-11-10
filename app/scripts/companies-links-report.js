@@ -38,6 +38,8 @@ function applyCompanyRoleRestrictions() {
     document.querySelectorAll('th[data-fin-col]').forEach(th => th.remove());
     const linkTypeWrapper = document.getElementById('reportLinkTypeFilterWrapper');
     if (linkTypeWrapper) linkTypeWrapper.remove();
+    const salaryMonthWrapper = document.getElementById('reportSalaryMonthWrapper');
+    if (salaryMonthWrapper) salaryMonthWrapper.remove();
     // أعمدة الجدول المتبقية (الموظف، الهوية، الحالة): نعيد توزيع العرض
     const widths = ['40%', '30%', '30%'];
     document.querySelectorAll('.companies-table thead th').forEach((th, i) => { if (widths[i]) th.style.width = widths[i]; });
@@ -99,6 +101,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (statusFilter) statusFilter.addEventListener('change', applyLinksReportFilters);
     const linkTypeFilter = document.getElementById('reportLinkTypeFilter');
     if (linkTypeFilter) linkTypeFilter.addEventListener('change', applyLinksReportFilters);
+
+    // 💵 شهر "الراتب": الراتب المعروض = الراتب المستورد لهذا الشهر (قائمة الرواتب ←
+    // استيراد)، وإلا الراتب الأساسي من ربط الموظف. الشهر الحالي افتراضياً.
+    const salaryMonthInput = document.getElementById('reportSalaryMonth');
+    if (salaryMonthInput) {
+        salaryMonthInput.value = EmployeeSalaries.currentMonthValue();
+        salaryMonthInput.addEventListener('change', async () => {
+            if (!salaryMonthInput.value) salaryMonthInput.value = EmployeeSalaries.currentMonthValue();
+            await loadLinksReportData();
+            applyLinksReportFilters(); // يحافظ على الفلاتر الحالية بعد إعادة التحميل
+        });
+    }
 
     const btnExport = document.getElementById('btnExportExcel');
     if (btnExport) btnExport.addEventListener('click', exportLinksReportToExcel);
@@ -245,17 +259,25 @@ async function loadLinksReportData() {
             let query = dbClient.from('employee_links')
                 .select(isCompanyRoleUser()
                     ? 'id, link_status, link_status_note, employees(name, national_id, mobile_number), companies(name)'
-                    : 'id, link_type, link_status, link_status_note, basic_salary_value, net_salary_value, employees(name, national_id, mobile_number), companies(name, company_refund, company_refund_type, company_commission, company_commission_type, income_mode, company_net_income, company_net_income_type)')
+                    : 'id, link_type, link_status, link_status_note, basic_salary_value, net_salary_value, employees(name, national_id, mobile_number), companies(name, representative_name, company_refund, company_refund_type, company_commission, company_commission_type, income_mode, company_net_income, company_net_income_type)')
                 .or(`link_end_date.is.null,link_end_date.gte.${todayStr}`)
                 .order('id', { ascending: true });
             if (currentUserScope.companyIds !== null) query = query.in('company_id', currentUserScope.companyIds);
             return query.range(from, to);
         });
 
+        // 💵 الرواتب المستوردة للشهر المختار (لا حاجة لها لمسؤول الشركة: لا يرى الراتب أصلاً)
+        const salaryMonthValue = (document.getElementById('reportSalaryMonth') || {}).value || EmployeeSalaries.currentMonthValue();
+        const importedSalaries = isCompanyRoleUser()
+            ? new Map()
+            : await EmployeeSalaries.fetchImportedMap(`${salaryMonthValue}-01`);
+
         fullLinksReportDataset = links.map(link => {
             // 🆕 حالة الربط: السجلات القديمة (قبل إضافة هذا الحقل) تُعامَل كـ
             // "تم التعيين" افتراضياً — نفس القيمة الافتراضية بقاعدة البيانات.
             const linkStatus = link.link_status || 'تم التعيين';
+            // الراتب: المستورد للشهر المختار إن وُجد، وإلا الراتب الأساسي من الربط (قد يكون فارغاً ⇐ '----')
+            const linkSalary = importedSalaries.has(String(link.id)) ? importedSalaries.get(String(link.id)) : link.basic_salary_value;
             const isPending = linkStatus === 'قيد المعالجة';
             // رسوم الاسترداد والعمولة وصافي الدخل: النسبة تُحسب من صافي هذا الربط تحديداً
             const fin = isCompanyRoleUser()
@@ -265,14 +287,23 @@ async function loadLinksReportData() {
             return {
                 id: link.id,
                 company_name: (link.companies && link.companies.name) || '----',
+                // اسم مندوب الشركة (لتصدير Excel فقط)
+                representative_name: (link.companies && link.companies.representative_name) || '',
                 employee_name: (link.employees && link.employees.name) || '----',
                 national_id: (link.employees && link.employees.national_id) || '----',
                 mobile_number: (link.employees && link.employees.mobile_number) || '----',
-                basic_salary: isCompanyRoleUser() ? '' : formatLinksReportMoney(link.basic_salary_value, '----'),
+                // الراتب = المستورد للشهر المختار، وإلا الراتب الأساسي من الربط
+                basic_salary: isCompanyRoleUser() ? '' : formatLinksReportMoney(linkSalary, '----'),
                 net_fee: isCompanyRoleUser() ? '' : formatLinksReportMoney(link.net_salary_value, '----'),
                 refund_fee: formatLinksReportMoney(fin.refund, '----'),
                 commission_fee: formatLinksReportMoney(fin.commission, '----'),
                 net_income: formatLinksReportMoney(fin.income, '----'),
+                // قيم رقمية خام (لإجماليات ملف Excel وتنسيقه كأرقام حقيقية)
+                raw_basic_salary: isCompanyRoleUser() ? null : toLinksReportNumber(linkSalary),
+                raw_net_fee: toLinksReportNumber(link.net_salary_value),
+                raw_refund_fee: toLinksReportNumber(fin.refund),
+                raw_commission_fee: toLinksReportNumber(fin.commission),
+                raw_net_income: toLinksReportNumber(fin.income),
                 link_type: link.link_type || '',
                 link_status: linkStatus,
                 // 🏷️ عمود "الحالة" المعروض: يُظهر ملاحظة حالة الربط لو كانت الحالة
@@ -372,6 +403,12 @@ function formatLinksReportMoney(value, emptyText) {
     return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num);
 }
 
+function toLinksReportNumber(value) {
+    if (value === null || value === undefined || value === '') return null;
+    const num = parseFloat(value);
+    return isNaN(num) ? null : num;
+}
+
 function buildLinksReportRowHtml(row) {
     const isPending = row.link_status === 'قيد المعالجة';
     const statusColor = isPending ? '#b45309' : '#15803d';
@@ -453,29 +490,67 @@ function exportLinksReportToExcel() {
     const companyRole = isCompanyRoleUser();
     const headers = companyRole
         ? ['الشركة', 'اسم الموظف', 'رقم الهوية', 'رقم الجوال', 'الحالة']
-        : ['الشركة', 'اسم الموظف', 'رقم الهوية', 'رقم الجوال', 'الراتب', 'رسوم الموظف (الصافي)', 'رسوم الاسترداد', 'العمولة', 'صافي الدخل', 'الحالة'];
+        : ['الشركة', 'اسم المندوب', 'اسم الموظف', 'رقم الهوية', 'رقم الجوال', 'الراتب', 'رسوم الموظف (الصافي)', 'رسوم الاسترداد', 'العمولة', 'صافي الدخل', 'الحالة'];
 
     const rows = filteredLinksReportDataset.map(row => companyRole
         ? [row.company_name, row.employee_name, row.national_id, row.mobile_number, row.status_display]
         : [
             row.company_name,
+            row.representative_name,
             row.employee_name,
             row.national_id,
             row.mobile_number,
-            row.basic_salary,
-            row.net_fee,
-            row.refund_fee,
-            row.commission_fee,
-            row.net_income,
+            row.raw_basic_salary,
+            row.raw_net_fee,
+            row.raw_refund_fee,
+            row.raw_commission_fee,
+            row.raw_net_income,
             row.status_display
         ]);
 
     const worksheetData = [headers, ...rows];
     const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
 
+    // الأعمدة الرقمية (الراتب ← صافي الدخل) تُعرض كأرقام حقيقية بتنسيق مبلغ،
+    // وتُضاف تحتها صف "الإجمالي" لأعمدة: رسوم الموظف، رسوم الاسترداد، العمولة، صافي الدخل
+    // (يُحسب على السجلات المصدَّرة فقط، أي بعد تطبيق الفلاتر الحالية).
+    if (!companyRole) {
+        const MONEY_FMT = '#,##0.00';
+        const lastDataRow = rows.length + 1;      // رقم صف Excel (1 = العناوين)
+        const totalRow = lastDataRow + 1;
+        const totalCols = [
+            { idx: 6, key: 'raw_net_fee' },
+            { idx: 7, key: 'raw_refund_fee' },
+            { idx: 8, key: 'raw_commission_fee' },
+            { idx: 9, key: 'raw_net_income' }
+        ];
+        // تنسيق خلايا البيانات الرقمية
+        for (let r = 1; r < lastDataRow; r++) {
+            for (let c = 5; c <= 9; c++) {
+                const cell = worksheet[XLSX.utils.encode_cell({ r, c })];
+                if (cell && cell.t === 'n') cell.z = MONEY_FMT;
+            }
+        }
+        const labelCell = XLSX.utils.encode_cell({ r: lastDataRow, c: 0 });
+        worksheet[labelCell] = { t: 's', v: 'الإجمالي' };
+        totalCols.forEach(({ idx, key }) => {
+            const total = filteredLinksReportDataset.reduce((sum, row) => sum + (row[key] || 0), 0);
+            const colLetter = XLSX.utils.encode_col(idx);
+            worksheet[XLSX.utils.encode_cell({ r: lastDataRow, c: idx })] = {
+                t: 'n',
+                v: Math.round(total * 100) / 100,
+                f: `SUM(${colLetter}2:${colLetter}${lastDataRow})`,
+                z: MONEY_FMT
+            };
+        });
+        const ref = XLSX.utils.decode_range(worksheet['!ref']);
+        ref.e.r = lastDataRow;
+        worksheet['!ref'] = XLSX.utils.encode_range(ref);
+    }
+
     worksheet['!cols'] = companyRole
         ? [{ wch: 22 }, { wch: 22 }, { wch: 15 }, { wch: 15 }, { wch: 24 }]
-        : [{ wch: 22 }, { wch: 22 }, { wch: 15 }, { wch: 15 }, { wch: 14 }, { wch: 20 }, { wch: 16 }, { wch: 14 }, { wch: 16 }, { wch: 24 }];
+        : [{ wch: 22 }, { wch: 20 }, { wch: 22 }, { wch: 15 }, { wch: 15 }, { wch: 14 }, { wch: 20 }, { wch: 16 }, { wch: 14 }, { wch: 16 }, { wch: 24 }];
 
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'تقرير ربط الشركات');

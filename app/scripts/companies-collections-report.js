@@ -81,6 +81,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const fromDate = document.getElementById('compCollFromDateInput');
     const toDate = document.getElementById('compCollToDateInput');
+    // الافتراضي: الشهر الحالي في الحقلين (يمكن تغييره أو مسحه لعرض كل الأشهر)
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    if (fromDate) fromDate.value = currentMonth;
+    if (toDate) toDate.value = currentMonth;
     if (fromDate) fromDate.addEventListener('change', applyCompCollFilters);
     if (toDate) toDate.addEventListener('change', applyCompCollFilters);
 
@@ -107,10 +112,10 @@ function setupCompCollSearchCombo({ inputId, dropdownId, clearLabel, emptyText, 
     if (!input || !dropdown) return;
 
     function renderSuggestions(query) {
-        const normalized = (query || '').trim().toLowerCase();
+        const normalized = normalizeCompCollText(query);
         const options = getOptions() || [];
         const matches = normalized
-            ? options.filter(opt => opt.toLowerCase().includes(normalized))
+            ? options.filter(opt => normalizeCompCollText(opt).includes(normalized))
             : options;
 
         dropdown.innerHTML = '';
@@ -184,6 +189,41 @@ function formatCompCollDate(dateStr) {
     return `${d}/${m}/${y}`;
 }
 
+// 🔡 توحيد النص العربي للبحث (يتجاهل أ/إ/آ/ا و ة/ه و ى/ي والتشكيل)
+function normalizeCompCollText(value) {
+    return String(value == null ? '' : value)
+        .toLowerCase()
+        .replace(/[\u064B-\u065F\u0670\u0640]/g, '')
+        .replace(/[أإآٱ]/g, 'ا')
+        .replace(/ى/g, 'ي')
+        .replace(/ة/g, 'ه')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+// 🛡️ اسم الشركة يُدخله المستخدم؛ يُهرَّب قبل وضعه داخل innerHTML
+function escapeCompCollHtml(value) {
+    return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// نطاق الأشهر المحدد حالياً (من ≤ إلى دائماً: لو عُكس الترتيب يُصحَّح تلقائياً)
+function getCompCollMonthRange() {
+    let from = document.getElementById('compCollFromDateInput')?.value || '';
+    let to = document.getElementById('compCollToDateInput')?.value || '';
+    if (from && to && from > to) [from, to] = [to, from];
+    return { from, to };
+}
+
+// وصف الفترة لعنوان الطباعة واسم ملف Excel
+function getCompCollPeriodLabel() {
+    const { from, to } = getCompCollMonthRange();
+    if (!from && !to) return 'كل الفترات';
+    if (from && to) return from === to ? `شهر ${from}` : `من شهر ${from} إلى شهر ${to}`;
+    return from ? `من شهر ${from}` : `حتى شهر ${to}`;
+}
+
 // =========================================================================
 // 2. جلب الشركات والفواتير (مرة واحدة ضمن نطاق الرؤية)، ثم بناء التجميع الأول
 // =========================================================================
@@ -207,7 +247,7 @@ async function loadCompCollReportData() {
                 // يُستخدم فقط بترتيب نسخة الطباعة (انظر groupLinkedCompaniesForPrint
                 // أسفل الملف) لتجميع الشركات "المربوطة ببعض" (تشترك بنفس حساب
                 // الدخول) متجاورة، بنفس منطق تقرير الشركات (companies-report.js).
-                let query = dbClient.from('companies').select('id, name, user_id').order('name', { ascending: true });
+                let query = dbClient.from('companies').select('id, name, user_id, status').order('name', { ascending: true });
                 if (currentUserScope.companyIds !== null) query = query.in('id', currentUserScope.companyIds);
                 return query.range(from, to);
             }),
@@ -241,13 +281,13 @@ async function loadCompCollReportData() {
 //    بنطاق التاريخ، لأن كل الفواتير الخام محمَّلة مسبقاً بالذاكرة.
 // =========================================================================
 function computeCompCollAggregatedRows() {
-    const fromDate = document.getElementById('compCollFromDateInput')?.value || '';
-    const toDate = document.getElementById('compCollToDateInput')?.value || '';
+    const { from: fromDate, to: toDate } = getCompCollMonthRange();
 
     const invoicesInRange = compCollInvoicesRaw.filter(inv => {
-        const d = inv.invoice_date;
-        if (fromDate && (!d || d < fromDate)) return false;
-        if (toDate && (!d || d > toDate)) return false;
+        // المقارنة بالشهر (YYYY-MM) لا باليوم: "من شهر" و"إلى شهر" شاملان بكامل أيامهما
+        const m = inv.invoice_date ? String(inv.invoice_date).slice(0, 7) : '';
+        if (fromDate && (!m || m < fromDate)) return false;
+        if (toDate && (!m || m > toDate)) return false;
         return true;
     });
 
@@ -279,6 +319,7 @@ function computeCompCollAggregatedRows() {
 
         return {
             companyId: company.id,
+            isInactive: (company.status || 'active') === 'inactive',
             userId: company.user_id, // 🆕 يُستخدم فقط بترتيب نسخة الطباعة (تجميع الشركات المربوطة ببعض)
             companyName: company.name || '----',
             invoiceCount: stat.count,
@@ -298,11 +339,14 @@ function computeCompCollAggregatedRows() {
 function applyCompCollFilters() {
     compCollAggregatedRows = computeCompCollAggregatedRows();
 
-    const nameQuery = (document.getElementById('compCollNameSearchInput')?.value || '').toLowerCase().trim();
+    const nameQuery = normalizeCompCollText(document.getElementById('compCollNameSearchInput')?.value || '');
     const statusValue = document.getElementById('compCollStatusFilter')?.value || 'all';
 
     compCollFilteredRows = compCollAggregatedRows.filter(row => {
-        const matchesName = !nameQuery || row.companyName.toLowerCase().includes(nameQuery);
+        // الشركة غير النشطة لا تظهر إلا إذا صدرت لها فواتير ضمن الفترة المحددة
+        if (row.isInactive && row.invoiceCount === 0) return false;
+
+        const matchesName = !nameQuery || normalizeCompCollText(row.companyName).includes(nameQuery);
 
         const hasRemaining = row.remainingAmount > 0.004;
         const matchesStatus =
@@ -376,7 +420,7 @@ function buildCompCollRowHtml(row) {
 
     return `
         <tr>
-            <td><strong style="color:#1e293b;">${row.companyName}</strong></td>
+            <td><strong style="color:#1e293b;">${escapeCompCollHtml(row.companyName)}</strong></td>
             <td style="text-align:center; color:#334155;">${row.invoiceCount}</td>
             <td class="comp-coll-amount-cell" style="text-align:center;">${formatCompCollCurrency(row.totalAmount)}</td>
             <td class="comp-coll-amount-cell" style="text-align:center;">${formatCompCollCurrency(row.paidAmount)}</td>
@@ -446,15 +490,47 @@ function exportCompCollReportToExcel() {
     const rows = compCollFilteredRows.map(row => [
         row.companyName,
         row.invoiceCount,
-        formatCompCollCurrency(row.totalAmount),
-        formatCompCollCurrency(row.paidAmount),
-        formatCompCollCurrency(row.remainingAmount),
+        Number(row.totalAmount) || 0,
+        Number(row.paidAmount) || 0,
+        Number(row.remainingAmount) || 0,
         row.collectionRate === null ? '—' : `${row.collectionRate}%`,
         row.lastInvoiceDateRaw ? formatCompCollDate(row.lastInvoiceDateRaw) : '—'
     ]);
 
     const worksheetData = [headers, ...rows];
     const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+
+    // صف "الإجمالي" أسفل البيانات تحت أعمدة: عدد الفواتير، إجمالي الفواتير،
+    // المحصَّل، المتبقي — يُحسب على الصفوف المصدَّرة فقط (بعد تطبيق الفلاتر).
+    // الأعمدة المالية تُصدَّر كأرقام حقيقية بتنسيق مبلغ، وفي الإجمالي معادلة SUM.
+    const MONEY_FMT = '#,##0.00';
+    const lastDataRow = rows.length + 1;   // رقم صف Excel (1 = العناوين)
+    const sumCols = [
+        { idx: 1, key: 'invoiceCount', fmt: '#,##0' },
+        { idx: 2, key: 'totalAmount', fmt: MONEY_FMT },
+        { idx: 3, key: 'paidAmount', fmt: MONEY_FMT },
+        { idx: 4, key: 'remainingAmount', fmt: MONEY_FMT }
+    ];
+    for (let r = 1; r < lastDataRow; r++) {
+        sumCols.forEach(({ idx, fmt }) => {
+            const cell = worksheet[XLSX.utils.encode_cell({ r, c: idx })];
+            if (cell && cell.t === 'n') cell.z = fmt;
+        });
+    }
+    worksheet[XLSX.utils.encode_cell({ r: lastDataRow, c: 0 })] = { t: 's', v: 'الإجمالي' };
+    sumCols.forEach(({ idx, key, fmt }) => {
+        const total = compCollFilteredRows.reduce((sum, row) => sum + (Number(row[key]) || 0), 0);
+        const col = XLSX.utils.encode_col(idx);
+        worksheet[XLSX.utils.encode_cell({ r: lastDataRow, c: idx })] = {
+            t: 'n',
+            v: Math.round(total * 100) / 100,
+            f: `SUM(${col}2:${col}${lastDataRow})`,
+            z: fmt
+        };
+    });
+    const ref = XLSX.utils.decode_range(worksheet['!ref']);
+    ref.e.r = lastDataRow;
+    worksheet['!ref'] = XLSX.utils.encode_range(ref);
 
     worksheet['!cols'] = [
         { wch: 26 }, { wch: 13 }, { wch: 16 }, { wch: 14 }, { wch: 14 }, { wch: 13 }, { wch: 15 }
@@ -466,7 +542,9 @@ function exportCompCollReportToExcel() {
     const now = new Date();
     const dateSuffix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-    XLSX.writeFile(workbook, `تقرير_تحصيل_الشركات_${dateSuffix}.xlsx`);
+    const { from: pFrom, to: pTo } = getCompCollMonthRange();
+    const periodSuffix = (pFrom || pTo) ? `_${pFrom || '...'}_${pTo || '...'}` : '_كل-الفترات';
+    XLSX.writeFile(workbook, `تقرير_تحصيل_الشركات${periodSuffix}_${dateSuffix}.xlsx`);
 }
 
 // =========================================================================
@@ -525,6 +603,7 @@ async function printCompCollReport() {
 
     const docNumber = window.PrintReport.generateReportDocNumber();
     const reportDateText = window.PrintReport.formatDateDDMMYYYY(new Date());
+    const periodLabel = getCompCollPeriodLabel(); // الفترة المحددة تظهر بعنوان الطباعة ورمز QR
 
     // 🔗 ترتيب خاص بالطباعة فقط: تجميع الشركات المربوطة بنفس حساب الدخول
     // متجاورة بعضها ببعض (بدل الترتيب تنازلياً حسب المبلغ المتبقي كما كان
@@ -545,7 +624,7 @@ async function printCompCollReport() {
             .from('report_snapshots')
             .insert({
                 doc_number: docNumber,
-                report_title: 'تقرير تحصيل الشركات',
+                report_title: `تقرير تحصيل الشركات — ${periodLabel}`,
                 report_type: 'company_collections',
                 columns: COMPANIES_COLLECTIONS_REPORT_COLUMNS,
                 company_name: null,
@@ -567,7 +646,7 @@ async function printCompCollReport() {
     printRoot.innerHTML = window.PrintReport.buildGenericReportPrintPagesHtml({
         docNumber,
         companyLabel: 'بصمة الأعمال',
-        subtitleText: 'تقرير تحصيل الشركات',
+        subtitleText: `تقرير تحصيل الشركات — ${periodLabel}`,
         reportDateText,
         columns: COMPANIES_COLLECTIONS_REPORT_COLUMNS,
         rows: printRows,
