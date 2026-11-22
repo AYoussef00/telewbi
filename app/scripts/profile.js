@@ -62,8 +62,26 @@ async function loadCurrentUserProfile() {
         const email = (profileRow && profileRow.email) || session.user.email;
         const phone = (profileRow && profileRow.phone) || '';
         const role = profileRow && profileRow.role;
-        const status = (profileRow && profileRow.status) || 'active';
         const createdAt = profileRow && profileRow.created_at;
+
+        // 🏷️ الحالة المعروضة: للموظف (role = employee) حالته الفعلية مصدرها جدول
+        // employees (تصبح "نشط" تلقائياً عند ربطه بشركة، و"غير نشط" عند إنهاء ربطه أو
+        // إضافته للقائمة السوداء) — أما عمود users.status فلا يُحدَّث مع الربط فكان يبقى
+        // "غير نشط" دائماً. باقي الأدوار تبقى حالتها من جدول users كما كانت.
+        let status = (profileRow && profileRow.status) || 'active';
+        if (role === 'employee') {
+            const { data: employeeRow, error: employeeError } = await dbClient
+                .from('employees')
+                .select('status')
+                .eq('user_id', currentUserId)
+                .maybeSingle();
+            if (employeeError) {
+                console.error('تعذّر جلب حالة الموظف من سجل الموظفين:', employeeError.message);
+            } else if (employeeRow) {
+                // نفس قاعدة شاشة "الموظفين": أي قيمة غير "inactive" تُعتبر نشطاً
+                status = employeeRow.status === 'inactive' ? 'inactive' : 'active';
+            }
+        }
 
         const initial = (name || '?').trim().charAt(0).toUpperCase();
 
