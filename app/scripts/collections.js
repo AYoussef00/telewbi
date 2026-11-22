@@ -97,6 +97,7 @@ let localCollectionsCache = [];    // دمج بيانات الروابط (اضا
 let filteredCollectionsCache = [];
 let currentCollectionPage = 1;
 const collectionsPerPage = 15;
+let noClaimColumnAvailable = true; // false لو لم يُنفَّذ collection_no_claim_setup.sql بعد
 let currentMonthValue = '';        // بصيغة YYYY-MM (من حقل <input type="month">)
 
 // 🆕 قائمة "العقود المنتهية" (روابط اضافة لها link_end_date ماضٍ أو اليوم) + تقسيم صفحاتها
@@ -316,6 +317,12 @@ function computeLinkOverlapWithMonth(linkDateStr, linkEndDateStr, year, month) {
 //   • لا يظهر الموظف إن لم يتقاطع ربطه مع الشهر. ولا ينزل المستحق عن صفر.
 const COLLECTION_FIXED_DEDUCTION = 1000;
 
+// هل سجل تحصيل هذا الربط لهذا الشهر معلَّم "عدم المطالبة بالسداد"؟
+function collection0IsNoClaim(collectionByLinkId, linkId) {
+    const c = collectionByLinkId.get(String(linkId));
+    return !!(c && c.no_claim);
+}
+
 function computeLinkDueForMonth(balance, linkDateStr, linkEndDateStr, year, month) {
     const balanceValue = parseFloat(balance) || 0;
     const { overlapDays, isFullMonth } = computeLinkOverlapWithMonth(linkDateStr, linkEndDateStr, year, month);
@@ -371,16 +378,28 @@ async function fetchAndRenderCollections() {
             ? additionLinks.map(l => l.id)
             : null;
 
-        const collectionRows = allowedLinkIds !== null && allowedLinkIds.length === 0
-            ? []
-            : await fetchAllRows((from, to) => {
-                let q = dbClient.from('employee_collections')
-                    .select('employee_link_id, amount, received_amount, status, paid_at, notes, collection_type_id, collection_types(name)')
-                    .eq('collection_month', monthDateStr)
-                    .range(from, to);
-                if (allowedLinkIds !== null) q = q.in('employee_link_id', allowedLinkIds);
-                return q;
-            });
+        // 🚫 عمود no_claim ("عدم المطالبة بالسداد") — لو لم يُنفَّذ سكربت SQL الخاص به بعد
+        // نُعيد الجلب بدونه بدل إيقاف الشاشة كلها (ويُعطَّل الإجراء حتى يُنفَّذ السكربت)
+        const fetchCollectionRows = (selectCols) => fetchAllRows((from, to) => {
+            let q = dbClient.from('employee_collections')
+                .select(selectCols)
+                .eq('collection_month', monthDateStr)
+                .range(from, to);
+            if (allowedLinkIds !== null) q = q.in('employee_link_id', allowedLinkIds);
+            return q;
+        });
+        const BASE_COLLECTION_COLS = 'employee_link_id, amount, received_amount, status, paid_at, notes, collection_type_id, collection_types(name)';
+        let collectionRows = [];
+        if (!(allowedLinkIds !== null && allowedLinkIds.length === 0)) {
+            try {
+                collectionRows = await fetchCollectionRows(BASE_COLLECTION_COLS + ', no_claim');
+                noClaimColumnAvailable = true;
+            } catch (colError) {
+                if (!/no_claim/i.test((colError && colError.message) || '')) throw colError;
+                noClaimColumnAvailable = false;
+                collectionRows = await fetchCollectionRows(BASE_COLLECTION_COLS);
+            }
+        }
 
         const collectionByLinkId = new Map();
         collectionRows.forEach(row => collectionByLinkId.set(String(row.employee_link_id), row));
@@ -393,7 +412,7 @@ async function fetchAndRenderCollections() {
             .map(link => {
                 const netSalaryValue = link.net_salary_value != null ? parseFloat(link.net_salary_value) : 0;
                 // 💵 الرصيد: الراتب المستورد لهذا الشهر، وإلا الراتب الأساسي من الربط
-                const balance = EmployeeSalaries.resolveBalance(importedSalaries, link.id, link.basic_salary_value);
+                const balance = (collection0IsNoClaim(collectionByLinkId, link.id)) ? 0 : EmployeeSalaries.resolveBalance(importedSalaries, link.id, link.basic_salary_value);
                 const dueInfo = computeLinkDueForMonth(balance, link.link_date, link.link_end_date, selectedYear, selectedMonthIndex);
 
                 // لا شيء مستحق بعد عن هذا الشهر (لا تداخل، أو شهر مستقبلي لم
@@ -401,7 +420,9 @@ async function fetchAndRenderCollections() {
                 if (dueInfo.overlapDays <= 0) return null;
 
                 const collection = collectionByLinkId.get(String(link.id));
-                const receivedAmount = collection && collection.received_amount != null ? parseFloat(collection.received_amount) : 0;
+                // 🚫 "عدم المطالبة بالسداد": الرصيد والمستحق والمستلم والمتبقي صفر والحالة مدفوع
+                const isNoClaim = !!(collection && collection.no_claim);
+                const receivedAmount = !isNoClaim && collection && collection.received_amount != null ? parseFloat(collection.received_amount) : 0;
 
                 // 🆕 السجلات المؤكَّدة "مدفوع" تعتمد على المبلغ المحفوظ فعلياً بقاعدة
                 // البيانات (collection.amount) بدل إعادة حسابه حياً من تاريخ اليوم —
@@ -411,11 +432,11 @@ async function fetchAndRenderCollections() {
                 // يجعل "المتبقي" يظهر كمبلغ موجب زائف رغم شارة "مدفوع"). السجلات غير
                 // المدفوعة تبقى تماماً على مسار الاستحقاق التراكمي الحي كما كان.
                 const isPaidRecord = !!(collection && collection.status === 'paid');
-                const dueAmount = (isPaidRecord && collection.amount != null) ? parseFloat(collection.amount) : dueInfo.dueAmount;
+                const dueAmount = isNoClaim ? 0 : ((isPaidRecord && collection.amount != null) ? parseFloat(collection.amount) : dueInfo.dueAmount);
                 const remaining = Math.max(dueAmount - receivedAmount, 0);
                 // ✅ مستحق صفر (مثلاً راتب مستورد 0، أو رصيد لا يتجاوز الخصم الثابت) ⇐ الحالة
                 // "مدفوع" تلقائياً: لا شيء مطلوب تحصيله، فلا يُترك "غير مدفوع"
-                const isAutoPaid = !isPaidRecord && dueAmount <= 0.004;
+                const isAutoPaid = !isPaidRecord && !isNoClaim && dueAmount <= 0.004;
 
                 return {
                     linkId: link.id,
@@ -435,12 +456,13 @@ async function fetchAndRenderCollections() {
                     daysInMonth: dueInfo.daysInMonth,
                     netSalaryValue,           // كامل الصافي الشهري المرجعي (بغض النظر عن التناسب)
                     dueAmount,                // المستحق المعروض: محفوظ (إن كان مدفوعاً ومُعدَّلاً) أو محسوب حياً
-                    isFullMonth: isPaidRecord ? true : dueInfo.isFullMonth,
+                    isFullMonth: (isPaidRecord || isNoClaim) ? true : dueInfo.isFullMonth,
+                    isNoClaim,
                     overlapDays: dueInfo.overlapDays,
                     receivedAmount,
                     remaining,
                     isAutoPaid,
-                    status: isAutoPaid ? 'paid' : (collection ? (collection.status || 'unpaid') : 'unpaid'),
+                    status: (isNoClaim || isAutoPaid) ? 'paid' : (collection ? (collection.status || 'unpaid') : 'unpaid'),
                     paidAt: collection ? collection.paid_at : null,
                     notes: collection ? (collection.notes || '') : '',
                     // 🆕 طريقة التحصيل المُختارة عند تعليم هذا الشهر كمدفوع (قد تكون
@@ -559,7 +581,7 @@ function renderCollectionsTable(data) {
             <td class="collection-net-cell"${dueTitleAttr} style="text-align:center;">${formatCollectionCurrency(row.dueAmount)}${dueProratedNote}</td>
             <td class="collection-received-cell" style="text-align:center;">${formatCollectionCurrency(row.receivedAmount)}</td>
             <td class="collection-remaining-cell ${remainingClass}" style="text-align:center;">${formatCollectionCurrency(row.remaining)}</td>
-            <td style="text-align:center;"><span class="${statusBadgeClass}"${row.isAutoPaid ? ' title="مستحقه صفر — مدفوع تلقائياً"' : ''}>${statusLabel}</span></td>
+            <td style="text-align:center;"><span class="${statusBadgeClass}"${row.isNoClaim ? ' title="غير مطالَب بالسداد"' : (row.isAutoPaid ? ' title="مستحقه صفر — مدفوع تلقائياً"' : '')}>${statusLabel}</span>${row.isNoClaim ? '<div class="collection-subtext">غير مطالَب بالسداد</div>' : ''}</td>
             <td style="text-align:center;">
                 <div style="font-family: monospace;">${row.paidAt ? formatCollectionDate(row.paidAt) : '—'}</div>
                 ${row.collectionTypeName ? `<div class="collection-subtext">${row.collectionTypeName}</div>` : ''}
@@ -575,10 +597,14 @@ function renderCollectionsTable(data) {
             onView: () => { window.location.href = `${Routes.url('employee-collection-details')}?linkId=${row.linkId}`; },
             getMenuItems: () => [
                 // "مدفوع تلقائياً" (مستحقه صفر): لا معنى لتعليمه/إلغاء تعليمه يدوياً
-                ...(row.isAutoPaid ? [] : [isPaid
+                ...(row.isNoClaim ? [
+                    { perm: 'edit:finance_collections', icon: ICONS.refresh, label: 'إلغاء عدم المطالبة بالسداد', run: () => setNoClaim(row.linkId, false) }
+                ] : []),
+                ...(row.isNoClaim ? [] : [{ perm: 'edit:finance_collections', icon: ICONS.close || ICONS.refresh, label: 'عدم المطالبة بالسداد', run: () => setNoClaim(row.linkId, true) }]),
+                ...((row.isAutoPaid || row.isNoClaim) ? [] : [isPaid
                     ? { perm: 'edit:finance_collections', icon: ICONS.refresh, label: 'إلغاء تعليم كمدفوع', run: () => toggleCollectionStatus(row.linkId, 'unpaid') }
                     : { perm: 'edit:finance_collections', icon: ICONS['check-circle'], label: 'تعليم كمدفوع', run: () => toggleCollectionStatus(row.linkId, 'paid') }]),
-                { perm: 'edit:finance_collections', icon: ICONS.edit, label: 'تعديل بيانات التحصيل', run: () => openEditCollectionModal(row.linkId) }
+                ...(row.isNoClaim ? [] : [{ perm: 'edit:finance_collections', icon: ICONS.edit, label: 'تعديل بيانات التحصيل', run: () => openEditCollectionModal(row.linkId) }])
             ]
         });
 
@@ -1018,5 +1044,86 @@ async function handleEditCollectionSubmit(event) {
         showCollectionModalAlert('فشلت العملية: ' + error.message, 'error');
     } finally {
         if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = originalText; }
+    }
+}
+
+
+// =========================================================================
+// 🚫 إجراء "عدم المطالبة بالسداد" (مثلاً موظف أُنهي ربطه ولا يُطلب منه سداد):
+// يُعلِّم سجل تحصيل هذا الشهر لهذا الموظف بـ no_claim = true، فيصبح الرصيد والمستحق
+// والمبلغ المستلم والمتبقي صفراً والحالة "مدفوع". الإلغاء يعيده "غير مدفوع" بلا مبلغ
+// مستلم (يُعاد حساب الرصيد والمستحق تلقائياً). يتطلب تنفيذ collection_no_claim_setup.sql
+// =========================================================================
+function setNoClaim(linkId, enable) {
+    const row = localCollectionsCache.find(r => String(r.linkId) === String(linkId));
+    if (!row) return;
+
+    if (!noClaimColumnAvailable) {
+        alert('هذا الإجراء يتطلب تنفيذ سكربت collection_no_claim_setup.sql في Supabase أولاً.');
+        return;
+    }
+
+    if (enable) {
+        // نافذة بملاحظة اختيارية (تظهر لاحقاً بصفحة تفاصيل الموظف ودفعات السداد)
+        document.getElementById('noClaimLinkId').value = row.linkId;
+        document.getElementById('noClaimEmployeeName').value = `${row.employeeName} — ${row.companyName}`;
+        document.getElementById('noClaimNotes').value = row.notes || '';
+        document.getElementById('noClaimModal').classList.add('open');
+        return;
+    }
+
+    if (!confirm(`إلغاء عدم المطالبة بسداد «${row.employeeName}» عن هذا الشهر؟\nسيعود «غير مدفوع» ويُعاد احتساب الرصيد والمستحق.`)) return;
+    saveNoClaim(row, false, row.notes || '');
+}
+
+function closeNoClaimModal() {
+    document.getElementById('noClaimModal').classList.remove('open');
+}
+
+async function handleNoClaimSubmit(event) {
+    event.preventDefault();
+    const linkId = document.getElementById('noClaimLinkId').value;
+    const row = localCollectionsCache.find(r => String(r.linkId) === String(linkId));
+    if (!row) { closeNoClaimModal(); return; }
+    const notes = document.getElementById('noClaimNotes').value.trim();
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
+    try {
+        const ok = await saveNoClaim(row, true, notes);
+        if (ok) closeNoClaimModal();
+    } finally {
+        if (submitBtn) submitBtn.disabled = false;
+    }
+}
+
+async function saveNoClaim(row, enable, notes) {
+    const payload = {
+        employee_link_id: parseInt(row.linkId, 10),
+        collection_month: `${currentMonthValue}-01`,
+        amount: 0,
+        received_amount: 0,
+        status: enable ? 'paid' : 'unpaid',
+        paid_at: null,
+        collection_type_id: null,
+        notes: notes || null,
+        no_claim: !!enable
+    };
+
+    try {
+        const { data: upsertedRows, error } = await dbClient
+            .from('employee_collections')
+            .upsert([payload], { onConflict: 'employee_link_id,collection_month' })
+            .select();
+        if (error) throw error;
+        if (!upsertedRows || upsertedRows.length === 0) {
+            alert('لم يتم حفظ الإجراء فعلياً. تحقق من سياسات إضافة/تعديل (RLS) على جدول employee_collections في سوبابيس.');
+            return false;
+        }
+        await fetchAndRenderCollections();
+        return true;
+    } catch (error) {
+        console.error('Set No-Claim Error:', error);
+        alert('فشلت العملية: ' + error.message);
+        return false;
     }
 }

@@ -24,6 +24,29 @@
     <link rel="stylesheet" href="../../resources/css/add_employee.css">
     <link rel="stylesheet" href="../../resources/css/view_employee.css">
     <link rel="stylesheet" href="../../resources/css/tasks.css">
+
+    <!-- تنسيقات قسم "مستندات المهمة" (مضمَّنة هنا حتى لا تعتمد على ملف CSS مشترك) -->
+    <style>
+        .task-docs-section { margin-top: 28px; padding-top: 18px; border-top: 1px solid #e2e8f0; }
+        .task-docs-upload-box { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; margin-bottom: 14px; }
+        .task-docs-pick-btn { display: inline-flex; align-items: center; padding: 9px 16px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; font-family: inherit; font-size: 13px; font-weight: 600; color: #334155; cursor: pointer; }
+        .task-docs-pick-btn:hover { background: #f1f5f9; }
+        .task-docs-selected { font-size: 13px; color: #64748b; flex: 1; min-width: 120px; word-break: break-all; }
+        .task-docs-hint { width: 100%; font-size: 12px; color: #94a3b8; }
+        .task-docs-list { display: flex; flex-direction: column; gap: 8px; }
+        .task-docs-empty { text-align: center; padding: 22px; color: #94a3b8; font-size: 13px; background: #f8fafc; border-radius: 8px; }
+        .task-doc-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; }
+        .task-doc-info { min-width: 0; }
+        .task-doc-name { font-weight: 700; color: #1e293b; font-size: 14px; word-break: break-all; }
+        .task-doc-meta { font-size: 12px; color: #94a3b8; margin-top: 3px; }
+        .task-doc-actions { display: flex; gap: 8px; flex-shrink: 0; }
+        .btn-task-doc { padding: 6px 14px; border-radius: 6px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid; background: #fff; }
+        .btn-task-doc-view { color: #c2410c; border-color: #fed7aa; background: #fff7ed; }
+        .btn-task-doc-view:hover { background: #ffedd5; }
+        .btn-task-doc-delete { color: #dc2626; border-color: #fecaca; }
+        .btn-task-doc-delete:hover { background: #fef2f2; }
+        @media (max-width: 600px) { .task-doc-row { flex-direction: column; align-items: stretch; } .task-doc-actions { justify-content: flex-end; } }
+    </style>
 </head>
 <body>
     <div class="app-container">
@@ -45,7 +68,7 @@
                                 <span class="title-icon">🗒️</span>
                                 <span class="breadcrumb-current">بيانات المهمة</span>
                             </nav>
-                            <p class="view-subtitle">عرض تفاصيل المهمة الكاملة (للعرض فقط)</p>
+                            <p class="view-subtitle">عرض تفاصيل المهمة الكاملة ومستنداتها</p>
                         </div>
                     </div>
 
@@ -106,6 +129,26 @@
                                 </div>
 
                             </div>
+
+                            <!-- 📎 مستندات المهمة — يملؤه task_documents.js ولا يظهر إلا لمن له حق الوصول للمهمة -->
+                            <div id="taskDocsSection" class="task-docs-section" style="display:none;">
+                                <h3 class="form-section-title">📎 مستندات المهمة</h3>
+
+                                <div id="taskDocsAlert" class="form-alert" style="display:none;"></div>
+
+                                <div id="taskDocsUploadBox" class="task-docs-upload-box">
+                                    <label for="taskDocsFileInput" class="task-docs-pick-btn">اختيار ملف</label>
+                                    <input type="file" id="taskDocsFileInput" multiple style="display:none;"
+                                           accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx">
+                                    <span class="task-docs-selected" id="taskDocsSelectedLabel">لم يتم اختيار ملف</span>
+                                    <button type="button" id="taskDocsUploadBtn" class="btn btn-submit">رفع المستند</button>
+                                    <span class="task-docs-hint">الأنواع المسموحة: PDF، صور (JPG / PNG / WEBP)، Word، Excel — بحد أقصى 10 ميغابايت للملف.</span>
+                                </div>
+
+                                <div id="taskDocsList" class="task-docs-list">
+                                    <div class="task-docs-empty">جاري تحميل المستندات...</div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- أزرار الإجراءات -->
@@ -124,6 +167,8 @@
     <script src="../shared/navbar.js"></script>
     <!-- ربط ملف العمليات الخارجي الخاص بشاشة عرض بيانات المهمة -->
     <script src="../scripts/view_task.js?v=2"></script>
+    <!-- 📎 رفع وعرض مستندات المهمة -->
+    <script src="../scripts/task_documents.js?v=1"></script>
 
 </body>
 </html>

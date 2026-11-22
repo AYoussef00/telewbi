@@ -338,13 +338,23 @@ async function loadCollectionsReportData() {
         const linkIds = additionLinks.map(l => l.id);
 
         // 🛡️ لا داعي لاستعلام جدول التحصيل إن لم توجد أي روابط إضافة أصلاً بالنطاق الحالي
-        const collectionRows = linkIds.length === 0 ? [] : await fetchAllRows((from, to) =>
+        // 🚫 عمود no_claim ("عدم المطالبة بالسداد") — لو لم يُنفَّذ سكربت SQL بعد نُعيد الجلب بدونه
+        const fetchCollectionRows = (selectCols) => fetchAllRows((from, to) =>
             dbClient.from('employee_collections')
-                .select('employee_link_id, amount, received_amount, status, paid_at, notes')
+                .select(selectCols)
                 .eq('collection_month', monthDateStr)
                 .in('employee_link_id', linkIds)
                 .range(from, to)
         );
+        let collectionRows = [];
+        if (linkIds.length > 0) {
+            try {
+                collectionRows = await fetchCollectionRows('employee_link_id, amount, received_amount, status, paid_at, notes, no_claim');
+            } catch (colError) {
+                if (!/no_claim/i.test((colError && colError.message) || '')) throw colError;
+                collectionRows = await fetchCollectionRows('employee_link_id, amount, received_amount, status, paid_at, notes');
+            }
+        }
 
         const collectionByLinkId = new Map();
         collectionRows.forEach(row => collectionByLinkId.set(String(row.employee_link_id), row));
@@ -356,7 +366,10 @@ async function loadCollectionsReportData() {
             .map(link => {
                 const netSalaryValue = link.net_salary_value != null ? parseFloat(link.net_salary_value) : 0;
                 // 💵 الرصيد: الراتب المستورد لهذا الشهر، وإلا الراتب الأساسي من الربط
-                const balance = EmployeeSalaries.resolveBalance(importedSalaries, link.id, link.basic_salary_value);
+                const collectionForLink = collectionByLinkId.get(String(link.id));
+                // 🚫 "عدم المطالبة بالسداد": الرصيد والمستحق والمستلم والمتبقي صفر والحالة مدفوع
+                const isNoClaim = !!(collectionForLink && collectionForLink.no_claim);
+                const balance = isNoClaim ? 0 : EmployeeSalaries.resolveBalance(importedSalaries, link.id, link.basic_salary_value);
                 const dueInfo = computeReportLinkDueForMonth(balance, link.link_date, link.link_end_date, reportSelectedYear, reportSelectedMonthIndex);
 
                 // لا شيء مستحق بعد عن هذا الشهر (لا تداخل بين فترة الربط والشهر
@@ -364,10 +377,10 @@ async function loadCollectionsReportData() {
                 if (dueInfo.overlapDays <= 0) return null;
 
                 const collection = collectionByLinkId.get(String(link.id));
-                const receivedAmount = collection && collection.received_amount != null ? parseFloat(collection.received_amount) : 0;
-                const remaining = Math.max(dueInfo.dueAmount - receivedAmount, 0);
+                const receivedAmount = !isNoClaim && collection && collection.received_amount != null ? parseFloat(collection.received_amount) : 0;
+                const remaining = isNoClaim ? 0 : Math.max(dueInfo.dueAmount - receivedAmount, 0);
                 // ✅ مستحق صفر ⇐ الحالة "مدفوع" تلقائياً (لا شيء مطلوب تحصيله)
-                const isAutoPaid = dueInfo.dueAmount <= 0.004;
+                const isAutoPaid = !isNoClaim && dueInfo.dueAmount <= 0.004;
                 return {
                     linkId: link.id,
                     employeeName: (link.employees && link.employees.name) ? link.employees.name : '----',
@@ -379,13 +392,14 @@ async function loadCollectionsReportData() {
                     daysInMonth: dueInfo.daysInMonth,
                     linkDateRaw: link.link_date || null,   // تاريخ الربط (لتصدير Excel)
                     netSalaryValue,               // كامل الصافي الشهري المرجعي (بغض النظر عن التناسب)
-                    dueAmount: dueInfo.dueAmount,  // المستحق الفعلي عن هذا الشهر حتى تاريخه (بعد التناسب إن وُجد)
-                    isFullMonth: dueInfo.isFullMonth,
+                    dueAmount: isNoClaim ? 0 : dueInfo.dueAmount,  // المستحق الفعلي عن هذا الشهر حتى تاريخه (بعد التناسب إن وُجد)
+                    isFullMonth: isNoClaim ? true : dueInfo.isFullMonth,
+                    isNoClaim,
                     overlapDays: dueInfo.overlapDays,
                     receivedAmount,
                     remaining,
                     isAutoPaid,
-                    status: isAutoPaid ? 'paid' : (collection ? (collection.status || 'unpaid') : 'unpaid'),
+                    status: (isNoClaim || isAutoPaid) ? 'paid' : (collection ? (collection.status || 'unpaid') : 'unpaid'),
                     paidAt: collection ? collection.paid_at : null
                 };
             })

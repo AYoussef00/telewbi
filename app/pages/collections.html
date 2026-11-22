@@ -223,6 +223,36 @@
         </div>
     </div>
 
+    <!-- نافذة "عدم المطالبة بالسداد": ملاحظة اختيارية تُحفظ بسجل التحصيل وتظهر بعمود
+         الملاحظات في صفحة تفاصيل الموظف ودفعات السداد -->
+    <div class="modal-overlay" id="noClaimModal">
+        <div class="modal-content-box">
+            <div class="modal-header-section">
+                <h2 class="modal-title">عدم المطالبة بالسداد</h2>
+                <button type="button" class="btn-close-x" onclick="closeNoClaimModal()">×</button>
+            </div>
+
+            <div class="input-field-group" style="margin-bottom:14px;">
+                <label>الموظف</label>
+                <input type="text" id="noClaimEmployeeName" disabled>
+            </div>
+
+            <form id="noClaimForm" onsubmit="handleNoClaimSubmit(event)">
+                <input type="hidden" id="noClaimLinkId">
+                <div class="input-field-group">
+                    <label for="noClaimNotes">ملاحظة</label>
+                    <textarea id="noClaimNotes" rows="3" placeholder="سبب عدم المطالبة بالسداد (اختياري)..." style="width:100%; padding:8px 12px; border:1px solid #cbd5e1; border-radius:4px; font-family:inherit; font-size:13px; resize:vertical; outline:none;"></textarea>
+                </div>
+                <div style="font-size:12px; color:#64748b; margin:8px 0 14px;">سيصبح الرصيد والمستحق والمستلم والمتبقي صفراً والحالة «مدفوع» عن هذا الشهر.</div>
+
+                <div class="modal-footer-buttons">
+                    <button type="button" class="btn-modal-cancel" onclick="closeNoClaimModal()">إلغاء</button>
+                    <button type="submit" class="btn-modal-save" data-perm="edit:finance_collections">تأكيد</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- نافذة تعديل تفاصيل تحصيل الموظف عن الشهر المختار (تاريخ التحصيل + طريقة
          التحصيل + المبلغ المستلم + الملاحظات) — لا تُعدّل بيانات الربط أو الصافي
          نفسه، فقط سجل تحصيل هذا الشهر تحديداً بجدول employee_collections -->
@@ -277,6 +307,6 @@
     <script src="../shared/navbar.js"></script>
     <script src="../shared/row-actions.js?v=1"></script>
     <script src="../shared/employee-salaries.js?v=2"></script>
-    <script src="../scripts/collections.js?v=15"></script>
+    <script src="../scripts/collections.js?v=17"></script>
 </body>
 </html>

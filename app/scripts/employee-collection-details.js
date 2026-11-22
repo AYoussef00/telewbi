@@ -194,13 +194,21 @@ async function loadEmployeeCollectionDetails() {
             `;
         }
 
-        const paymentRows = await fetchAllDetailsRows((from, to) =>
+        const fetchPaymentRows = (cols) => fetchAllDetailsRows((from, to) =>
             dbClient.from('employee_collections')
-                .select('collection_month, amount, received_amount, status, paid_at, notes')
+                .select(cols)
                 .eq('employee_link_id', linkId)
                 .order('collection_month', { ascending: false })
                 .range(from, to)
         );
+        let paymentRows;
+        try {
+            // no_claim ("عدم المطالبة بالسداد") — لو لم يُنفَّذ سكربته بعد نعيد الجلب بدونه
+            paymentRows = await fetchPaymentRows('collection_month, amount, received_amount, status, paid_at, notes, no_claim');
+        } catch (colError) {
+            if (!/no_claim/i.test((colError && colError.message) || '')) throw colError;
+            paymentRows = await fetchPaymentRows('collection_month, amount, received_amount, status, paid_at, notes');
+        }
 
         renderEmployeeDetailsPayments(paymentRows, netSalaryValue);
 
@@ -246,7 +254,7 @@ function renderEmployeeDetailsPayments(paymentRows, netSalaryValue) {
                 <td class="collection-net-cell" style="text-align:center;">${formatDetailsCurrency(dueAmount)}</td>
                 <td class="collection-received-cell" style="text-align:center;">${formatDetailsCurrency(receivedAmount)}</td>
                 <td class="collection-remaining-cell ${remainingClass}" style="text-align:center;">${formatDetailsCurrency(remaining)}</td>
-                <td style="text-align:center;"><span class="${statusBadgeClass}">${statusLabel}</span></td>
+                <td style="text-align:center;"><span class="${statusBadgeClass}">${statusLabel}</span>${payment.no_claim ? '<div style="font-size:11px; color:#64748b; margin-top:2px;">غير مطالَب بالسداد</div>' : ''}</td>
                 <td style="text-align:center; font-family: monospace;">${payment.paid_at ? formatDetailsDate(payment.paid_at) : '—'}</td>
                 <td style="color:#475569;">${payment.notes ? escapeDetailsHtml(payment.notes) : '—'}</td>
             </tr>

@@ -15,6 +15,65 @@
 let currentUserScope = { role: null, employeeId: null };
 let scopedEmployeeIds = null; // null = بلا تقييد (مدير عام/مسؤول)؛ مصفوفة = مُقيَّد بهذه المعرّفات فقط
 
+// =========================================================================
+// 📚 جلب كامل صفوف استعلام على دفعات: سوبابيس (PostgREST) يُرجع 1000 صف كحد
+// أقصى للطلب الواحد، فكان أي موظف بعد الألف الأول لا يصل للصفحة أصلاً ولا
+// يظهر بالبحث. نكرر الطلب (range) حتى تنتهي الصفوف.
+// =========================================================================
+const EMP_FETCH_PAGE_SIZE = 1000;
+async function fetchAllEmployeeRows(builderFactory) {
+    let allRows = [];
+    let from = 0;
+    while (true) {
+        const { data, error } = await builderFactory(from, from + EMP_FETCH_PAGE_SIZE - 1);
+        if (error) throw error;
+        allRows = allRows.concat(data || []);
+        if (!data || data.length < EMP_FETCH_PAGE_SIZE) break;
+        from += EMP_FETCH_PAGE_SIZE;
+    }
+    return allRows;
+}
+
+// تقسيم مصفوفة معرّفات لدفعات صغيرة (فلتر .in() بمئات المعرّفات يُطوِّل رابط الطلب ويفشل)
+function chunkEmployeeIds(ids, size) {
+    const chunks = [];
+    for (let i = 0; i < ids.length; i += size) chunks.push(ids.slice(i, i + size));
+    return chunks;
+}
+
+// =========================================================================
+// 🔤 توحيد النص العربي للبحث: يتجاهل التشكيل والتطويل، ويوحّد الألف (أ إ آ ٱ ← ا)
+// والياء (ى ئ ← ي) والتاء المربوطة (ة ← ه) والواو (ؤ ← و)، ويحوّل الأرقام العربية
+// والهندية إلى لاتينية، ويوحّد المسافات — حتى يظهر الموظف مهما اختلفت كتابة اسمه.
+// =========================================================================
+function normalizeEmpSearchText(value) {
+    if (value === null || value === undefined) return '';
+    return String(value)
+        .toLowerCase()
+        .replace(/[ً-ٰٟۖ-ۭـ]/g, '')
+        .replace(/[أإآٱ]/g, 'ا')
+        .replace(/ى/g, 'ي')
+        .replace(/ئ/g, 'ي')
+        .replace(/ة/g, 'ه')
+        .replace(/ؤ/g, 'و')
+        .replace(/[٠-٩]/g, d => String(d.charCodeAt(0) - 0x0660))
+        .replace(/[۰-۹]/g, d => String(d.charCodeAt(0) - 0x06F0))
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+// يطابق النص المُدخل (بعد توحيده) كل كلماته مع المفتاح المُوحَّد — ترتيب الكلمات لا يهم
+function empSearchKeyMatches(searchKey, normalizedQuery) {
+    if (!normalizedQuery) return true;
+    return normalizedQuery.split(' ').every(token => searchKey.includes(token));
+}
+
+function escapeEmpHtml(value) {
+    return String(value === null || value === undefined ? '' : value)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 async function loadCurrentUserScope() {
     try {
         const { data: { session } } = await dbClient.auth.getSession();
@@ -33,14 +92,17 @@ async function loadCurrentUserScope() {
                 // موظفو شركاته: الربط الحالي + الأرشيف (حتى تظهر له سجلات موظفيه
                 // السابقين أيضاً، وليس فقط المرتبطين حالياً). الأرشيف طلب غير
                 // معطِّل (قد لا يكون الجدول موجوداً بعد بقواعد بيانات قديمة).
+                // ⚠️ الجلب على دفعات (حد الألف صف) كي لا يسقط موظفون من النطاق.
                 const idSet = new Set();
-                const { data: activeLinks } = await dbClient.from('employee_links').select('employee_id').in('company_id', companyIds);
-                (activeLinks || []).forEach(l => { if (l.employee_id != null) idSet.add(l.employee_id); });
+                const activeLinks = await fetchAllEmployeeRows((from, to) => dbClient
+                    .from('employee_links').select('employee_id').in('company_id', companyIds)
+                    .order('id', { ascending: true }).range(from, to));
+                activeLinks.forEach(l => { if (l.employee_id != null) idSet.add(l.employee_id); });
                 try {
-                    const { data: historyLinks, error: historyError } = await dbClient
-                        .from('employee_link_history').select('employee_id').in('company_id', companyIds);
-                    if (historyError) throw historyError;
-                    (historyLinks || []).forEach(l => { if (l.employee_id != null) idSet.add(l.employee_id); });
+                    const historyLinks = await fetchAllEmployeeRows((from, to) => dbClient
+                        .from('employee_link_history').select('employee_id').in('company_id', companyIds)
+                        .order('id', { ascending: true }).range(from, to));
+                    historyLinks.forEach(l => { if (l.employee_id != null) idSet.add(l.employee_id); });
                 } catch (historyErr) {
                     console.error('تعذّر تحميل أرشيف الروابط المنتهية لتحديد نطاق موظفي الشركة:', historyErr.message);
                 }
@@ -78,6 +140,9 @@ let allEmployeeSearchOptions = [];
 // "غير محدد" منذ حذف حقل المسمى الوظيفي من نموذج إضافة الموظف — المسمى الحقيقي
 // يُحدَّد فقط عند ربط الموظف بشركة عبر شاشة "ربط الموظفين".
 let employeeLinkedJobTitleMap = {};
+
+// 🏢 خريطة أسماء الشركات المرتبط بها الموظف حالياً (employee_id -> [أسماء]) — للبحث باسم الشركة
+let employeeLinkedCompanyNamesMap = {};
 
 // Pagination Settings — 🆕 15 صفاً بالصفحة بدل 7
 let currentEmpPage = 1;
@@ -292,12 +357,9 @@ function setupEmployeeSearchCombo() {
     if (!input || !dropdown) return;
 
     function renderSuggestions(query) {
-        const normalized = (query || '').trim().toLowerCase();
+        const normalized = normalizeEmpSearchText(query);
         const matches = normalized
-            ? allEmployeeSearchOptions.filter(opt =>
-                opt.label.toLowerCase().includes(normalized) ||
-                (opt.nationalId && opt.nationalId.toLowerCase().includes(normalized))
-              )
+            ? allEmployeeSearchOptions.filter(opt => empSearchKeyMatches(opt.searchKey, normalized))
             : allEmployeeSearchOptions;
 
         dropdown.innerHTML = '';
@@ -336,6 +398,14 @@ function setupEmployeeSearchCombo() {
                 idEl.style.cssText = 'display:block; font-size:11px; color:#94a3b8; margin-top:2px;';
                 idEl.textContent = '🪪 ' + opt.nationalId;
                 item.appendChild(idEl);
+            }
+
+            // اسم الشركة المرتبط بها الموظف (إن وُجد) كنص فرعي ثانٍ
+            if (opt.companyNames && opt.companyNames.length) {
+                const companyEl = document.createElement('span');
+                companyEl.style.cssText = 'display:block; font-size:11px; color:#94a3b8; margin-top:2px;';
+                companyEl.textContent = '🏢 ' + opt.companyNames.join('، ');
+                item.appendChild(companyEl);
             }
 
             item.addEventListener('mousedown', (e) => {
@@ -381,24 +451,48 @@ async function fetchAndRenderEmployees() {
     const tableBody = document.getElementById('employeesTableBody');
     if (!tableBody) return;
 
-    // 🛡️ تقييد جلب الموظفين بنطاق المستخدم الحالي (انظر تعليق نطاق الرؤية أعلى
-    // الملف) — بلا هذا التقييد كان أي مستخدم (بما فيه دور "موظف") يرى بيانات
-    // كل الموظفين بالنظام، وليس فقط سجله الشخصي أو موظفي شركته.
-    let employeesQuery = dbClient.from('employees').select('*').order('created_at', { ascending: false });
-    if (scopedEmployeeIds !== null) employeesQuery = employeesQuery.in('id', scopedEmployeeIds);
+    let employees = [];
+    let links = [];
+    let linksError = null;
 
-    const [
-        { data: employees, error },
-        { data: links, error: linksError }
-    ] = await Promise.all([
-        employeesQuery,
+    try {
+        // 🛡️ تقييد جلب الموظفين بنطاق المستخدم الحالي (انظر تعليق نطاق الرؤية أعلى
+        // الملف) — بلا هذا التقييد كان أي مستخدم (بما فيه دور "موظف") يرى بيانات
+        // كل الموظفين بالنظام، وليس فقط سجله الشخصي أو موظفي شركته.
+        //
+        // 📚 الجلب على دفعات (حد الألف صف بالطلب الواحد)، والترتيب الثانوي بالمعرّف
+        // يضمن عدم تكرار/إسقاط صفوف بين الدفعات حين يتساوى created_at.
+        const employeesPromise = (async () => {
+            if (scopedEmployeeIds === null) {
+                return fetchAllEmployeeRows((from, to) => dbClient.from('employees').select('*')
+                    .order('created_at', { ascending: false })
+                    .order('id', { ascending: true })
+                    .range(from, to));
+            }
+            // نطاق مُقيَّد: نقسم المعرّفات لدفعات صغيرة حتى لا يطول رابط الطلب
+            const all = [];
+            for (const chunk of chunkEmployeeIds(scopedEmployeeIds, 150)) {
+                const rows = await fetchAllEmployeeRows((from, to) => dbClient.from('employees').select('*')
+                    .in('id', chunk)
+                    .order('id', { ascending: true })
+                    .range(from, to));
+                all.push(...rows);
+            }
+            all.sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
+            return all;
+        })();
+
         // ⚠️ روابط نشطة فقط (بلا تاريخ انتهاء، أو لم يأتِ تاريخ انتهائها بعد) —
-        // انظر تعليق getTodayDateStringForLinks أعلى الملف.
-        dbClient.from('employee_links').select('employee_id, job_title')
+        // انظر تعليق getTodayDateStringForLinks أعلى الملف. فشل هذا الجلب غير حرج.
+        const linksPromise = fetchAllEmployeeRows((from, to) => dbClient.from('employee_links')
+            .select('employee_id, job_title, companies(name)')
             .or(`link_end_date.is.null,link_end_date.gte.${getTodayDateStringForLinks()}`)
-    ]);
+            .order('id', { ascending: true })
+            .range(from, to))
+            .catch(err => { linksError = err; return []; });
 
-    if (error) {
+        [employees, links] = await Promise.all([employeesPromise, linksPromise]);
+    } catch (error) {
         console.error("خطأ في الاتصال بقاعدة البيانات:", error.message);
         tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#ef4444; padding:20px;">فشل تحميل بيانات الموظفين.</td></tr>`;
         return;
@@ -408,6 +502,7 @@ async function fetchAndRenderEmployees() {
     // الفعلي فقط للموظفين المرتبطين بشركة؛ نتجاهل فشل هذا الجلب بصمت (غير حرج)
     // ونكتفي بعرض "غير محدد" بدل توقف الجدول بالكامل عن العرض.
     employeeLinkedJobTitleMap = {};
+    employeeLinkedCompanyNamesMap = {};
     if (linksError) {
         console.error('تعذّر تحميل مسميات الربط الوظيفية:', linksError.message);
     } else {
@@ -415,8 +510,21 @@ async function fetchAndRenderEmployees() {
             if (link.employee_id != null && link.job_title) {
                 employeeLinkedJobTitleMap[String(link.employee_id)] = link.job_title;
             }
+            const companyName = link.companies && link.companies.name;
+            if (link.employee_id != null && companyName) {
+                const key = String(link.employee_id);
+                const list = employeeLinkedCompanyNamesMap[key] || (employeeLinkedCompanyNamesMap[key] = []);
+                if (!list.includes(companyName)) list.push(companyName);
+            }
         });
     }
+
+    // 🔤 مفتاح بحث موحّد لكل موظف (اسم + بريد + رقم هوية + اسم الشركة المرتبط بها) يُحسب مرة واحدة عند التحميل
+    employees.forEach(e => {
+        const companyNames = employeeLinkedCompanyNamesMap[String(e.id)] || [];
+        e._companyNames = companyNames;
+        e._searchKey = normalizeEmpSearchText([e.name, e.email, e.national_id, ...companyNames].filter(v => v != null).join(' '));
+    });
 
     localEmployeesCache = employees;
     filteredEmployeesCache = employees;
@@ -425,20 +533,19 @@ async function fetchAndRenderEmployees() {
     // تحديث قائمة اقتراحات البحث (اسم + رقم هوية) — رقم الهوية يُحوَّل صراحة
     // إلى نص (String) لأن عمود national_id قد يعود من سوبابيس كرقم (number)
     // حسب نوعه الفعلي بقاعدة البيانات، وليس بالضرورة كنص (string) دائماً.
-    const seenNames = new Set();
-    allEmployeeSearchOptions = (employees || [])
-        .filter(e => {
-            if (!e.name || seenNames.has(e.name)) return false;
-            seenNames.add(e.name);
-            return true;
-        })
+    // لا نحذف الأسماء المكررة: موظفان بنفس الاسم برقمي هوية مختلفين يظهران معاً.
+    allEmployeeSearchOptions = employees
+        .filter(e => e.name)
         .map(e => ({
             label: e.name,
-            nationalId: e.national_id != null ? String(e.national_id) : ''
+            nationalId: e.national_id != null ? String(e.national_id) : '',
+            companyNames: e._companyNames || [],
+            searchKey: e._searchKey
         }))
         .sort((a, b) => a.label.localeCompare(b.label, 'ar'));
 
-    renderEmployeesTable(filteredEmployeesCache);
+    // إن كان المستخدم قد كتب شيئاً بالبحث أثناء التحميل نحافظ على الفلترة
+    applyEmployeeFilters();
 }
 
 // 📑 بناء أسطر الجدول وتوليد الدوائر التعريفية الثنائية تلقائياً بناءً على الاسم الأول
@@ -485,21 +592,21 @@ function renderEmployeesTable(data) {
         // 🏷️ المسمى الوظيفي: يُعرض المسمى الفعلي من سجل الربط إن كان الموظف مرتبطاً
         // بشركة (من جدول employee_links)، وإلا يُعرض "غير محدد".
         const linkedJobTitle = employeeLinkedJobTitleMap[String(emp.id)];
-        const jobTitleDisplay = linkedJobTitle || 'غير محدد';
+        const jobTitleDisplay = escapeEmpHtml(linkedJobTitle || 'غير محدد');
 
         // 📧 البريد الإلكتروني: يُعرض "لا يوجد" بدل الشرطات عند عدم وجود بريد مسجّل
-        const emailDisplay = emp.email || 'لا يوجد';
+        const emailDisplay = escapeEmpHtml(emp.email || 'لا يوجد');
 
         // 🆕 عمود الإجراءات: زر "عرض البيانات" ظاهر دائماً + زر ثلاث نقاط (⋮)
         // يفتح قائمة بباقي الخيارات (تعديل / قائمة سوداء / حذف)
         row.innerHTML = `
             <td>
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <span class="company-prefix ${prefixColorClass}">${initials}</span>
-                    <strong style="color: #1e293b;">${emp.name || '----'}</strong>
+                    <span class="company-prefix ${prefixColorClass}">${escapeEmpHtml(initials)}</span>
+                    <strong style="color: #1e293b;">${escapeEmpHtml(emp.name || '----')}</strong>
                 </div>
             </td>
-            <td style="color: #475569; font-family: monospace; font-size: 0.95rem;">${emp.national_id || '----'}</td>
+            <td style="color: #475569; font-family: monospace; font-size: 0.95rem;">${escapeEmpHtml(emp.national_id || '----')}</td>
             <td style="color: #475569; font-family: monospace;">${emailDisplay}</td>
             <td style="font-weight: 500; color: #334155;">${jobTitleDisplay}</td>
             <td style="text-align: center;">
@@ -539,24 +646,16 @@ function renderEmployeesTable(data) {
     Permissions.applyButtonGating(tableBody);
 }
 
-// 🔍 دالة الفلترة المُوحّدة: تجمع بحث النص الحر (اسم/بريد/هوية) مع فلتر الحالة معاً
-//     (كانت الحالة والبحث لا يعملان سابقاً بسبب استدعاء دالة غير معرّفة أصلاً
-//     "handleFilterChange" من الـ HTML، والبحث كان يتجاهل فلتر الحالة كلياً)
-//
-//     ⚠️ إصلاح إضافي: عمود national_id قد يعود من سوبابيس كرقم (number) وليس
-//     دائماً كنص (string) حسب نوعه الفعلي بقاعدة البيانات — استدعاء .includes()
-//     مباشرة على رقم كان يتسبب بخطأ JS صامت (TypeError) يوقف الفلترة بالكامل،
-//     فيبدو للمستخدم أن البحث "لا يعمل" تماماً كلما وصل الفحص لهذا الحقل. الحل:
-//     تحويل القيمة صراحة إلى نص عبر String(...) قبل البحث فيها.
+// 🔍 دالة الفلترة المُوحّدة: تجمع بحث النص الحر (اسم/بريد/هوية) مع فلتر الحالة معاً.
+//     البحث يعتمد النص العربي الموحَّد (normalizeEmpSearchText) ويطابق كل كلمات
+//     النص المُدخل بأي ترتيب، فلا يضيع موظف بسبب اختلاف همزة أو تاء مربوطة أو تشكيل
+//     أو مسافات زائدة. وعمود national_id يُحوَّل إلى نص قبل البحث (قد يعود رقماً).
 function applyEmployeeFilters() {
-    const text = (document.getElementById('employeeSearchInput')?.value || '').toLowerCase().trim();
+    const text = normalizeEmpSearchText(document.getElementById('employeeSearchInput')?.value || '');
     const statusValue = document.getElementById('statusFilter')?.value || 'all';
 
     filteredEmployeesCache = localEmployeesCache.filter(e => {
-        const matchesText = !text ||
-            (e.name && e.name.toLowerCase().includes(text)) ||
-            (e.email && e.email.toLowerCase().includes(text)) ||
-            (e.national_id != null && String(e.national_id).toLowerCase().includes(text));
+        const matchesText = empSearchKeyMatches(e._searchKey || '', text);
 
         const isActiveStatus = e.status !== 'inactive';
         const matchesStatus = statusValue === 'all' ||

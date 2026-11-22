@@ -255,19 +255,54 @@ async function loadLinksReportData() {
         // 🛡️ نطاق الرؤية: لمسؤول الشركة (companyIds مصفوفة محددة)، يُقيَّد
         // الاستعلام بشركاته المملوكة فقط عبر .in('company_id', ...).
         const todayStr = getTodayDateStringForLinks();
-        const links = await fetchAllRows((from, to) => {
+        const salaryMonthValue = (document.getElementById('reportSalaryMonth') || {}).value || EmployeeSalaries.currentMonthValue();
+        // 📅 حدود الشهر المختار: الموظف الذي بدأ ربطه بعد نهاية الشهر لا يظهر فيه
+        const [selYear, selMonth] = salaryMonthValue.split('-').map(Number);
+        const monthStartStr = `${salaryMonthValue}-01`;
+        const monthEndStr = `${salaryMonthValue}-${String(new Date(selYear, selMonth, 0).getDate()).padStart(2, '0')}`;
+        const linkSelect = isCompanyRoleUser()
+            ? 'id, link_date, link_end_date, link_status, link_status_note, employees(name, national_id, mobile_number), companies(name)'
+            : 'id, link_type, link_date, link_end_date, link_status, link_status_note, basic_salary_value, net_salary_value, employees(name, national_id, mobile_number), companies(name, representative_name, company_refund, company_refund_type, company_commission, company_commission_type, income_mode, company_net_income, company_net_income_type)';
+
+        let links = await fetchAllRows((from, to) => {
             let query = dbClient.from('employee_links')
-                .select(isCompanyRoleUser()
-                    ? 'id, link_status, link_status_note, employees(name, national_id, mobile_number), companies(name)'
-                    : 'id, link_type, link_status, link_status_note, basic_salary_value, net_salary_value, employees(name, national_id, mobile_number), companies(name, representative_name, company_refund, company_refund_type, company_commission, company_commission_type, income_mode, company_net_income, company_net_income_type)')
+                .select(linkSelect)
                 .or(`link_end_date.is.null,link_end_date.gte.${todayStr}`)
                 .order('id', { ascending: true });
             if (currentUserScope.companyIds !== null) query = query.in('company_id', currentUserScope.companyIds);
             return query.range(from, to);
         });
 
+        // 🚫 "عدم المطالبة بالسداد" لهذا الشهر (شاشة تحصيل الموظفين): هؤلاء يظهرون بقيمة صفر،
+        // حتى لو كان ربطهم قد انتهى. لو لم يُنفَّذ سكربت العمود no_claim بعد نتجاهل الأمر بصمت.
+        const noClaimLinkIds = new Set();
+        try {
+            const noClaimRows = await fetchAllRows((from, to) => dbClient.from('employee_collections')
+                .select('employee_link_id')
+                .eq('collection_month', monthStartStr)
+                .eq('no_claim', true)
+                .range(from, to));
+            noClaimRows.forEach(row => noClaimLinkIds.add(String(row.employee_link_id)));
+        } catch (noClaimError) {
+            console.warn('تعذّر جلب سجلات عدم المطالبة بالسداد:', noClaimError && noClaimError.message);
+        }
+
+        // روابط منتهية لكنها "غير مطالَب بسدادها" في هذا الشهر: تُضاف للتقرير
+        const loadedLinkIds = new Set(links.map(l => String(l.id)));
+        const missingNoClaimIds = Array.from(noClaimLinkIds).filter(id => !loadedLinkIds.has(id));
+        for (let i = 0; i < missingNoClaimIds.length; i += 200) {
+            const chunk = missingNoClaimIds.slice(i, i + 200);
+            let query = dbClient.from('employee_links').select(linkSelect).in('id', chunk);
+            if (currentUserScope.companyIds !== null) query = query.in('company_id', currentUserScope.companyIds);
+            const { data: extraLinks, error: extraError } = await query;
+            if (extraError) throw extraError;
+            links = links.concat((extraLinks || []).filter(l => !l.link_end_date || String(l.link_end_date).slice(0, 10) >= monthStartStr));
+        }
+
+        // 📅 استبعاد من بدأ ربطه بعد الشهر المختار (ربط حديث)
+        links = links.filter(l => !l.link_date || String(l.link_date).slice(0, 10) <= monthEndStr);
+
         // 💵 الرواتب المستوردة للشهر المختار (لا حاجة لها لمسؤول الشركة: لا يرى الراتب أصلاً)
-        const salaryMonthValue = (document.getElementById('reportSalaryMonth') || {}).value || EmployeeSalaries.currentMonthValue();
         const importedSalaries = isCompanyRoleUser()
             ? new Map()
             : await EmployeeSalaries.fetchImportedMap(`${salaryMonthValue}-01`);
@@ -277,12 +312,15 @@ async function loadLinksReportData() {
             // "تم التعيين" افتراضياً — نفس القيمة الافتراضية بقاعدة البيانات.
             const linkStatus = link.link_status || 'تم التعيين';
             // الراتب: المستورد للشهر المختار إن وُجد، وإلا الراتب الأساسي من الربط (قد يكون فارغاً ⇐ '----')
-            const linkSalary = importedSalaries.has(String(link.id)) ? importedSalaries.get(String(link.id)) : link.basic_salary_value;
+            const isNoClaim = noClaimLinkIds.has(String(link.id));
+            // غير مطالَب بالسداد في هذا الشهر ⇐ كل القيم المالية صفر
+            const linkSalary = isNoClaim ? 0 : (importedSalaries.has(String(link.id)) ? importedSalaries.get(String(link.id)) : link.basic_salary_value);
+            const linkNetFee = isNoClaim ? 0 : link.net_salary_value;
             const isPending = linkStatus === 'قيد المعالجة';
             // رسوم الاسترداد والعمولة وصافي الدخل: النسبة تُحسب من صافي هذا الربط تحديداً
             const fin = isCompanyRoleUser()
                 ? { refund: null, commission: null, income: null }
-                : window.CompanyFinance.compute(link.net_salary_value, link.companies);
+                : (isNoClaim ? { refund: 0, commission: 0, income: 0 } : window.CompanyFinance.compute(link.net_salary_value, link.companies));
 
             return {
                 id: link.id,
@@ -294,13 +332,13 @@ async function loadLinksReportData() {
                 mobile_number: (link.employees && link.employees.mobile_number) || '----',
                 // الراتب = المستورد للشهر المختار، وإلا الراتب الأساسي من الربط
                 basic_salary: isCompanyRoleUser() ? '' : formatLinksReportMoney(linkSalary, '----'),
-                net_fee: isCompanyRoleUser() ? '' : formatLinksReportMoney(link.net_salary_value, '----'),
+                net_fee: isCompanyRoleUser() ? '' : formatLinksReportMoney(linkNetFee, '----'),
                 refund_fee: formatLinksReportMoney(fin.refund, '----'),
                 commission_fee: formatLinksReportMoney(fin.commission, '----'),
                 net_income: formatLinksReportMoney(fin.income, '----'),
                 // قيم رقمية خام (لإجماليات ملف Excel وتنسيقه كأرقام حقيقية)
                 raw_basic_salary: isCompanyRoleUser() ? null : toLinksReportNumber(linkSalary),
-                raw_net_fee: toLinksReportNumber(link.net_salary_value),
+                raw_net_fee: toLinksReportNumber(linkNetFee),
                 raw_refund_fee: toLinksReportNumber(fin.refund),
                 raw_commission_fee: toLinksReportNumber(fin.commission),
                 raw_net_income: toLinksReportNumber(fin.income),
