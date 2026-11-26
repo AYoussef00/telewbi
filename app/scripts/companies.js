@@ -100,6 +100,14 @@ function renderCompaniesTable(data) {
     if (window.RowActions) RowActions.closeMenu();
     tableBody.innerHTML = '';
 
+    // 🔢 عدد النتائج المطابقة لخيارات البحث/الفلترة الحالية (قبل التقسيم لصفحات)
+    const resultsCountEl = document.getElementById('companiesResultsCount');
+    if (resultsCountEl) {
+        resultsCountEl.textContent = document.documentElement.getAttribute('lang') === 'en'
+            ? `Matching results: ${data.length}`
+            : `عدد النتائج المطابقة: ${data.length}`;
+    }
+
     if (data.length === 0) {
         tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:#94a3b8;">لا توجد شركات مطابقة للبحث.</td></tr>`;
         setupPaginationControls(0);
@@ -143,12 +151,12 @@ function renderCompaniesTable(data) {
 
         row.innerHTML = `
             <td>
-                <span class="company-prefix ${prefixColorClass}">${firstWord}</span>
-                <strong>${restOfName}</strong>
+                <span class="company-prefix ${prefixColorClass}">${escHtml(firstWord)}</span>
+                <strong>${escHtml(restOfName)}</strong>
             </td>
-            <td style="color: #475569; font-family: monospace;">${establishmentId}</td>
-            <td style="color: #475569; font-family: monospace; direction: ltr; text-align: right;">${authorizedPersonPhone}</td>
-            <td style="color: #475569;">${contractTypeDisplay}</td>
+            <td style="color: #475569; font-family: monospace;">${escHtml(establishmentId)}</td>
+            <td style="color: #475569; font-family: monospace; direction: ltr; text-align: right;">${escHtml(authorizedPersonPhone)}</td>
+            <td style="color: #475569;">${escHtml(contractTypeDisplay)}</td>
             <td style="color: #475569;">${contractDateDisplay}</td>
             <td style="color: #475569; font-family: monospace;">${subscriptionValueText}</td>
             <td style="text-align: center;"><span class="${statusBadgeClass}">${statusLabel}</span></td>
@@ -230,18 +238,34 @@ function setupPaginationControls(totalItems) {
     controlsContainer.appendChild(nextBtn);
 }
 
+// 🔡 توحيد النص للبحث: يتجاهل التشكيل والتطويل واختلاف (أ/إ/آ) و(ة/ه) و(ى/ي) والأرقام العربية
+function normalizeCompanySearchText(value) {
+    return String(value == null ? '' : value)
+        .toLowerCase()
+        .replace(/[\u064B-\u065F\u0670\u0640]/g, '')
+        .replace(/[أإآٱ]/g, 'ا')
+        .replace(/ى/g, 'ي')
+        .replace(/ة/g, 'ه')
+        .replace(/[٠-٩]/g, d => String(d.charCodeAt(0) - 0x0660))
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
 // 🔍 دالة البحث الفوري داخل جدول الشركات مع إعادة تعيين معايير التقسيم
 // تجمع البحث النصي الحر مع فلتر الحالة (نشط/غير نشط) معاً
 function searchCompanies() {
-    const text = document.getElementById('companySearchInput').value.toLowerCase();
+    const text = normalizeCompanySearchText(document.getElementById('companySearchInput').value);
     const statusFilterEl = document.getElementById('statusFilter');
     const statusValue = statusFilterEl ? statusFilterEl.value : 'all';
 
-    // فلترة السجلات المخبأة محلياً بناءً على حقول الاسم أو البريد أو رقم هوية المنشأة، مع فلتر الحالة
+    // فلترة السجلات المخبأة محلياً بناءً على حقول الاسم أو البريد أو رقم هوية المنشأة
+    // أو اسم المندوب (بتوحيد الحروف العربية: أ/إ/آ، ة/ه، ى/ي، التشكيل)، مع فلتر الحالة
     filteredCompaniesCache = localCompaniesCache.filter(c => {
-        const matchesText = (c.name && c.name.toLowerCase().includes(text))
-            || (c.email && c.email.toLowerCase().includes(text))
-            || (c.establishment_national_id && c.establishment_national_id.toLowerCase().includes(text));
+        const matchesText = !text
+            || normalizeCompanySearchText(c.name).includes(text)
+            || normalizeCompanySearchText(c.email).includes(text)
+            || normalizeCompanySearchText(c.establishment_national_id).includes(text)
+            || normalizeCompanySearchText(c.representative_name).includes(text);
 
         const companyStatus = c.status || 'active';
         const matchesStatus = statusValue === 'all' || companyStatus === statusValue;

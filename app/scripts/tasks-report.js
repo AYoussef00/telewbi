@@ -530,7 +530,7 @@ async function loadTasksReportData() {
         if (isStale()) return;
         console.error('فشل جلب بيانات تقرير المهام:', error.message);
         if (tableBody) {
-            tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل بيانات التقرير: ${error.message}</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل بيانات التقرير: ${escHtml(error.message)}</td></tr>`;
         }
     }
 }
@@ -619,12 +619,12 @@ function buildTasksReportRowHtml(row) {
 
     return `
         <tr>
-            <td><strong style="color:#1e293b;"><span data-icon="person"></span> ${row.assignee_name || 'غير مسندة'}</strong></td>
-            <td><span class="task-title-cell ${isCompleted ? 'completed' : ''}">${row.title}</span></td>
-            <td style="color:#334155;"><span data-icon="building"></span> ${row.company_name}</td>
-            <td><span class="badge-task-type ${typeBadgeClass}">${row.type}</span></td>
+            <td><strong style="color:#1e293b;"><span data-icon="person"></span> ${escHtml(row.assignee_name || 'غير مسندة')}</strong></td>
+            <td><span class="task-title-cell ${isCompleted ? 'completed' : ''}">${escHtml(row.title)}</span></td>
+            <td style="color:#334155;"><span data-icon="building"></span> ${escHtml(row.company_name)}</td>
+            <td><span class="badge-task-type ${typeBadgeClass}">${escHtml(row.type)}</span></td>
             <td style="color:#475569;"><span data-icon="calendar"></span> ${formatTaskPeriod(row)}</td>
-            <td style="text-align:center;"><span class="badge-task-status ${statusBadgeClass}">${row.status}</span></td>
+            <td style="text-align:center;"><span class="badge-task-status ${statusBadgeClass}">${escHtml(row.status)}</span></td>
         </tr>
     `;
 }

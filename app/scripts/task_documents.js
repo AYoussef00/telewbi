@@ -20,9 +20,9 @@
     function $(id) { return document.getElementById(id); }
 
     function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text == null ? '' : String(text);
-        return div.innerHTML;
+        return String(text == null ? '' : text)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/`/g, '&#96;');
     }
 
     function showAlert(message, type) {

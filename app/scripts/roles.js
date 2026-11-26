@@ -90,9 +90,9 @@ function renderRoleTabs() {
     if (!container) return;
 
     container.innerHTML = allRolesList.map(r => `
-        <button type="button" class="role-tab ${r.key === currentSelectedRole ? 'active' : ''}" data-role="${r.key}">
-            <span data-icon="${r.icon || 'person'}" class="icon-inline"></span> ${r.label}
-            ${r.builtin ? '' : `<span class="role-tab-remove" data-remove-role="${r.key}" title="حذف هذا الدور">✕</span>`}
+        <button type="button" class="role-tab ${r.key === currentSelectedRole ? 'active' : ''}" data-role="${escHtml(r.key)}">
+            <span data-icon="${r.icon || 'person'}" class="icon-inline"></span> ${escHtml(r.label)}
+            ${r.builtin ? '' : `<span class="role-tab-remove" data-remove-role="${escHtml(r.key)}" title="حذف هذا الدور">✕</span>`}
         </button>
     `).join('');
 
@@ -122,7 +122,7 @@ function populateAssignRoleSelect() {
     const select = document.getElementById('userRoleNewSelect');
     if (!select) return;
     const previousValue = select.value;
-    select.innerHTML = allRolesList.map(r => `<option value="${r.key}">${r.label}</option>`).join('');
+    select.innerHTML = allRolesList.map(r => `<option value="${escHtml(r.key)}">${escHtml(r.label)}</option>`).join('');
     if (allRolesList.some(r => r.key === previousValue)) select.value = previousValue;
 }
 
@@ -238,7 +238,7 @@ function buildPermissionsTable() {
                     <td colspan="${Permissions.ACTIONS.length + 1}">
                         <span class="perm-group-header-cell">
                             <span data-icon="${section.icon}"></span>
-                            ${section.label}
+                            ${escHtml(section.label)}
                         </span>
                     </td>
                 </tr>
@@ -263,11 +263,11 @@ function buildPermissionsTable() {
 function buildPermissionRowHtml(section, isChild) {
     const hidden = new Set(section.hiddenActions || []);
     return `
-        <tr data-section-row="${section.key}" class="${isChild ? 'perm-child-row' : ''}">
+        <tr data-section-row="${escHtml(section.key)}" class="${isChild ? 'perm-child-row' : ''}">
             <td>
                 <span class="perm-section-cell ${isChild ? 'perm-section-cell-child' : ''}">
                     <span data-icon="${section.icon}"></span>
-                    ${section.label}
+                    ${escHtml(section.label)}
                 </span>
             </td>
             ${Permissions.ACTIONS.map(action => {
@@ -276,7 +276,7 @@ function buildPermissionRowHtml(section, isChild) {
                 }
                 return `
                 <td>
-                    <input type="checkbox" value="${action}:${section.key}" title="${Permissions.ACTION_LABELS_AR[action]} — ${section.label}">
+                    <input type="checkbox" value="${action}:${escHtml(section.key)}" title="${Permissions.ACTION_LABELS_AR[action]} — ${escHtml(section.label)}">
                 </td>
             `;
             }).join('')}

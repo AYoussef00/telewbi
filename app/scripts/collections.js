@@ -98,6 +98,7 @@ let filteredCollectionsCache = [];
 let currentCollectionPage = 1;
 const collectionsPerPage = 15;
 let noClaimColumnAvailable = true; // false لو لم يُنفَّذ collection_no_claim_setup.sql بعد
+let dueOverrideColumnAvailable = true; // false لو لم يُنفَّذ collection_due_override_setup.sql بعد
 let currentMonthValue = '';        // بصيغة YYYY-MM (من حقل <input type="month">)
 
 // 🆕 قائمة "العقود المنتهية" (روابط اضافة لها link_end_date ماضٍ أو اليوم) + تقسيم صفحاتها
@@ -181,7 +182,7 @@ function populateCollectionMethodSelect(selectId, selectedId, selectedLabel) {
     }
 
     select.innerHTML = '<option value="">— اختر طريقة التحصيل —</option>' +
-        options.map(o => `<option value="${o.id}">${o.name}</option>`).join('');
+        options.map(o => `<option value="${o.id}">${escHtml(o.name)}</option>`).join('');
     select.value = selectedId != null ? String(selectedId) : '';
 }
 
@@ -391,13 +392,22 @@ async function fetchAndRenderCollections() {
         const BASE_COLLECTION_COLS = 'employee_link_id, amount, received_amount, status, paid_at, notes, collection_type_id, collection_types(name)';
         let collectionRows = [];
         if (!(allowedLinkIds !== null && allowedLinkIds.length === 0)) {
-            try {
-                collectionRows = await fetchCollectionRows(BASE_COLLECTION_COLS + ', no_claim');
-                noClaimColumnAvailable = true;
-            } catch (colError) {
-                if (!/no_claim/i.test((colError && colError.message) || '')) throw colError;
-                noClaimColumnAvailable = false;
-                collectionRows = await fetchCollectionRows(BASE_COLLECTION_COLS);
+            // أعمدة اختيارية (no_claim, due_override): لو لم يُنفَّذ سكربت أحدها بعد نُعيد الجلب بدونه
+            noClaimColumnAvailable = true;
+            dueOverrideColumnAvailable = true;
+            for (let attempt = 0; attempt < 3; attempt++) {
+                const optionalCols = [];
+                if (noClaimColumnAvailable) optionalCols.push('no_claim');
+                if (dueOverrideColumnAvailable) optionalCols.push('due_override');
+                try {
+                    collectionRows = await fetchCollectionRows([BASE_COLLECTION_COLS, ...optionalCols].join(', '));
+                    break;
+                } catch (colError) {
+                    const msg = (colError && colError.message) || '';
+                    if (dueOverrideColumnAvailable && /due_override/i.test(msg)) { dueOverrideColumnAvailable = false; continue; }
+                    if (noClaimColumnAvailable && /no_claim/i.test(msg)) { noClaimColumnAvailable = false; continue; }
+                    throw colError;
+                }
             }
         }
 
@@ -432,7 +442,11 @@ async function fetchAndRenderCollections() {
                 // يجعل "المتبقي" يظهر كمبلغ موجب زائف رغم شارة "مدفوع"). السجلات غير
                 // المدفوعة تبقى تماماً على مسار الاستحقاق التراكمي الحي كما كان.
                 const isPaidRecord = !!(collection && collection.status === 'paid');
-                const dueAmount = isNoClaim ? 0 : ((isPaidRecord && collection.amount != null) ? parseFloat(collection.amount) : dueInfo.dueAmount);
+                // ✏️ "تعديل المستحق": قيمة يدوية محفوظة لهذا الشهر (due_override) تتقدّم على الحساب التلقائي
+                const hasDueOverride = !isNoClaim && !!collection && collection.due_override != null && collection.due_override !== '';
+                const dueAmount = isNoClaim ? 0 : (hasDueOverride
+                    ? Math.max(parseFloat(collection.due_override) || 0, 0)
+                    : ((isPaidRecord && collection.amount != null) ? parseFloat(collection.amount) : dueInfo.dueAmount));
                 const remaining = Math.max(dueAmount - receivedAmount, 0);
                 // ✅ مستحق صفر (مثلاً راتب مستورد 0، أو رصيد لا يتجاوز الخصم الثابت) ⇐ الحالة
                 // "مدفوع" تلقائياً: لا شيء مطلوب تحصيله، فلا يُترك "غير مدفوع"
@@ -457,6 +471,8 @@ async function fetchAndRenderCollections() {
                     netSalaryValue,           // كامل الصافي الشهري المرجعي (بغض النظر عن التناسب)
                     dueAmount,                // المستحق المعروض: محفوظ (إن كان مدفوعاً ومُعدَّلاً) أو محسوب حياً
                     isFullMonth: (isPaidRecord || isNoClaim) ? true : dueInfo.isFullMonth,
+                    isDueOverridden: hasDueOverride,
+                    computedDueAmount: dueInfo.dueAmount, // المستحق المحسوب تلقائياً (للمقارنة بنافذة تعديل المستحق)
                     isNoClaim,
                     overlapDays: dueInfo.overlapDays,
                     receivedAmount,
@@ -497,7 +513,7 @@ async function fetchAndRenderCollections() {
 
     } catch (error) {
         console.error('تعذّر تحميل بيانات تحصيل الموظفين:', error.message);
-        tableBody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:#ef4444; padding:20px;">فشل تحميل بيانات التحصيل: ${(error && error.message) || 'خطأ غير معروف'}. تأكد من إنشاء جدول 'employee_collections' (بعمود received_amount) بقاعدة بيانات سوبابيس.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:#ef4444; padding:20px;">فشل تحميل بيانات التحصيل: ${escHtml((error && error.message) || 'خطأ غير معروف')}. تأكد من إنشاء جدول 'employee_collections' (بعمود received_amount) بقاعدة بيانات سوبابيس.</td></tr>`;
         if (endedTableBody) endedTableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل بيانات العقود المنتهية.</td></tr>`;
         return;
     }
@@ -558,23 +574,25 @@ function renderCollectionsTable(data) {
         // 📌 عند وجود استحقاق جزئي (شهر جارٍ لم ينتهِ بعد، أو بداية/نهاية ربط
         // خلال الشهر) نعرض عدد الأيام المحتسبة تحت المبلغ، مع تلميح (title)
         // يوضّح كامل الصافي الشهري للمقارنة
-        const dueTitleAttr = !row.isFullMonth
+        const dueTitleAttr = (!row.isFullMonth && !row.isDueOverridden)
             ? ` title="الرصيد: ${formatCollectionCurrency(row.balance)} − خصم تناسبي ${formatCollectionCurrency(row.dueDeduction)} (${COLLECTION_FIXED_DEDUCTION} ÷ ${row.daysInMonth} × ${row.overlapDays} يوم)"`
             : '';
-        const dueProratedNote = !row.isFullMonth
-            ? `<div class="due-prorated-note">(${row.overlapDays} يوم)</div>`
-            : '';
+        const dueProratedNote = row.isDueOverridden
+            ? `<div class="due-prorated-note" title="تم تعديل المستحق يدوياً (المحسوب تلقائياً: ${formatCollectionCurrency(row.computedDueAmount)})">(معدَّل يدوياً)</div>`
+            : (!row.isFullMonth
+                ? `<div class="due-prorated-note">(${row.overlapDays} يوم)</div>`
+                : '');
 
         // 🆕 عمود "الموظف": الاسم + اسم الشركة بسطر ثانوي رمادي تحته، بدل عمود
         // "الشركة" المنفصل السابق. عمود "رقم الهوية": الرقم + (تاريخ الربط - تاريخ انتهاء الربط)
         // بسطر ثانوي واحد تحته، بدل عمود "تاريخ ربط الموظف" المنفصل السابق.
         tr.innerHTML = `
             <td>
-                <div class="employee-name-link">${row.employeeName}</div>
-                <div class="collection-subtext">${row.companyName}</div>
+                <div class="employee-name-link">${escHtml(row.employeeName)}</div>
+                <div class="collection-subtext">${escHtml(row.companyName)}</div>
             </td>
             <td class="collection-national-id-cell">
-                <div>${row.nationalId}</div>
+                <div>${escHtml(row.nationalId)}</div>
                 <div class="collection-subtext" style="white-space:nowrap;">${formatCollectionDate(row.linkDate)} - ${formatCollectionDate(row.linkEndDate)}</div>
             </td>
             <td class="collection-balance-cell" style="text-align:center;">${formatCollectionCurrency(row.balance)}</td>
@@ -584,7 +602,7 @@ function renderCollectionsTable(data) {
             <td style="text-align:center;"><span class="${statusBadgeClass}"${row.isNoClaim ? ' title="غير مطالَب بالسداد"' : (row.isAutoPaid ? ' title="مستحقه صفر — مدفوع تلقائياً"' : '')}>${statusLabel}</span>${row.isNoClaim ? '<div class="collection-subtext">غير مطالَب بالسداد</div>' : ''}</td>
             <td style="text-align:center;">
                 <div style="font-family: monospace;">${row.paidAt ? formatCollectionDate(row.paidAt) : '—'}</div>
-                ${row.collectionTypeName ? `<div class="collection-subtext">${row.collectionTypeName}</div>` : ''}
+                ${row.collectionTypeName ? `<div class="collection-subtext">${escHtml(row.collectionTypeName)}</div>` : ''}
             </td>
             <td style="text-align:center;"><div class="ra-actions-cell">${RowActions.viewBtnHtml('view:finance_collections', 'عرض تفاصيل الموظف ودفعات السداد')}${RowActions.moreBtnHtml('edit:finance_collections')}</div></td>
         `;
@@ -604,6 +622,7 @@ function renderCollectionsTable(data) {
                 ...((row.isAutoPaid || row.isNoClaim) ? [] : [isPaid
                     ? { perm: 'edit:finance_collections', icon: ICONS.refresh, label: 'إلغاء تعليم كمدفوع', run: () => toggleCollectionStatus(row.linkId, 'unpaid') }
                     : { perm: 'edit:finance_collections', icon: ICONS['check-circle'], label: 'تعليم كمدفوع', run: () => toggleCollectionStatus(row.linkId, 'paid') }]),
+                ...(row.isNoClaim ? [] : [{ perm: 'edit:finance_collections', icon: ICONS.edit, label: 'تعديل المستحق', run: () => openEditDueModal(row.linkId) }]),
                 ...(row.isNoClaim ? [] : [{ perm: 'edit:finance_collections', icon: ICONS.edit, label: 'تعديل بيانات التحصيل', run: () => openEditCollectionModal(row.linkId) }])
             ]
         });
@@ -689,10 +708,10 @@ function renderEndedLinksTable() {
     paginatedData.forEach(row => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td><a href="employee-collection-details.html?linkId=${row.linkId}" class="employee-name-link" title="عرض تفاصيل الموظف وسجل تحصيله">${row.employeeName}</a></td>
-            <td class="collection-national-id-cell">${row.nationalId}</td>
-            <td style="color:#334155;">${row.companyName}</td>
-            <td style="color:#475569;">${row.jobTitle}</td>
+            <td><a href="employee-collection-details.html?linkId=${row.linkId}" class="employee-name-link" title="عرض تفاصيل الموظف وسجل تحصيله">${escHtml(row.employeeName)}</a></td>
+            <td class="collection-national-id-cell">${escHtml(row.nationalId)}</td>
+            <td style="color:#334155;">${escHtml(row.companyName)}</td>
+            <td style="color:#475569;">${escHtml(row.jobTitle)}</td>
             <td style="text-align:center; font-family: monospace; color:#475569;">${formatCollectionDate(row.linkDate)}</td>
             <td style="text-align:center; font-family: monospace; color:#b45309; font-weight:600;">${formatCollectionDate(row.linkEndDate)}</td>
             <td style="text-align:center;"><a href="employee-collection-details.html?linkId=${row.linkId}" style="color:#2563eb; font-weight:600; text-decoration:underline; font-size:12.5px;">عرض السجل</a></td>
@@ -1047,6 +1066,124 @@ async function handleEditCollectionSubmit(event) {
     }
 }
 
+
+// =========================================================================
+// ✏️ إجراء "تعديل المستحق": تعديل المبلغ المستحق لموظف عن الشهر المختار فقط
+// (مثلاً خصم/تسوية متفق عليها). تُحفظ القيمة بعمود due_override (وتُنسخ أيضاً
+// لعمود amount) فتتقدّم على الحساب التلقائي، ولا تتأثر بها باقي الأشهر.
+// «إعادة الحساب التلقائي» يمسح due_override. يتطلب collection_due_override_setup.sql
+// المبلغ المستلم لا يتغيّر؛ والحالة تُشتق من مقارنته بالمستحق الجديد.
+// =========================================================================
+function openEditDueModal(linkId) {
+    const row = localCollectionsCache.find(r => String(r.linkId) === String(linkId));
+    if (!row) return;
+
+    if (!dueOverrideColumnAvailable) {
+        alert('هذا الإجراء يتطلب تنفيذ سكربت collection_due_override_setup.sql في Supabase أولاً.');
+        return;
+    }
+
+    document.getElementById('editDueLinkId').value = row.linkId;
+    document.getElementById('editDueEmployeeName').value = `${row.employeeName} — ${row.companyName}`;
+    document.getElementById('editDueComputed').value = formatCollectionCurrency(row.computedDueAmount);
+    document.getElementById('editDueReceived').value = formatCollectionCurrency(row.receivedAmount);
+    document.getElementById('editDueAmount').value = (parseFloat(row.dueAmount) || 0).toFixed(2);
+    document.getElementById('editDueNotes').value = row.notes || '';
+    document.getElementById('error-edit_due_amount').textContent = '';
+    hideEditDueAlert();
+
+    const resetBtn = document.getElementById('editDueResetBtn');
+    if (resetBtn) resetBtn.style.display = row.isDueOverridden ? '' : 'none';
+
+    document.getElementById('editDueModal').classList.add('open');
+}
+
+function closeEditDueModal() {
+    document.getElementById('editDueModal').classList.remove('open');
+}
+
+function showEditDueAlert(message) {
+    const box = document.getElementById('editDueAlert');
+    box.textContent = message;
+    box.className = 'form-alert alert-error';
+    box.style.display = 'block';
+}
+function hideEditDueAlert() {
+    const box = document.getElementById('editDueAlert');
+    if (box) box.style.display = 'none';
+}
+
+async function handleEditDueSubmit(event) {
+    event.preventDefault();
+    await saveDueOverride(false);
+}
+
+async function resetDueOverride() {
+    if (!confirm('إعادة المستحق لهذا الشهر إلى الحساب التلقائي؟')) return;
+    await saveDueOverride(true);
+}
+
+async function saveDueOverride(reset) {
+    hideEditDueAlert();
+    const linkId = document.getElementById('editDueLinkId').value;
+    const row = localCollectionsCache.find(r => String(r.linkId) === String(linkId));
+    if (!row) { closeEditDueModal(); return; }
+
+    let newDue;
+    if (reset) {
+        newDue = parseFloat(row.computedDueAmount) || 0;
+    } else {
+        const raw = document.getElementById('editDueAmount').value.trim();
+        const num = parseFloat(raw);
+        if (raw === '' || isNaN(num) || num < 0) {
+            document.getElementById('error-edit_due_amount').textContent = 'الرجاء إدخال مبلغ مستحق صحيح (رقم موجب أو صفر).';
+            return;
+        }
+        document.getElementById('error-edit_due_amount').textContent = '';
+        newDue = Math.round(num * 100) / 100;
+    }
+
+    const notes = document.getElementById('editDueNotes').value.trim();
+    const received = parseFloat(row.receivedAmount) || 0;
+    const newStatus = (newDue > 0 && received >= newDue) ? 'paid' : 'unpaid';
+
+    const submitBtn = document.querySelector('#editDueForm .btn-modal-save');
+    const resetBtn = document.getElementById('editDueResetBtn');
+    if (submitBtn) submitBtn.disabled = true;
+    if (resetBtn) resetBtn.disabled = true;
+
+    const payload = {
+        employee_link_id: parseInt(linkId, 10),
+        collection_month: `${currentMonthValue}-01`,
+        amount: newDue,
+        due_override: reset ? null : newDue,
+        received_amount: received,
+        status: newStatus,
+        paid_at: row.paidAt || ((newStatus === 'paid' && received > 0) ? new Date().toISOString() : null),
+        collection_type_id: row.collectionTypeId || null,
+        notes: notes || null
+    };
+
+    try {
+        const { data: upsertedRows, error } = await dbClient
+            .from('employee_collections')
+            .upsert([payload], { onConflict: 'employee_link_id,collection_month' })
+            .select();
+        if (error) throw error;
+        if (!upsertedRows || upsertedRows.length === 0) {
+            showEditDueAlert('لم يتم حفظ التعديل فعلياً. تحقق من سياسات إضافة/تعديل (RLS) على جدول employee_collections في سوبابيس.');
+            return;
+        }
+        closeEditDueModal();
+        await fetchAndRenderCollections();
+    } catch (error) {
+        console.error('Edit Due Error:', error);
+        showEditDueAlert('فشلت العملية: ' + error.message);
+    } finally {
+        if (submitBtn) submitBtn.disabled = false;
+        if (resetBtn) resetBtn.disabled = false;
+    }
+}
 
 // =========================================================================
 // 🚫 إجراء "عدم المطالبة بالسداد" (مثلاً موظف أُنهي ربطه ولا يُطلب منه سداد):

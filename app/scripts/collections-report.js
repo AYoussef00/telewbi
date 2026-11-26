@@ -348,11 +348,21 @@ async function loadCollectionsReportData() {
         );
         let collectionRows = [];
         if (linkIds.length > 0) {
-            try {
-                collectionRows = await fetchCollectionRows('employee_link_id, amount, received_amount, status, paid_at, notes, no_claim');
-            } catch (colError) {
-                if (!/no_claim/i.test((colError && colError.message) || '')) throw colError;
-                collectionRows = await fetchCollectionRows('employee_link_id, amount, received_amount, status, paid_at, notes');
+            // أعمدة اختيارية (no_claim, due_override): لو لم يُنفَّذ سكربت أحدها بعد نُعيد الجلب بدونه
+            let useNoClaim = true, useDueOverride = true;
+            for (let attempt = 0; attempt < 3; attempt++) {
+                const cols = ['employee_link_id', 'amount', 'received_amount', 'status', 'paid_at', 'notes'];
+                if (useNoClaim) cols.push('no_claim');
+                if (useDueOverride) cols.push('due_override');
+                try {
+                    collectionRows = await fetchCollectionRows(cols.join(', '));
+                    break;
+                } catch (colError) {
+                    const msg = (colError && colError.message) || '';
+                    if (useDueOverride && /due_override/i.test(msg)) { useDueOverride = false; continue; }
+                    if (useNoClaim && /no_claim/i.test(msg)) { useNoClaim = false; continue; }
+                    throw colError;
+                }
             }
         }
 
@@ -378,9 +388,12 @@ async function loadCollectionsReportData() {
 
                 const collection = collectionByLinkId.get(String(link.id));
                 const receivedAmount = !isNoClaim && collection && collection.received_amount != null ? parseFloat(collection.received_amount) : 0;
-                const remaining = isNoClaim ? 0 : Math.max(dueInfo.dueAmount - receivedAmount, 0);
+                // ✏️ "تعديل المستحق" اليدوي (due_override) يتقدّم على الحساب التلقائي
+                const hasDueOverride = !isNoClaim && !!collection && collection.due_override != null && collection.due_override !== '';
+                const effectiveDue = isNoClaim ? 0 : (hasDueOverride ? Math.max(parseFloat(collection.due_override) || 0, 0) : dueInfo.dueAmount);
+                const remaining = isNoClaim ? 0 : Math.max(effectiveDue - receivedAmount, 0);
                 // ✅ مستحق صفر ⇐ الحالة "مدفوع" تلقائياً (لا شيء مطلوب تحصيله)
-                const isAutoPaid = !isNoClaim && dueInfo.dueAmount <= 0.004;
+                const isAutoPaid = !isNoClaim && effectiveDue <= 0.004;
                 return {
                     linkId: link.id,
                     employeeName: (link.employees && link.employees.name) ? link.employees.name : '----',
@@ -392,8 +405,9 @@ async function loadCollectionsReportData() {
                     daysInMonth: dueInfo.daysInMonth,
                     linkDateRaw: link.link_date || null,   // تاريخ الربط (لتصدير Excel)
                     netSalaryValue,               // كامل الصافي الشهري المرجعي (بغض النظر عن التناسب)
-                    dueAmount: isNoClaim ? 0 : dueInfo.dueAmount,  // المستحق الفعلي عن هذا الشهر حتى تاريخه (بعد التناسب إن وُجد)
-                    isFullMonth: isNoClaim ? true : dueInfo.isFullMonth,
+                    dueAmount: effectiveDue,  // المستحق الفعلي عن هذا الشهر حتى تاريخه (بعد التناسب إن وُجد)
+                    isFullMonth: (isNoClaim || hasDueOverride) ? true : dueInfo.isFullMonth,
+                    isDueOverridden: hasDueOverride,
                     isNoClaim,
                     overlapDays: dueInfo.overlapDays,
                     receivedAmount,
@@ -419,7 +433,7 @@ async function loadCollectionsReportData() {
     } catch (error) {
         console.error('تعذّر تحميل بيانات تقرير تحصيل الموظفين:', error);
         if (tableBody) {
-            tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل بيانات التقرير: ${(error && error.message) || 'خطأ غير معروف'}</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل بيانات التقرير: ${escHtml((error && error.message) || 'خطأ غير معروف')}</td></tr>`;
         }
     }
 }
@@ -515,12 +529,12 @@ function buildCollectionsReportRowHtml(row) {
     return `
         <tr>
             <td>
-                <strong style="color:#1e293b;">${row.employeeName}</strong>
-                <div class="collection-subtext">${row.companyName}</div>
+                <strong style="color:#1e293b;">${escHtml(row.employeeName)}</strong>
+                <div class="collection-subtext">${escHtml(row.companyName)}</div>
             </td>
             <td class="collection-national-id-cell">
-                <div>${row.nationalId}</div>
-                <div class="collection-subtext">${row.jobTitle}</div>
+                <div>${escHtml(row.nationalId)}</div>
+                <div class="collection-subtext">${escHtml(row.jobTitle)}</div>
             </td>
             <td class="collection-balance-cell" style="text-align:center;">${formatCollectionsReportCurrency(row.balance)}</td>
             <td class="collection-net-cell"${dueTitleAttr} style="text-align:center;">${formatCollectionsReportCurrency(row.dueAmount)}${dueProratedNote}</td>

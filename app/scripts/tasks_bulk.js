@@ -222,11 +222,11 @@ async function handleCompanySelected(companyId) {
         }
 
         listContainer.innerHTML = currentCompanyEmployees.map(emp => `
-            <label class="employee-picker-chip" data-emp-name="${emp.name.toLowerCase()}">
+            <label class="employee-picker-chip" data-emp-name="${escHtml(emp.name.toLowerCase())}">
                 <input type="checkbox" class="employee-picker-checkbox" value="${emp.employee_id}">
                 <span class="chip-box"></span>
-                <span class="chip-text">${emp.name}</span>
-                ${emp.job_title ? `<span class="chip-job-title">— ${emp.job_title}</span>` : ''}
+                <span class="chip-text">${escHtml(emp.name)}</span>
+                ${emp.job_title ? `<span class="chip-job-title">— ${escHtml(emp.job_title)}</span>` : ''}
             </label>
         `).join('');
 
@@ -237,7 +237,7 @@ async function handleCompanySelected(companyId) {
 
     } catch (error) {
         console.error('تعذّر تحميل موظفي الشركة:', error.message);
-        listContainer.innerHTML = `<p class="employees-picker-empty">تعذّر تحميل الموظفين: ${error.message}</p>`;
+        listContainer.innerHTML = `<p class="employees-picker-empty">تعذّر تحميل الموظفين: ${escHtml(error.message)}</p>`;
     }
 }
 

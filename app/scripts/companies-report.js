@@ -327,7 +327,7 @@ async function loadCompanyReportData() {
     } catch (error) {
         console.error("فشل تحميل بيانات تقرير الشركات:", error);
         if (tableBody) {
-            tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل بيانات التقرير: ${(error && error.message) || 'خطأ غير معروف'}</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل بيانات التقرير: ${escHtml((error && error.message) || 'خطأ غير معروف')}</td></tr>`;
         }
     }
 }
@@ -395,11 +395,11 @@ function buildCompanyReportRowHtml(row) {
     return `
         <tr>
             <td>
-                <strong style="color:#1e293b;">${row.name}</strong>
-                <div class="report-subtext">${row.email}</div>
+                <strong style="color:#1e293b;">${escHtml(row.name)}</strong>
+                <div class="report-subtext">${escHtml(row.email)}</div>
             </td>
-            <td style="color:#475569; font-family: monospace; font-size:0.95rem;">${row.phone}</td>
-            <td style="color:#334155;">${row.city}</td>
+            <td style="color:#475569; font-family: monospace; font-size:0.95rem;">${escHtml(row.phone)}</td>
+            <td style="color:#334155;">${escHtml(row.city)}</td>
             <td style="text-align:center; color:#334155;">${row.contract_date}</td>
             <td style="text-align:center; font-weight:600; color:#64748b;">${row.addition_count}</td>
             <td style="text-align:center; font-weight:600; color:#64748b;">${row.hosting_count}</td>

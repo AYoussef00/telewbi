@@ -179,7 +179,7 @@ async function loadTickets() {
 
     } catch (error) {
         console.error('فشل جلب بيانات التذاكر:', error.message);
-        tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل التذاكر: ${error.message}</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل التذاكر: ${escHtml(error.message)}</td></tr>`;
     }
 }
 
@@ -258,7 +258,7 @@ function buildTicketRowHtml(ticket) {
             <td><span class="ticket-subject-cell">${escapeHtml(ticket.subject)}</span></td>
             <td>
                 <div class="requester-cell">
-                    <span class="requester-avatar">${(companyLabel || '?').trim().charAt(0)}</span>
+                    <span class="requester-avatar">${escHtml((companyLabel || '?').trim().charAt(0))}</span>
                     <div class="requester-info">
                         <span class="requester-company">🏢 ${escapeHtml(companyLabel)}</span>
                         <span class="requester-name">${escapeHtml(requesterName)}</span>
@@ -266,7 +266,7 @@ function buildTicketRowHtml(ticket) {
                 </div>
             </td>
             <td style="color:#475569;">📅 ${dateLabel}</td>
-            <td style="text-align:center;"><span class="badge-ticket-status ${statusBadgeClass}">${ticket.status}</span></td>
+            <td style="text-align:center;"><span class="badge-ticket-status ${statusBadgeClass}">${escHtml(ticket.status)}</span></td>
             <td style="text-align:center;">
                 <button class="action-icon-btn" title="عرض التذكرة" onclick="openTicketModal(${ticket.id})" data-icon="eye"></button>
                 ${canDelete ? `<button class="action-icon-btn" style="color:#ef4444;" title="حذف" onclick="deleteTicket(${ticket.id})" data-icon="trash" data-perm="delete:support"></button>` : ''}
@@ -276,9 +276,9 @@ function buildTicketRowHtml(ticket) {
 }
 
 function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text || '';
-    return div.innerHTML;
+    return String(text == null ? '' : text)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/`/g, '&#96;');
 }
 
 function setupTicketsPaginationControls(totalItems) {

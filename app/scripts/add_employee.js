@@ -8,7 +8,20 @@ const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 
 // كلمة المرور الافتراضية لأي حساب موظف جديد يُنشأ من هذه الشاشة.
 // يُجبر الموظف على تغييرها فور أول تسجيل دخول (عبر علامة must_change_password بجدول users).
-const DEFAULT_EMPLOYEE_PASSWORD = "Basma@1234";
+// 🔑 كلمة مرور مؤقتة عشوائية لكل حساب جديد (بدل كلمة ثابتة مكشوفة داخل ملف الجافاسكربت
+// يعرفها أي شخص يفتح الموقع). تُعرض للمسؤول مرة واحدة عند الإنشاء، ويُجبَر صاحب الحساب
+// على تغييرها عند أول تسجيل دخول (must_change_password).
+function generateTempPassword() {
+    const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ', lower = 'abcdefghijkmnpqrstuvwxyz', digits = '23456789', symbols = '@#$%&*!';
+    const all = upper + lower + digits + symbols;
+    const rnd = (n) => { const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % n; };
+    const pick = (set) => set[rnd(set.length)];
+    const chars = [pick(upper), pick(lower), pick(digits), pick(symbols)];
+    while (chars.length < 12) chars.push(pick(all));
+    for (let i = chars.length - 1; i > 0; i--) { const j = rnd(i + 1); [chars[i], chars[j]] = [chars[j], chars[i]]; }
+    return chars.join('');
+}
+let DEFAULT_EMPLOYEE_PASSWORD = generateTempPassword(); // تُجدَّد عند كل محاولة حفظ
 
 // =========================================================================
 // 3. قواعد التحقق (Validation Rules)
@@ -359,6 +372,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         const status = document.getElementById('empStatus').value;
         const role = document.getElementById('empRole').value;
         // كلمة مرور موحّدة لكل الحسابات الجديدة؛ الموظف يُجبر على تغييرها عند أول دخول
+        DEFAULT_EMPLOYEE_PASSWORD = generateTempPassword();
         const password = DEFAULT_EMPLOYEE_PASSWORD;
 
         const submitBtn = form.querySelector('.btn-submit');
@@ -529,10 +543,11 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (insertError) throw new Error(insertError.message);
 
             const successMsg = createAccount
-                ? `تم إضافة الموظف بنجاح! كلمة المرور الافتراضية: ${DEFAULT_EMPLOYEE_PASSWORD} — سيُطلب من الموظف تغييرها عند أول تسجيل دخول.`
+                ? `تم إضافة الموظف بنجاح! كلمة المرور المؤقتة: ${DEFAULT_EMPLOYEE_PASSWORD} — انسخها الآن (لن تظهر مرة أخرى)، وسيُطلب من الموظف تغييرها عند أول تسجيل دخول.`
                 : 'تم إضافة الموظف بنجاح! لم يتم إنشاء حساب دخول له.';
 
             showFormAlert(successMsg, 'success');
+            if (createAccount) alert(successMsg); // يُعرض مرتين عمداً: الرسالة بالصفحة + تنبيه يلزم تأكيده حتى لا تضيع كلمة المرور
 
             // 🧹 نبقى بنفس الصفحة بعد الحفظ (بدون تحويل لصفحة أخرى) لتسهيل إضافة
             // موظف آخر مباشرة، مع إعادة تعيين النموذج بالكامل لحالته الافتراضية.

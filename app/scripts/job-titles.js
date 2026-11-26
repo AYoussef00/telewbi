@@ -72,8 +72,8 @@ function renderProfessionsTable(data) {
             : '----';
 
         row.innerHTML = `
-            <td><strong style="color: #1e293b;">${profession.name_ar || '----'}</strong></td>
-            <td style="color: #475569; direction: ltr; text-align: right;">${profession.name_en || '----'}</td>
+            <td><strong style="color: #1e293b;">${escHtml(profession.name_ar || '----')}</strong></td>
+            <td style="color: #475569; direction: ltr; text-align: right;">${escHtml(profession.name_en || '----')}</td>
             <td style="color: #64748b;">${createdDate}</td>
             <td style="text-align: center;">
                 <button class="action-icon-btn" data-perm="edit:job_titles" title="تعديل المسمى الوظيفي" onclick="editProfession('${profession.id}')">${ICONS.edit}</button>

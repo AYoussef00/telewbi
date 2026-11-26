@@ -287,13 +287,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 // التحقق من نوع الحساب (يجب أن يكون حساب شركة) ومن حالة كلمة المرور معاً
                 let userRole = null;
                 let mustChangePassword = false;
+                let accountStatus = null;
                 try {
                     const { data: userRow } = await dbClient
                         .from('users')
-                        .select('role, must_change_password')
+                        .select('role, status, must_change_password')
                         .eq('id', data.user.id)
                         .maybeSingle();
                     userRole = userRow ? userRow.role : null;
+                    accountStatus = userRow ? userRow.status : null;
                     mustChangePassword = !!(userRow && userRow.must_change_password);
                 } catch (innerErr) {
                     console.error('تعذّر التحقق من بيانات الحساب:', innerErr);
@@ -303,6 +305,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (userRole !== 'company') {
                     await dbClient.auth.signOut();
                     showLoginAlert(t.notCompanyAccount, "error");
+                    return;
+                }
+
+                // 🛡️ حساب قيد المراجعة أو مرفوض لا يدخل مهما كان دوره
+                if (accountStatus === 'pending_review' || accountStatus === 'rejected') {
+                    await dbClient.auth.signOut();
+                    showLoginAlert('حسابك غير مفعّل بعد. يرجى التواصل مع إدارة النظام.', "error");
                     return;
                 }
 

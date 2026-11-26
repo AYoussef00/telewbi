@@ -185,7 +185,7 @@ function renderClientPreview(company) {
     box.innerHTML = fields.map(([label, value]) => `
         <div class="preview-field">
             <label>${label}</label>
-            <span>${value}</span>
+            <span>${escHtml(value)}</span>
         </div>
     `).join('');
 
@@ -357,8 +357,8 @@ function addInvoiceItemRow(prefill) {
 
     const p = prefill || {};
     row.innerHTML = `
-        <td><input type="text" class="item-description" placeholder="مثال: رسوم خدمة عمل عن بعد" value="${p.description || ''}"></td>
-        <td><input type="text" class="item-unit" placeholder="خدمة" value="${p.unit || 'خدمة'}"></td>
+        <td><input type="text" class="item-description" placeholder="مثال: رسوم خدمة عمل عن بعد" value="${escHtml(p.description || '')}"></td>
+        <td><input type="text" class="item-unit" placeholder="خدمة" value="${escHtml(p.unit || 'خدمة')}"></td>
         <td><input type="number" class="item-unit-price" min="0" step="0.01" placeholder="0.00" value="${p.unit_price != null ? p.unit_price : ''}"></td>
         <td><input type="number" class="item-quantity" min="0" step="1" placeholder="1" value="${p.quantity != null ? p.quantity : 1}"></td>
         <td><input type="number" class="item-discount" min="0" step="0.01" placeholder="0.00" value="${p.discount_amount != null ? p.discount_amount : 0}"></td>

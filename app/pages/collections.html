@@ -14,6 +14,7 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="../../config/supabase.js"></script>
     <script src="../../routes/routes.js"></script>
+    <script src="../shared/html-escape.js?v=1"></script>
     <script src="../shared/icons.js"></script>
 
     <link rel="stylesheet" href="../../resources/css/global-layout.css?v=2">
@@ -223,6 +224,53 @@
         </div>
     </div>
 
+    <!-- نافذة "تعديل المستحق": تعديل المبلغ المستحق لموظف عن الشهر المختار فقط -->
+    <div class="modal-overlay" id="editDueModal">
+        <div class="modal-content-box">
+            <div class="modal-header-section">
+                <h2 class="modal-title">تعديل المستحق</h2>
+                <button type="button" class="btn-close-x" onclick="closeEditDueModal()">×</button>
+            </div>
+
+            <div class="input-field-group" style="margin-bottom:14px;">
+                <label>الموظف</label>
+                <input type="text" id="editDueEmployeeName" disabled>
+            </div>
+
+            <form id="editDueForm" onsubmit="handleEditDueSubmit(event)">
+                <input type="hidden" id="editDueLinkId">
+                <div style="display:flex; gap:12px; margin-bottom:14px;">
+                    <div class="input-field-group" style="flex:1;">
+                        <label>المستحق المحسوب تلقائياً</label>
+                        <input type="text" id="editDueComputed" disabled>
+                    </div>
+                    <div class="input-field-group" style="flex:1;">
+                        <label>المبلغ المستلم</label>
+                        <input type="text" id="editDueReceived" disabled>
+                    </div>
+                </div>
+                <div class="input-field-group">
+                    <label for="editDueAmount">المستحق الجديد عن هذا الشهر</label>
+                    <input type="number" id="editDueAmount" min="0" step="0.01" placeholder="0.00">
+                    <span class="field-error" id="error-edit_due_amount"></span>
+                </div>
+                <div class="input-field-group" style="margin-top:12px;">
+                    <label for="editDueNotes">ملاحظة</label>
+                    <textarea id="editDueNotes" rows="3" placeholder="سبب التعديل (اختياري)..." style="width:100%; padding:8px 12px; border:1px solid #cbd5e1; border-radius:4px; font-family:inherit; font-size:13px; resize:vertical; outline:none;"></textarea>
+                </div>
+                <div style="font-size:12px; color:#64748b; margin:8px 0 14px;">يسري التعديل على هذا الشهر فقط، ويُحسب «المتبقي» والحالة بناءً على المستحق الجديد.</div>
+
+                <div class="form-alert" id="editDueAlert" style="display:none;"></div>
+
+                <div class="modal-footer-buttons">
+                    <button type="button" class="btn-modal-cancel" id="editDueResetBtn" onclick="resetDueOverride()" style="display:none;">إعادة الحساب التلقائي</button>
+                    <button type="button" class="btn-modal-cancel" onclick="closeEditDueModal()">إلغاء</button>
+                    <button type="submit" class="btn-modal-save" data-perm="edit:finance_collections">حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- نافذة "عدم المطالبة بالسداد": ملاحظة اختيارية تُحفظ بسجل التحصيل وتظهر بعمود
          الملاحظات في صفحة تفاصيل الموظف ودفعات السداد -->
     <div class="modal-overlay" id="noClaimModal">
@@ -307,6 +355,6 @@
     <script src="../shared/navbar.js"></script>
     <script src="../shared/row-actions.js?v=1"></script>
     <script src="../shared/employee-salaries.js?v=2"></script>
-    <script src="../scripts/collections.js?v=17"></script>
+    <script src="../scripts/collections.js?v=19"></script>
 </body>
 </html>

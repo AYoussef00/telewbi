@@ -381,9 +381,9 @@ function renderEndLinkTable(data) {
         const companyName = (link.companies && link.companies.name) ? link.companies.name : '----';
 
         row.innerHTML = `
-            <td><strong style="color: #1e293b;">${employeeName}</strong></td>
-            <td style="color: #475569;">${companyName}</td>
-            <td style="font-weight: 500; color: #334155;">${link.job_title || '----'}</td>
+            <td><strong style="color: #1e293b;">${escHtml(employeeName)}</strong></td>
+            <td style="color: #475569;">${escHtml(companyName)}</td>
+            <td style="font-weight: 500; color: #334155;">${escHtml(link.job_title || '----')}</td>
             <td style="text-align: center;">${renderLinkTypeBadge(link.link_type)}</td>
             <td style="text-align: center; font-family: monospace;">${formatEndLinkDate(link.link_date)}</td>
             <td style="text-align: center; font-family: monospace;">${formatEndLinkDate(link.link_end_date)}</td>
@@ -479,7 +479,7 @@ async function fetchAndRenderHistoryTable() {
 
     if (error) {
         console.error('تعذّر تحميل سجل الإنهاءات السابقة:', error.message);
-        tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل سجل الإنهاءات السابقة: ${error.message}</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل سجل الإنهاءات السابقة: ${escHtml(error.message)}</td></tr>`;
         return;
     }
 
@@ -546,13 +546,13 @@ function renderHistoryTable() {
                 <div style="display:flex; align-items:flex-start;">
                     <span class="procedure-dot ${dotClass}" style="margin-top:5px;" title="${escapeProcedureHtml(dotTitle)}"></span>
                     <div>
-                        <strong style="color: #1e293b;">${record.employee_name || '----'}</strong>
+                        <strong style="color: #1e293b;">${escHtml(record.employee_name || '----')}</strong>
                         ${reasonLine}
                     </div>
                 </div>
             </td>
-            <td style="color: #475569;">${record.company_name || '----'}</td>
-            <td style="font-weight: 500; color: #334155;">${record.job_title || '----'}</td>
+            <td style="color: #475569;">${escHtml(record.company_name || '----')}</td>
+            <td style="font-weight: 500; color: #334155;">${escHtml(record.job_title || '----')}</td>
             <td style="text-align: center;">${renderLinkTypeBadge(record.link_type)}</td>
             <td style="text-align: center; font-family: monospace;">${formatEndLinkDate(record.start_date)}</td>
             <td style="text-align: center; font-family: monospace;">${formatEndLinkDate(record.end_date)}</td>
@@ -890,7 +890,7 @@ async function fetchAndRenderExpiredContractsTable() {
 
     if (error) {
         console.error('تعذّر تحميل قائمة العقود المنتهية:', error.message);
-        tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل قائمة العقود المنتهية: ${error.message}</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل قائمة العقود المنتهية: ${escHtml(error.message)}</td></tr>`;
         return;
     }
 
@@ -930,9 +930,9 @@ function renderExpiredContractsTable() {
         const companyName = (link.companies && link.companies.name) ? link.companies.name : '----';
 
         row.innerHTML = `
-            <td><strong style="color: #1e293b;">${employeeName}</strong></td>
-            <td style="color: #475569;">${companyName}</td>
-            <td style="font-weight: 500; color: #334155;">${link.job_title || '----'}</td>
+            <td><strong style="color: #1e293b;">${escHtml(employeeName)}</strong></td>
+            <td style="color: #475569;">${escHtml(companyName)}</td>
+            <td style="font-weight: 500; color: #334155;">${escHtml(link.job_title || '----')}</td>
             <td style="text-align: center;">${renderLinkTypeBadge(link.link_type)}</td>
             <td style="text-align: center; font-family: monospace;">${formatEndLinkDate(link.link_date)}</td>
             <td style="text-align: center; font-family: monospace; color:#b45309; font-weight:600;">${formatEndLinkDate(link.link_end_date)}</td>

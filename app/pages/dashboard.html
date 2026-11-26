@@ -16,6 +16,7 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="../../config/supabase.js"></script>
     <script src="../../routes/routes.js"></script>
+    <script src="../shared/html-escape.js?v=1"></script>
     <script src="../shared/icons.js"></script>
 
     <link rel="stylesheet" href="../../resources/css/dashboard.css">
@@ -259,6 +260,28 @@
                         </div>
                     </div>
                 </section>
+                <!-- مهام الشركة خلال آخر 7 أيام (كل المهام المضافة، حتى لو كانت فاتورة الشهر
+                     غير مسددة أو لم تُصدَر) — البطاقة ظاهرة دائماً، ويملأها dashboard.js -->
+                <section class="chart-card" id="companyPreviewTasksCard" style="margin-top:16px;">
+                    <div class="chart-title"><span class="title-with-icon"><span class="title-icon" data-icon="clipboard"></span><span>مهام آخر 7 أيام</span></span></div>
+                    <p id="companyPreviewTasksNote" style="font-size:12px; color:#b45309; margin:6px 0 0; display:none;">فاتورة الشهر الحالي غير مسددة أو لم تُصدَر — تظهر فقط المهام المضافة خلال آخر 7 أيام. اضغط على عنوان المهمة لعرض تفاصيلها والمستندات المرفوعة.</p>
+                    <div class="table-container" style="margin-top: 12px;">
+                        <table class="companies-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 34%;">عنوان المهمة</th>
+                                    <th style="width: 13%;">النوع</th>
+                                    <th style="width: 20%;">الشركة</th>
+                                    <th style="width: 15%;">تاريخ الاستحقاق</th>
+                                    <th style="width: 18%; text-align:center;">الحالة</th>
+                                </tr>
+                            </thead>
+                            <tbody id="companyPreviewTasksBody">
+                                <tr><td colspan="5" class="table-loading-state">جاري تحميل المهام...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
             </div>
 
             <!-- ==================================================================
@@ -328,7 +351,9 @@
          مستقبلي لأي منهما، غيّر رقمه (مثال: ?v=3) لضمان وصول التحديث فوراً. -->
     <script src="../../bootstrap/permissions.js?v=8"></script>
     <script src="../../bootstrap/app-core.js?v=2"></script>
-    <script src="../scripts/dashboard.js?v=2"></script>
+    <script src="../shared/invoice-periods.js?v=1"></script>
+    <script src="../shared/company-task-visibility.js?v=2"></script>
+    <script src="../scripts/dashboard.js?v=5"></script>
     <script src="../shared/navbar.js"></script>
     <script src="../shared/sidebar.js?v=3"></script>
 </body>

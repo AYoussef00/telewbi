@@ -565,7 +565,7 @@ async function loadAttendanceReportData() {
         if (isStale()) return;
         console.error('فشل جلب بيانات تقرير الحضور:', error.message);
         if (tableBody) {
-            tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل بيانات التقرير: ${error.message}</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل بيانات التقرير: ${escHtml(error.message)}</td></tr>`;
         }
     }
 }
@@ -651,13 +651,13 @@ function buildAttendanceReportRowHtml(row) {
 
     return `
         <tr>
-            <td><strong style="color:#1e293b;"><span data-icon="person"></span> ${row.employee_name}</strong></td>
-            <td style="color:#334155;"><span data-icon="building"></span> ${row.company_name}</td>
+            <td><strong style="color:#1e293b;"><span data-icon="person"></span> ${escHtml(row.employee_name)}</strong></td>
+            <td style="color:#334155;"><span data-icon="building"></span> ${escHtml(row.company_name)}</td>
             <td style="color:#475569;"><span data-icon="calendar"></span> ${row.date}</td>
             <td style="font-weight:600; color:#475569;">${row.check_in || '--:--:--'}</td>
             <td style="font-weight:600; color:#475569;">${row.check_out || '--:--:--'}</td>
             <td style="text-align:center; font-weight:600; color:#64748b;">${hoursDisplay}</td>
-            <td style="text-align:center;"><span class="badge-att-status ${badgeClass}"><span data-icon="${badgeIconName}"></span> ${row.status}</span></td>
+            <td style="text-align:center;"><span class="badge-att-status ${badgeClass}"><span data-icon="${badgeIconName}"></span> ${escHtml(row.status)}</span></td>
         </tr>
     `;
 }

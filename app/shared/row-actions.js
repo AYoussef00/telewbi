@@ -114,7 +114,7 @@
             b.className = 'ra-menu-item' + (item.danger ? ' danger' : '');
             b.setAttribute('role', 'menuitem');
             if (item.perm) b.setAttribute('data-perm', item.perm);
-            b.innerHTML = `${item.icon || ''}<span>${item.label}</span>`;
+            b.innerHTML = `${item.icon || ''}<span>${escHtml(item.label)}</span>`;
             b.addEventListener('click', (e) => {
                 e.stopPropagation();
                 closeMenu();

@@ -211,9 +211,9 @@ function renderCompanyDocs(company, isEnglish) {
     ];
 
     grid.innerHTML = docs.map(doc => {
-        const labelHtml = `<span data-icon="${doc.icon}" class="icon-inline"></span> ${doc.text}`;
+        const labelHtml = `<span data-icon="${doc.icon}" class="icon-inline"></span> ${escHtml(doc.text)}`;
         if (doc.url) {
-            return `<a href="${doc.url}" target="_blank" rel="noopener" class="doc-view-link">${labelHtml} ↗</a>`;
+            return `<a href="#" data-doc-url="${StorageDocs.attr(doc.url)}" class="doc-view-link">${labelHtml} ↗</a>`;
         }
         return `<div class="doc-view-missing">${labelHtml} — ${isEnglish ? 'not uploaded' : 'لم يُرفع'}</div>`;
     }).join('');

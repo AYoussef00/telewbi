@@ -105,13 +105,13 @@ function renderUsersTable(data) {
         row.innerHTML = `
             <td>
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <span class="company-prefix ${prefixColorClass}">${initials}</span>
-                    <strong style="color: #1e293b;">${user.name || '----'}</strong>
+                    <span class="company-prefix ${prefixColorClass}">${escHtml(initials)}</span>
+                    <strong style="color: #1e293b;">${escHtml(user.name || '----')}</strong>
                 </div>
             </td>
-            <td style="color: #475569; font-family: monospace;">${user.email || '----'}</td>
-            <td style="color: #475569; font-family: monospace;" dir="ltr">${user.phone || '----'}</td>
-            <td><span class="role-badge">${roleText}</span></td>
+            <td style="color: #475569; font-family: monospace;">${escHtml(user.email || '----')}</td>
+            <td style="color: #475569; font-family: monospace;" dir="ltr">${escHtml(user.phone || '----')}</td>
+            <td><span class="role-badge">${escHtml(roleText)}</span></td>
             <td style="text-align: center;">
                 <span class="${statusClass}">${statusText}</span>
             </td>

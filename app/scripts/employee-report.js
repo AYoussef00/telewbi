@@ -325,7 +325,7 @@ async function loadEmployeeReportData() {
     } catch (error) {
         console.error("فشل تحميل بيانات تقرير الموظفين:", error);
         if (tableBody) {
-            tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل بيانات التقرير: ${(error && error.message) || 'خطأ غير معروف'}</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل بيانات التقرير: ${escHtml((error && error.message) || 'خطأ غير معروف')}</td></tr>`;
         }
     }
 }
@@ -396,10 +396,10 @@ function buildReportRowHtml(row) {
 
     return `
         <tr>
-            <td><strong style="color:#1e293b;">${row.name}</strong></td>
-            <td style="color:#475569; font-family: monospace; font-size:0.95rem;">${row.national_id}</td>
-            <td style="font-weight:500; color:#334155;">${row.job_title}</td>
-            <td style="color:#334155;">${row.company_name}</td>
+            <td><strong style="color:#1e293b;">${escHtml(row.name)}</strong></td>
+            <td style="color:#475569; font-family: monospace; font-size:0.95rem;">${escHtml(row.national_id)}</td>
+            <td style="font-weight:500; color:#334155;">${escHtml(row.job_title)}</td>
+            <td style="color:#334155;">${escHtml(row.company_name)}</td>
             <td style="text-align:center;"><span class="badge-status ${statusBadgeClass}">${statusLabel}</span></td>
         </tr>
     `;

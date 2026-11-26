@@ -8,7 +8,20 @@ const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 
 // كلمة المرور الافتراضية لأي حساب موظف جديد يُنشأ من هذه الشاشة (نفس شاشة "إضافة موظف").
 // يُجبر الموظف على تغييرها فور أول تسجيل دخول (عبر علامة must_change_password بجدول users).
-const DEFAULT_EMPLOYEE_PASSWORD = "Basma@1234";
+// 🔑 كلمة مرور مؤقتة عشوائية لكل حساب جديد (بدل كلمة ثابتة مكشوفة داخل ملف الجافاسكربت
+// يعرفها أي شخص يفتح الموقع). تُعرض للمسؤول مرة واحدة عند الإنشاء، ويُجبَر صاحب الحساب
+// على تغييرها عند أول تسجيل دخول (must_change_password).
+function generateTempPassword() {
+    const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ', lower = 'abcdefghijkmnpqrstuvwxyz', digits = '23456789', symbols = '@#$%&*!';
+    const all = upper + lower + digits + symbols;
+    const rnd = (n) => { const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % n; };
+    const pick = (set) => set[rnd(set.length)];
+    const chars = [pick(upper), pick(lower), pick(digits), pick(symbols)];
+    while (chars.length < 12) chars.push(pick(all));
+    for (let i = chars.length - 1; i > 0; i--) { const j = rnd(i + 1); [chars[i], chars[j]] = [chars[j], chars[i]]; }
+    return chars.join('');
+}
+let DEFAULT_EMPLOYEE_PASSWORD = generateTempPassword(); // تُجدَّد قبل إنشاء كل حساب
 
 // هل خيار "إنشاء حساب دخول للموظف" مُفعّل حالياً؟ يظهر هذا الخيار فقط لو الموظف
 // ما عنده حساب دخول أصلاً (انظر توضيح إظهار/إخفاء group-create_account في
@@ -73,7 +86,7 @@ function renderDocumentNote(key) {
     }
 
     if (url) {
-        el.innerHTML = `📎 الملف الحالي: <a href="${url}" target="_blank" rel="noopener">عرض الملف</a> <button type="button" class="action-icon-btn" title="حذف الملف الحالي" onclick="markDocumentForRemoval('${key}')" style="color:#ef4444; cursor:pointer; background:none; border:none; margin-inline-start:6px; vertical-align:middle;">${ICONS.trash}</button>`;
+        el.innerHTML = `📎 الملف الحالي: <a href="#" data-doc-url="${StorageDocs.attr(url)}">عرض الملف</a> <button type="button" class="action-icon-btn" title="حذف الملف الحالي" onclick="markDocumentForRemoval('${key}')" style="color:#ef4444; cursor:pointer; background:none; border:none; margin-inline-start:6px; vertical-align:middle;">${ICONS.trash}</button>`;
     } else {
         el.innerHTML = 'لا يوجد ملف مرفوع حالياً.';
     }
@@ -735,6 +748,7 @@ async function handleEditSubmit(event) {
             //    نحفظ جلسة المسؤول الحالي أولاً لأن signUp() قد يبدّل الجلسة النشطة
             //    تلقائياً إلى المستخدم الجديد (لو "Confirm email" غير مفعّل بالمشروع).
             submitBtn.textContent = 'جاري إنشاء حساب الدخول...';
+            DEFAULT_EMPLOYEE_PASSWORD = generateTempPassword();
             const { data: { session: adminSessionBeforeCreate } } = await dbClient.auth.getSession();
 
             const { data: authData, error: authError } = await dbClient.auth.signUp({
@@ -859,9 +873,10 @@ async function handleEditSubmit(event) {
         }
 
         const successMsg = (shouldCreateAccount && newAuthUserId)
-            ? `تم حفظ تعديلات بيانات الموظف بنجاح، وتم إنشاء حساب دخول له! كلمة المرور الافتراضية: ${DEFAULT_EMPLOYEE_PASSWORD} — سيُطلب منه تغييرها عند أول تسجيل دخول. جاري التحويل...`
+            ? `تم حفظ تعديلات بيانات الموظف بنجاح، وتم إنشاء حساب دخول له! كلمة المرور المؤقتة: ${DEFAULT_EMPLOYEE_PASSWORD} — انسخها الآن (لن تظهر مرة أخرى)، وسيُطلب منه تغييرها عند أول تسجيل دخول. جاري التحويل...`
             : 'تم حفظ تعديلات بيانات الموظف بنجاح! جاري التحويل...';
         showFormAlert(successMsg, 'success');
+        if (shouldCreateAccount && newAuthUserId) alert(successMsg); // تنبيه يلزم تأكيده حتى لا تضيع كلمة المرور المؤقتة
         setTimeout(() => {
             window.location.href = Routes.url('employees');
         }, 1800);

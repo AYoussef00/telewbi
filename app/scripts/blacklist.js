@@ -174,9 +174,9 @@ function renderBlacklistTable(data) {
     paginatedData.forEach(entry => {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td style="font-family: monospace; color: #475569;">${entry.national_id || '----'}</td>
-            <td><strong style="color:#1e293b;">${entry.name || '----'}</strong></td>
-            <td style="color:#64748b;">${entry.reason || '----'}</td>
+            <td style="font-family: monospace; color: #475569;">${escHtml(entry.national_id || '----')}</td>
+            <td><strong style="color:#1e293b;">${escHtml(entry.name || '----')}</strong></td>
+            <td style="color:#64748b;">${escHtml(entry.reason || '----')}</td>
             <td style="text-align:center;">
                 <button class="action-icon-btn" style="color:#ef4444;" title="إزالة من القائمة السوداء" data-perm="delete:blacklist" onclick="removeFromBlacklist('${entry.id}')">${ICONS.trash}</button>
             </td>

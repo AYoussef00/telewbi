@@ -310,7 +310,7 @@ function openEmpRowMenu(anchorBtn, empId) {
         btn.className = 'emp-menu-item' + (item.danger ? ' danger' : '');
         btn.setAttribute('role', 'menuitem');
         btn.setAttribute('data-perm', item.perm);
-        btn.innerHTML = `${item.icon || ''}<span>${item.label}</span>`;
+        btn.innerHTML = `${item.icon || ''}<span>${escHtml(item.label)}</span>`;
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             closeEmpRowMenu();

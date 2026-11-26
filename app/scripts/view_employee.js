@@ -228,9 +228,9 @@ function renderEmployeeDocs(emp, isEnglish) {
 
     grid.innerHTML = docs.map(doc => {
         if (doc.url) {
-            return `<a href="${doc.url}" target="_blank" rel="noopener" class="doc-view-link">${doc.label} ↗</a>`;
+            return `<a href="#" data-doc-url="${StorageDocs.attr(doc.url)}" class="doc-view-link">${escHtml(doc.label)} ↗</a>`;
         }
-        return `<div class="doc-view-missing">${doc.label} — ${isEnglish ? 'not uploaded' : 'لم يُرفع'}</div>`;
+        return `<div class="doc-view-missing">${escHtml(doc.label)} — ${isEnglish ? 'not uploaded' : 'لم يُرفع'}</div>`;
     }).join('');
 }
 

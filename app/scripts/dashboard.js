@@ -258,7 +258,7 @@ function renderTopCompaniesBarChart(rankedCompanies) {
     container.innerHTML = rankedCompanies.map((row, index) => {
         const widthPercent = Math.max(4, Math.round((row.count / maxCount) * 100));
         const colorClass = TOP_COMPANIES_BAR_COLORS[index % TOP_COMPANIES_BAR_COLORS.length];
-        const safeName = String(row.name).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const safeName = escapeActivityHtml(row.name);
 
         return `
             <div class="bar-row">
@@ -507,7 +507,9 @@ function renderRecentActivity(events) {
 }
 
 function escapeActivityHtml(str) {
-    return String(str).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return String(str == null ? '' : str)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/`/g, '&#96;');
 }
 
 // ⏱️ تنسيق فرق الوقت بصيغة نسبية مقروءة بالعربية (منذ لحظات / منذ س ساعة / منذ يوم...)
@@ -630,6 +632,7 @@ function renderCompanyDashboardView() {
     loadCompanyStats();
     loadCompanyCompaniesList();
     loadCompanyRecentLogins();
+    loadCompanyPreviewTasks();
 }
 
 // -------------------------------------------------------------------------
@@ -731,7 +734,7 @@ async function loadEmployeeTasksAndRender() {
         console.error('فشل تحميل مهام الموظف الحالي بلوحة التحكم:', error);
         statIds.forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '—'; });
         if (tableBody) {
-            tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل المهام: ${error.message}</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل المهام: ${escHtml(error.message)}</td></tr>`;
         }
     }
 }
@@ -890,6 +893,67 @@ function loadCompanyCompaniesList() {
         </div>
     `).join('');
     applyIconPlaceholders(container);
+}
+
+// -------------------------------------------------------------------------
+// 8ب-2. بطاقة "مهام آخر 7 أيام": تعرض دائماً كل المهام المضافة لشركة/شركات
+//       المستخدم خلال آخر 7 أيام (حتى لو كانت فاتورة شهرها غير مسددة أو لم
+//       تُصدَر — انظر app/shared/company-task-visibility.js). تظهر ملاحظة تنبيه
+//       فقط حين يكون الشهر الحالي غير مسدد/بلا فاتورة. عنوان المهمة رابط لصفحة
+//       تفاصيلها ومستنداتها.
+// -------------------------------------------------------------------------
+async function loadCompanyPreviewTasks() {
+    const card = document.getElementById('companyPreviewTasksCard');
+    const body = document.getElementById('companyPreviewTasksBody');
+    const note = document.getElementById('companyPreviewTasksNote');
+    if (!card || !body || !window.CompanyTaskVisibility) return;
+
+    const companyIds = currentUserScope.companyIds || [];
+    if (companyIds.length === 0) {
+        body.innerHTML = '<tr><td colspan="5" class="table-loading-state">لا توجد شركات مرتبطة بحسابك.</td></tr>';
+        return;
+    }
+
+    try {
+        // تنبيه الفاتورة: هل أي شركة لم يُسدَّد شهرها الحالي (أو بلا فاتورة)؟
+        const paidMonthsMap = await CompanyTaskVisibility.loadPaidMonthsMap(companyIds);
+        const monthKey = CompanyTaskVisibility.currentMonthKey();
+        const anyUnpaid = companyIds.some(id => !CompanyTaskVisibility.isMonthPaid(paidMonthsMap, id, monthKey));
+        if (note) note.style.display = anyUnpaid ? '' : 'none';
+
+        const tasks = await fetchAllRows((from, to) =>
+            dbClient.from('tasks')
+                .select('id, title, type, status, company_id, due_date, created_at')
+                .in('company_id', companyIds)
+                .gte('created_at', CompanyTaskVisibility.recentCutoffISO())
+                .order('created_at', { ascending: false })
+                .order('id', { ascending: false })
+                .range(from, to)
+        );
+
+        if (tasks.length === 0) {
+            body.innerHTML = '<tr><td colspan="5" class="table-loading-state">لا توجد مهام مضافة خلال آخر 7 أيام.</td></tr>';
+            return;
+        }
+
+        const companyNameById = new Map((currentUserScope.ownedCompanies || []).map(c => [String(c.id), c.name]));
+        body.innerHTML = tasks.map(task => {
+            const isCompleted = task.status === 'مكتملة';
+            const typeBadgeClass = EMPLOYEE_TASK_TYPE_BADGE[task.type] || 'badge-type-standalone';
+            const statusBadgeClass = EMPLOYEE_TASK_STATUS_BADGE[task.status] || 'badge-status-pending';
+            return `
+                <tr>
+                    <td><a href="view_task.html?id=${encodeURIComponent(task.id)}" class="task-title-cell task-title-link ${isCompleted ? 'completed' : ''}">${escapeActivityHtml(task.title || '')}</a></td>
+                    <td><span class="badge-task-type ${typeBadgeClass}">${escapeActivityHtml(task.type || '—')}</span></td>
+                    <td><span class="task-company-cell">${escapeActivityHtml(companyNameById.get(String(task.company_id)) || '—')}</span></td>
+                    <td style="color:#475569;">${escapeActivityHtml(task.due_date || '—')}</td>
+                    <td style="text-align:center;"><span class="badge-task-status ${statusBadgeClass}">${escapeActivityHtml(task.status || '—')}</span></td>
+                </tr>`;
+        }).join('');
+    } catch (error) {
+        console.error('تعذّر تحميل مهام آخر 7 أيام للشركة:', error);
+        body.innerHTML = '<tr><td colspan="5" class="table-loading-state" style="color:#ef4444;">تعذّر تحميل المهام.</td></tr>';
+    }
 }
 
 // -------------------------------------------------------------------------

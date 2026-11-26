@@ -162,7 +162,7 @@ function renderInvoicesTable(data) {
 
         row.innerHTML = `
             <td class="invoice-number-cell">${formatInvoiceDisplayNumber(invoice)}</td>
-            <td><strong>${companyName}</strong></td>
+            <td><strong>${escHtml(companyName)}</strong></td>
             <td style="color: #475569; font-family: monospace;">${formatInvoiceDate(invoice.invoice_date)}</td>
             <td style="text-align: center; font-family: monospace;">${formatInvoiceCurrency(invoice.total_amount)}</td>
             <td style="text-align: center;"><span class="${statusBadgeClass}">${statusLabel}</span></td>

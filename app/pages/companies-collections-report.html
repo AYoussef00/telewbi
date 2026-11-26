@@ -14,13 +14,14 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="../../config/supabase.js"></script>
     <script src="../../routes/routes.js"></script>
+    <script src="../shared/html-escape.js?v=1"></script>
     <script src="../shared/icons.js"></script>
     <!-- مكتبة SheetJS لتصدير التقرير كملف Excel (.xlsx) مباشرة من المتصفح -->
     <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- مكتبة توليد رمز QR (يُضمَّن بترويسة صفحة الطباعة، ويشير لصفحة عرض عامة للتقرير) -->
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     <!-- وحدة بناء صفحات الطباعة الاحترافية المشتركة (ترويسة/جدول/علامة مائية/تذييل) -->
-    <script src="../scripts/print-report.js?v=4"></script>
+    <script src="../scripts/print-report.js?v=5"></script>
 
     <!-- ملفات التنسيق: نعيد استخدام تنسيقات شريط البحث/الجدول من employee-report.css
          وبطاقات الإحصائيات من collections.css، مع إضافات خاصة بهذا التقرير فقط
@@ -117,18 +118,19 @@
                     <table class="companies-table">
                         <thead>
                             <tr>
-                                <th style="width: 26%;">الشركة</th>
-                                <th style="width: 12%; text-align: center;">عدد الفواتير</th>
-                                <th style="width: 16%; text-align: center;">إجمالي الفواتير</th>
-                                <th style="width: 14%; text-align: center;">المحصَّل</th>
-                                <th style="width: 14%; text-align: center;">المتبقي</th>
-                                <th style="width: 10%; text-align: center;">نسبة التحصيل</th>
-                                <th style="width: 14%; text-align: center;">آخر فاتورة</th>
+                                <th style="width: 22%;">الشركة</th>
+                                <th style="width: 10%; text-align: center;">عدد الفواتير</th>
+                                <th style="width: 14%; text-align: center;">إجمالي الفواتير</th>
+                                <th style="width: 12%; text-align: center;">المحصَّل</th>
+                                <th style="width: 12%; text-align: center;">المتبقي</th>
+                                <th style="width: 9%; text-align: center;">نسبة التحصيل</th>
+                                <th style="width: 11%; text-align: center;">آخر فاتورة</th>
+                                <th style="width: 10%; text-align: center;">اسم المندوب</th>
                             </tr>
                         </thead>
                         <tbody id="compCollTableBody">
                             <tr>
-                                <td colspan="7" class="table-loading-state">
+                                <td colspan="8" class="table-loading-state">
                                     جاري جلب بيانات التقرير...
                                 </td>
                             </tr>
@@ -147,6 +149,6 @@
     <script src="../../bootstrap/app-core.js"></script>
     <script src="../shared/sidebar.js?v=3"></script>
     <script src="../shared/navbar.js"></script>
-    <script src="../scripts/companies-collections-report.js?v=8"></script>
+    <script src="../scripts/companies-collections-report.js?v=13"></script>
 </body>
 </html>

@@ -450,13 +450,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     // انتقال للوحة التحكم.
                     let userRole = null;
                     let mustChangePassword = false;
+                    let accountStatus = null;
                     try {
                         const { data: profileRow } = await dbClient
                             .from('users')
-                            .select('role, must_change_password')
+                            .select('role, status, must_change_password')
                             .eq('id', data.user.id)
                             .maybeSingle();
                         userRole = profileRow ? profileRow.role : null;
+                        accountStatus = profileRow ? profileRow.status : null;
                         mustChangePassword = !!(profileRow && profileRow.must_change_password);
                     } catch (profileErr) {
                         console.error('تعذّر التحقق من بيانات الحساب:', profileErr.message);
@@ -473,6 +475,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         await dbClient.auth.signOut();
                         if (pageLoader) pageLoader.classList.add('loader-hidden');
                         showLoginError(translations[currentLang].errorNotCompanyLoginPage);
+                        return;
+                    }
+
+                    // 🛡️ حساب قيد المراجعة أو مرفوض لا يدخل مهما كان دوره
+                    if (accountStatus === 'pending_review' || accountStatus === 'rejected') {
+                        await dbClient.auth.signOut();
+                        if (pageLoader) pageLoader.classList.add('loader-hidden');
+                        showLoginError(currentLang === 'en'
+                            ? 'Your account is not activated yet. Please contact the system administrator.'
+                            : 'حسابك غير مفعّل بعد. يرجى التواصل مع إدارة النظام.');
                         return;
                     }
 

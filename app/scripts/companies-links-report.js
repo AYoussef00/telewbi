@@ -370,7 +370,7 @@ async function loadLinksReportData() {
     } catch (error) {
         console.error("فشل تحميل بيانات تقرير ربط الشركات:", error);
         if (tableBody) {
-            tableBody.innerHTML = `<tr><td colspan="${getLinksReportColumnCount()}" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل بيانات التقرير: ${(error && error.message) || 'خطأ غير معروف'}</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="${getLinksReportColumnCount()}" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل بيانات التقرير: ${escHtml((error && error.message) || 'خطأ غير معروف')}</td></tr>`;
         }
     }
 }
@@ -454,12 +454,12 @@ function buildLinksReportRowHtml(row) {
     return `
         <tr>
             <td>
-                <strong style="color:#1e293b;">${row.employee_name}</strong>
-                <div style="color:#64748b; font-size:0.82rem; font-weight:500; margin-top:2px;">${row.company_name}</div>
+                <strong style="color:#1e293b;">${escHtml(row.employee_name)}</strong>
+                <div style="color:#64748b; font-size:0.82rem; font-weight:500; margin-top:2px;">${escHtml(row.company_name)}</div>
             </td>
             <td style="color:#475569; font-family: monospace; font-size:0.95rem;">
-                ${row.national_id}
-                <div style="color:#64748b; font-size:0.85rem; margin-top:2px;">${row.mobile_number}</div>
+                ${escHtml(row.national_id)}
+                <div style="color:#64748b; font-size:0.85rem; margin-top:2px;">${escHtml(row.mobile_number)}</div>
             </td>
             ${isCompanyRoleUser() ? '' : `
             <td style="text-align:center; color:#334155; font-family: monospace; font-size:0.95rem;">${row.basic_salary}</td>
@@ -467,7 +467,7 @@ function buildLinksReportRowHtml(row) {
             <td style="text-align:center; color:#334155; font-family: monospace; font-size:0.95rem;">${row.refund_fee}</td>
             <td style="text-align:center; color:#334155; font-family: monospace; font-size:0.95rem;">${row.commission_fee}</td>
             <td style="text-align:center; color:#0f172a; font-weight:700; font-family: monospace; font-size:0.95rem;">${row.net_income}</td>`}
-            <td style="text-align:center; color:${statusColor}; font-weight:600;">${row.status_display}</td>
+            <td style="text-align:center; color:${statusColor}; font-weight:600;">${escHtml(row.status_display)}</td>
         </tr>
     `;
 }
@@ -699,7 +699,7 @@ function openLinksPrintColumnsDialog(onConfirm) {
                 ${LINKS_PRINT_COLUMN_OPTIONS.map(o => `
                     <label style="display:flex;align-items:center;gap:10px;cursor:pointer;color:#1e293b;">
                         <input type="checkbox" value="${o.id}" ${selected.has(o.id) ? 'checked' : ''}>
-                        <span>${o.label}</span>
+                        <span>${escHtml(o.label)}</span>
                     </label>`).join('')}
             </div>
             <p id="linksPrintColumnsError" style="display:none;margin:10px 0 0;color:#dc2626;font-size:.85rem;">اختر عمودًا واحدًا على الأقل.</p>

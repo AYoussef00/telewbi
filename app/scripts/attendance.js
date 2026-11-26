@@ -532,7 +532,7 @@ async function loadAttendanceForCurrentRange() {
     } catch (error) {
         console.error('فشل جلب سجلات الحضور:', error.message);
         if (tableBody) {
-            tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل سجلات الحضور: ${error.message}</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل سجلات الحضور: ${escHtml(error.message)}</td></tr>`;
         }
     }
 }
@@ -638,12 +638,12 @@ function buildAttendanceRowHtml(row) {
 
     return `
         <tr>
-            <td><strong style="color:#1e293b;"><span class="row-inline-icon" data-icon="person"></span> ${row.employee_name}</strong></td>
-            <td style="color:#334155;"><span class="row-inline-icon" data-icon="building"></span> ${row.company_name}</td>
+            <td><strong style="color:#1e293b;"><span class="row-inline-icon" data-icon="person"></span> ${escHtml(row.employee_name)}</strong></td>
+            <td style="color:#334155;"><span class="row-inline-icon" data-icon="building"></span> ${escHtml(row.company_name)}</td>
             <td style="color:#475569;"><span class="row-inline-icon" data-icon="calendar"></span> ${row.date}</td>
             <td style="font-weight:600; color:#475569;">${row.check_in || '--:--:--'}</td>
             <td style="font-weight:600; color:#475569;">${row.check_out || '--:--:--'}</td>
-            <td style="text-align:center;"><span class="badge-att-status ${badgeClass}"><span class="badge-dot-icon" data-icon="${badgeDotIcon}"></span> ${row.status}</span></td>
+            <td style="text-align:center;"><span class="badge-att-status ${badgeClass}"><span class="badge-dot-icon" data-icon="${badgeDotIcon}"></span> ${escHtml(row.status)}</span></td>
             <td style="text-align:center;">
                 ${markAbsentBtn}
                 <button class="action-icon-btn" data-perm="edit:attendance" title="تعديل السجل" onclick="editAttendanceRecord('${row.id}')">${ICONS.edit}</button>

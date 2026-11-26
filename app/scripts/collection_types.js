@@ -48,7 +48,7 @@ async function fetchAndRenderCollectionTypes() {
         applyCollectionTypesFilter('');
     } catch (error) {
         console.error('تعذّر تحميل أنواع التحصيل:', error.message);
-        tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل أنواع التحصيل: ${error.message} — تأكد من تنفيذ سكربت إعداد قاعدة البيانات الخاص بهذه الميزة (collection_types_setup.sql).</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل أنواع التحصيل: ${escHtml(error.message)} — تأكد من تنفيذ سكربت إعداد قاعدة البيانات الخاص بهذه الميزة (collection_types_setup.sql).</td></tr>`;
     }
 }
 
@@ -94,7 +94,7 @@ function renderCollectionTypesTable() {
             : `<span class="status-badge-inactive">غير نشط</span>`;
         return `
             <tr data-type-id="${t.id}">
-                <td><strong style="color:#1e293b;">${t.name}</strong></td>
+                <td><strong style="color:#1e293b;">${escHtml(t.name)}</strong></td>
                 <td style="text-align:center;">${statusBadge}</td>
                 <td style="text-align:center; color:#94a3b8; font-size:12.5px;">${formatCollectionTypeDate(t.created_at)}</td>
                 <td style="text-align:center;"><div class="ra-actions-cell">

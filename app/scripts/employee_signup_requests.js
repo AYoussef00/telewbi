@@ -126,7 +126,7 @@ async function fetchAndRenderRequests() {
         applyRequestsFilters();
     } catch (error) {
         console.error('تعذّر تحميل طلبات التسجيل:', error.message);
-        tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل طلبات التسجيل: ${error.message} — تأكد من تنفيذ سكربت إعداد قاعدة البيانات الخاص بهذه الميزة.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل طلبات التسجيل: ${escHtml(error.message)} — تأكد من تنفيذ سكربت إعداد قاعدة البيانات الخاص بهذه الميزة.</td></tr>`;
     }
 }
 
@@ -169,7 +169,7 @@ function buildAttachmentChips(request) {
     if (items.length === 0) return '<span class="attachment-links-empty">لا مرفقات</span>';
 
     return `<div class="attachment-links">${items.map(i =>
-        `<a class="attachment-link-chip" href="${i.url}" target="_blank" rel="noopener noreferrer">${window.ICONS ? ICONS.paperclip : '📎'} ${i.label}</a>`
+        `<a class="attachment-link-chip" href="#" data-doc-url="${StorageDocs.attr(i.url)}">${window.ICONS ? ICONS.paperclip : '📎'} ${escHtml(i.label)}</a>`
     ).join('')}</div>`;
 }
 
@@ -189,7 +189,7 @@ function buildRequestActionsHtml(request) {
         `;
     }
     if (request.status === 'rejected' && request.rejection_reason) {
-        return `<div class="rejection-reason-note">سبب الرفض: ${request.rejection_reason}</div>`;
+        return `<div class="rejection-reason-note">سبب الرفض: ${escHtml(request.rejection_reason)}</div>`;
     }
     if (request.status === 'approved') {
         return `<a href="link_employee.html" style="font-size:12px; font-weight:700; color:#e05236; text-decoration:none;">ربط الموظف الآن ←</a>`;
@@ -212,10 +212,10 @@ function renderRequestsTable() {
 
     tableBody.innerHTML = paginatedData.map(r => `
         <tr>
-            <td><strong style="color:#1e293b;">${r.name || '----'}</strong></td>
-            <td style="font-family:monospace; color:#475569;">${r.national_id || '----'}</td>
-            <td style="font-family:monospace; color:#475569; direction:ltr; text-align:right;">${r.mobile_number || '----'}</td>
-            <td style="direction:ltr; text-align:right; color:#475569;">${r.email || '----'}</td>
+            <td><strong style="color:#1e293b;">${escHtml(r.name || '----')}</strong></td>
+            <td style="font-family:monospace; color:#475569;">${escHtml(r.national_id || '----')}</td>
+            <td style="font-family:monospace; color:#475569; direction:ltr; text-align:right;">${escHtml(r.mobile_number || '----')}</td>
+            <td style="direction:ltr; text-align:right; color:#475569;">${escHtml(r.email || '----')}</td>
             <td>${buildAttachmentChips(r)}</td>
             <td style="text-align:center;">${buildStatusBadge(r.status)}</td>
             <td style="text-align:center; color:#94a3b8; font-size:12.5px;">${formatRequestDate(r.created_at)}</td>

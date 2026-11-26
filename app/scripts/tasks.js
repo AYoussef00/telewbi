@@ -478,15 +478,18 @@ async function loadTasks() {
         // 💳 مسؤول الشركة: إخفاء مهام أي شهر (due_date) لم تُصدَر له فاتورة
         // مدفوعة بعد — انظر تعليق getPaidMonthsMapForCompanies أعلى الملف
         if (currentUserScope.role === 'company') {
+            // ➕ استثناء: حتى لو لم تُسدَّد الفاتورة (أو لم تُصدَر)، تظهر كل المهام التي
+            // أُضيفت خلال آخر 7 أيام كمعاينة — انظر app/shared/company-task-visibility.js
             const paidMonthsMap = await getPaidMonthsMapForCompanies(currentUserScope.companyIds);
-            fullTasksDataset = fullTasksDataset.filter(task => isRecordDateInPaidMonth(paidMonthsMap, task.company_id, task.due_date));
+            const { visible, preview } = CompanyTaskVisibility.partitionTasks(fullTasksDataset, paidMonthsMap);
+            fullTasksDataset = visible.concat(preview).sort(CompanyTaskVisibility.newestFirst);
         }
 
         applyTaskFilters();
 
     } catch (error) {
         console.error('فشل جلب بيانات المهام:', error.message);
-        tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل المهام: ${error.message}</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل المهام: ${escHtml(error.message)}</td></tr>`;
     }
 }
 
@@ -582,10 +585,10 @@ function buildTaskRowHtml(task) {
 
     const assigneeHtml = task.assignee_name
         ? `<div class="assignee-cell">
-                <span class="assignee-avatar">${(task.assignee_name || '?').trim().charAt(0)}</span>
+                <span class="assignee-avatar">${escHtml((task.assignee_name || '?').trim().charAt(0))}</span>
                 <div class="assignee-info">
-                    <span class="assignee-name">${task.assignee_name}</span>
-                    ${task.assignee_job_title ? `<span class="assignee-role">${task.assignee_job_title}</span>` : ''}
+                    <span class="assignee-name">${escHtml(task.assignee_name)}</span>
+                    ${task.assignee_job_title ? `<span class="assignee-role">${escHtml(task.assignee_job_title)}</span>` : ''}
                     ${endedBadgeHtml}
                 </div>
            </div>`
@@ -602,12 +605,15 @@ function buildTaskRowHtml(task) {
 
     return `
         <tr>
-            <td><span class="task-title-cell ${isCompleted ? 'completed' : ''}">${task.title}</span></td>
-            <td><span class="badge-task-type ${typeBadgeClass}">${task.type}</span></td>
+            <td>
+                <a href="view_task.html?id=${encodeURIComponent(task.id)}" class="task-title-cell task-title-link ${isCompleted ? 'completed' : ''}">${escHtml(task.title)}</a>
+                ${task.is_unpaid_preview ? '<div style="font-size:11px; color:#b45309; margin-top:2px;">معاينة — الفاتورة غير مسددة</div>' : ''}
+            </td>
+            <td><span class="badge-task-type ${typeBadgeClass}">${escHtml(task.type)}</span></td>
             <td>${assigneeHtml}</td>
-            <td><span class="task-company-cell"><span data-icon="building"></span> ${task.company_name || '—'}</span></td>
+            <td><span class="task-company-cell"><span data-icon="building"></span> ${escHtml(task.company_name || '—')}</span></td>
             <td style="color:#475569;">${dateHtml}</td>
-            <td style="text-align:center;"><span class="badge-task-status ${statusBadgeClass}">${task.status}</span></td>
+            <td style="text-align:center;"><span class="badge-task-status ${statusBadgeClass}">${escHtml(task.status)}</span></td>
             <td class="task-actions-cell">
                 <button type="button" class="btn-task-actions" onclick="toggleTaskActionsMenu(event, ${task.id})">⋯</button>
                 <div class="task-actions-menu" id="taskActionsMenu-${task.id}">

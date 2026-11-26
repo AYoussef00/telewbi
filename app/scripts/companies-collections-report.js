@@ -55,6 +55,13 @@ async function fetchAllRows(builderFactory) {
 // البيانات الخام المحمَّلة مرة واحدة (ضمن نطاق الرؤية)
 let compCollCompaniesRaw = [];   // [{id, name, user_id}]
 let compCollInvoicesRaw = [];    // [{company_id, invoice_date, total_amount, status}]
+let compCollActiveLinkCounts = new Map(); // companyId -> عدد الموظفين المرتبطين حالياً (روابط نشطة)
+
+// 🧾 الفاتورة "المتوقعة": لشركة بلا أي فاتورة ضمن الفترة المحددة، تُعرض فاتورة واحدة
+// متوقعة = سعر الربط (companies.subscription_value) × الكمية الحالية (عدد الموظفين
+// المرتبطين حالياً) + ضريبة القيمة المضافة — نفس معادلة شاشة "إصدار فاتورة جديدة"
+// (add_invoice.js) حتى يطابق المبلغ ما ستُصدره الفاتورة فعلاً.
+const COMP_COLL_PROJECTED_VAT_RATE = 15;
 
 // النتائج بعد التجميع لكل شركة (قبل فلترة الاسم/الحالة) وبعدها
 let compCollAggregatedRows = [];
@@ -208,6 +215,11 @@ function escapeCompCollHtml(value) {
         .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+function getCompCollTodayString() {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
 // نطاق الأشهر المحدد حالياً (من ≤ إلى دائماً: لو عُكس الترتيب يُصحَّح تلقائياً)
 function getCompCollMonthRange() {
     let from = document.getElementById('compCollFromDateInput')?.value || '';
@@ -235,19 +247,21 @@ async function loadCompCollReportData() {
         if (currentUserScope.companyIds !== null && currentUserScope.companyIds.length === 0) {
             compCollCompaniesRaw = [];
             compCollInvoicesRaw = [];
+            compCollActiveLinkCounts = new Map();
             allCompCollNameOptions = [];
             currentCompCollPage = 1;
             applyCompCollFilters();
             return;
         }
 
-        const [companies, invoices] = await Promise.all([
+        const todayStr = getCompCollTodayString();
+        const [companies, invoices, linkRows] = await Promise.all([
             fetchAllRows((from, to) => {
                 // 🆕 user_id مطلوب أيضاً هنا (وليس فقط id/name كما كان سابقاً) —
                 // يُستخدم فقط بترتيب نسخة الطباعة (انظر groupLinkedCompaniesForPrint
                 // أسفل الملف) لتجميع الشركات "المربوطة ببعض" (تشترك بنفس حساب
                 // الدخول) متجاورة، بنفس منطق تقرير الشركات (companies-report.js).
-                let query = dbClient.from('companies').select('id, name, user_id, status').order('name', { ascending: true });
+                let query = dbClient.from('companies').select('id, name, user_id, status, subscription_value, representative_name, contract_date').order('name', { ascending: true });
                 if (currentUserScope.companyIds !== null) query = query.in('id', currentUserScope.companyIds);
                 return query.range(from, to);
             }),
@@ -255,8 +269,27 @@ async function loadCompCollReportData() {
                 let query = dbClient.from('invoices').select('company_id, invoice_date, total_amount, status');
                 if (currentUserScope.companyIds !== null) query = query.in('company_id', currentUserScope.companyIds);
                 return query.range(from, to);
+            }),
+            // الروابط (للكمية الحالية): نفس شرط "نشط" المعتمد بإصدار الفواتير —
+            // بلا تاريخ انتهاء أو تاريخ انتهائه اليوم أو بعده. فشله لا يُوقف التقرير.
+            fetchAllRows((from, to) => {
+                let query = dbClient.from('employee_links').select('id, company_id, link_end_date').order('id', { ascending: true });
+                if (currentUserScope.companyIds !== null) query = query.in('company_id', currentUserScope.companyIds);
+                return query.range(from, to);
+            }).catch(err => {
+                console.error('تعذّر جلب روابط الموظفين لحساب الفاتورة المتوقعة:', err && err.message);
+                return [];
             })
         ]);
+
+        compCollActiveLinkCounts = new Map();
+        linkRows.forEach(link => {
+            if (link.company_id == null) return;
+            const endStr = link.link_end_date ? String(link.link_end_date).split('T')[0] : null;
+            if (endStr && endStr < todayStr) return;
+            const key = String(link.company_id);
+            compCollActiveLinkCounts.set(key, (compCollActiveLinkCounts.get(key) || 0) + 1);
+        });
 
         compCollCompaniesRaw = companies;
         compCollInvoicesRaw = invoices;
@@ -270,7 +303,7 @@ async function loadCompCollReportData() {
     } catch (error) {
         console.error('تعذّر تحميل بيانات تقرير تحصيل الشركات:', error);
         if (tableBody) {
-            tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل بيانات التقرير: ${(error && error.message) || 'خطأ غير معروف'}</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#ef4444; padding:20px;">تعذّر تحميل بيانات التقرير: ${escHtml((error && error.message) || 'خطأ غير معروف')}</td></tr>`;
         }
     }
 }
@@ -314,7 +347,24 @@ function computeCompCollAggregatedRows() {
 
     return compCollCompaniesRaw.map(company => {
         const key = String(company.id);
-        const stat = statsByCompanyId.get(key) || { count: 0, total: 0, paid: 0, remaining: 0, lastDate: null };
+        let stat = statsByCompanyId.get(key) || { count: 0, total: 0, paid: 0, remaining: 0, lastDate: null };
+
+        // 🧾 لا فواتير ضمن الفترة ⇐ فاتورة واحدة متوقعة (سعر الربط × الكمية الحالية + الضريبة)،
+        // المحصَّل 0 والمتبقي = قيمتها، وتاريخ آخر فاتورة (إن وُجدت) من كل فواتير الشركة
+        let isProjected = false, projectedPrice = 0, projectedQty = 0;
+        if (stat.count === 0 && (company.status || 'active') !== 'inactive') {
+            projectedPrice = parseFloat(company.subscription_value) || 0;
+            projectedQty = compCollActiveLinkCounts.get(key) || 0;
+            if (projectedPrice > 0 && projectedQty > 0) {
+                const projectedTotal = Math.round(projectedPrice * projectedQty * (1 + COMP_COLL_PROJECTED_VAT_RATE / 100) * 100) / 100;
+                let lastAny = null;
+                compCollInvoicesRaw.forEach(inv => {
+                    if (String(inv.company_id) === key && inv.invoice_date && (!lastAny || inv.invoice_date > lastAny)) lastAny = inv.invoice_date;
+                });
+                stat = { count: 1, total: projectedTotal, paid: 0, remaining: projectedTotal, lastDate: lastAny };
+                isProjected = true;
+            }
+        }
         const collectionRate = stat.total > 0 ? Math.round((stat.paid / stat.total) * 1000) / 10 : null; // null = لا توجد فواتير أصلاً
 
         return {
@@ -327,7 +377,15 @@ function computeCompCollAggregatedRows() {
             paidAmount: stat.paid,
             remainingAmount: stat.remaining,
             collectionRate,
-            lastInvoiceDateRaw: stat.lastDate
+            lastInvoiceDateRaw: stat.lastDate,
+            isProjected,
+            projectedPrice,
+            projectedQty,
+            // سعر الربط (قيمة اشتراك الشركة) والكمية الحالية (الموظفون المرتبطون حالياً) — للتصدير
+            linkPrice: parseFloat(company.subscription_value) || 0,
+            linkQty: compCollActiveLinkCounts.get(key) || 0,
+            representativeName: company.representative_name || '',
+            contractDate: company.contract_date || null
         };
     });
 }
@@ -391,7 +449,7 @@ function renderCompCollTable(data) {
     }
 
     if (!data || data.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:#94a3b8;">لا توجد بيانات مطابقة لخيارات البحث الحالية.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:#94a3b8;">لا توجد بيانات مطابقة لخيارات البحث الحالية.</td></tr>`;
         setupCompCollPaginationControls(0);
         return;
     }
@@ -420,13 +478,17 @@ function buildCompCollRowHtml(row) {
 
     return `
         <tr>
-            <td><strong style="color:#1e293b;">${escapeCompCollHtml(row.companyName)}</strong></td>
-            <td style="text-align:center; color:#334155;">${row.invoiceCount}</td>
+            <td>
+                <strong style="color:#1e293b;">${escapeCompCollHtml(row.companyName)}</strong>
+                ${row.contractDate ? `<div style="font-size:11px; color:#64748b; margin-top:2px;">تاريخ العقد: ${formatCompCollDate(row.contractDate)}</div>` : ''}
+            </td>
+            <td style="text-align:center; color:#334155;"${row.isProjected ? ` title="فاتورة متوقعة: سعر الربط ${formatCompCollCurrency(row.projectedPrice)} × الكمية الحالية ${row.projectedQty} + ضريبة ${COMP_COLL_PROJECTED_VAT_RATE}%"` : ''}>${row.invoiceCount}${row.isProjected ? '<div style="font-size:11px; color:#64748b;">(متوقعة)</div>' : ''}</td>
             <td class="comp-coll-amount-cell" style="text-align:center;">${formatCompCollCurrency(row.totalAmount)}</td>
             <td class="comp-coll-amount-cell" style="text-align:center;">${formatCompCollCurrency(row.paidAmount)}</td>
             <td class="comp-coll-amount-cell comp-coll-remaining-cell ${remainingClass}" style="text-align:center;">${formatCompCollCurrency(row.remainingAmount)}</td>
             <td style="text-align:center;"><span class="comp-coll-rate-badge ${rateBadgeClass}">${rateLabel}</span></td>
             <td style="text-align:center; font-family: monospace;">${row.lastInvoiceDateRaw ? formatCompCollDate(row.lastInvoiceDateRaw) : '—'}</td>
+            <td style="text-align:center; color:#334155;">${row.representativeName ? escapeCompCollHtml(row.representativeName) : '—'}</td>
         </tr>
     `;
 }
@@ -485,16 +547,19 @@ function exportCompCollReportToExcel() {
         return;
     }
 
-    const headers = ['الشركة', 'عدد الفواتير', 'إجمالي الفواتير', 'المحصَّل', 'المتبقي', 'نسبة التحصيل', 'تاريخ آخر فاتورة'];
+    const headers = ['الشركة', 'عدد الفواتير', 'الكمية', 'سعر الربط', 'إجمالي الفواتير', 'المحصَّل', 'المتبقي', 'نسبة التحصيل', 'تاريخ آخر فاتورة', 'اسم المندوب'];
 
     const rows = compCollFilteredRows.map(row => [
         row.companyName,
         row.invoiceCount,
+        Number(row.linkQty) || 0,
+        Number(row.linkPrice) || 0,
         Number(row.totalAmount) || 0,
         Number(row.paidAmount) || 0,
         Number(row.remainingAmount) || 0,
         row.collectionRate === null ? '—' : `${row.collectionRate}%`,
-        row.lastInvoiceDateRaw ? formatCompCollDate(row.lastInvoiceDateRaw) : '—'
+        row.lastInvoiceDateRaw ? formatCompCollDate(row.lastInvoiceDateRaw) : '—',
+        row.representativeName || ''
     ]);
 
     const worksheetData = [headers, ...rows];
@@ -507,11 +572,20 @@ function exportCompCollReportToExcel() {
     const lastDataRow = rows.length + 1;   // رقم صف Excel (1 = العناوين)
     const sumCols = [
         { idx: 1, key: 'invoiceCount', fmt: '#,##0' },
-        { idx: 2, key: 'totalAmount', fmt: MONEY_FMT },
-        { idx: 3, key: 'paidAmount', fmt: MONEY_FMT },
-        { idx: 4, key: 'remainingAmount', fmt: MONEY_FMT }
+        { idx: 4, key: 'totalAmount', fmt: MONEY_FMT },
+        { idx: 5, key: 'paidAmount', fmt: MONEY_FMT },
+        { idx: 6, key: 'remainingAmount', fmt: MONEY_FMT }
+    ];
+    // عمودا "الكمية" و"سعر الربط": يُنسَّقان كأرقام فقط (بلا صف إجمالي لهما)
+    const plainNumberCols = [
+        { idx: 2, fmt: '#,##0' },
+        { idx: 3, fmt: MONEY_FMT }
     ];
     for (let r = 1; r < lastDataRow; r++) {
+        plainNumberCols.forEach(({ idx, fmt }) => {
+            const cell = worksheet[XLSX.utils.encode_cell({ r, c: idx })];
+            if (cell && cell.t === 'n') cell.z = fmt;
+        });
         sumCols.forEach(({ idx, fmt }) => {
             const cell = worksheet[XLSX.utils.encode_cell({ r, c: idx })];
             if (cell && cell.t === 'n') cell.z = fmt;
@@ -533,7 +607,7 @@ function exportCompCollReportToExcel() {
     worksheet['!ref'] = XLSX.utils.encode_range(ref);
 
     worksheet['!cols'] = [
-        { wch: 26 }, { wch: 13 }, { wch: 16 }, { wch: 14 }, { wch: 14 }, { wch: 13 }, { wch: 15 }
+        { wch: 26 }, { wch: 13 }, { wch: 10 }, { wch: 13 }, { wch: 16 }, { wch: 14 }, { wch: 14 }, { wch: 13 }, { wch: 15 }, { wch: 20 }
     ];
 
     const workbook = XLSX.utils.book_new();

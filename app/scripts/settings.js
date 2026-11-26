@@ -165,9 +165,8 @@ function renderFacilityDocuments() {
         if (doc && /^https?:\/\//i.test(doc.file_url || '')) {
             const viewLink = document.createElement('a');
             viewLink.className = 'facility-doc-btn view';
-            viewLink.href = doc.file_url;
-            viewLink.target = '_blank';
-            viewLink.rel = 'noopener noreferrer';
+            viewLink.href = '#';
+            viewLink.setAttribute('data-doc-url', doc.file_url);  // يُفتح برابط موقّع (انظر storage-docs.js)
             viewLink.textContent = 'عرض';
             actions.appendChild(viewLink);
         }

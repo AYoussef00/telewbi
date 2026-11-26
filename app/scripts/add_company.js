@@ -8,7 +8,20 @@ const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 
 // كلمة المرور الافتراضية لأي حساب مسؤول شركة جديد يُنشأ من هذه الشاشة.
 // تُجبر مسؤول الشركة على تغييرها فور أول تسجيل دخول (عبر علامة must_change_password بجدول users).
-const DEFAULT_COMPANY_PASSWORD = "Basma@1234";
+// 🔑 كلمة مرور مؤقتة عشوائية لكل حساب جديد (بدل كلمة ثابتة مكشوفة داخل ملف الجافاسكربت
+// يعرفها أي شخص يفتح الموقع). تُعرض للمسؤول مرة واحدة عند الإنشاء، ويُجبَر صاحب الحساب
+// على تغييرها عند أول تسجيل دخول (must_change_password).
+function generateTempPassword() {
+    const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ', lower = 'abcdefghijkmnpqrstuvwxyz', digits = '23456789', symbols = '@#$%&*!';
+    const all = upper + lower + digits + symbols;
+    const rnd = (n) => { const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % n; };
+    const pick = (set) => set[rnd(set.length)];
+    const chars = [pick(upper), pick(lower), pick(digits), pick(symbols)];
+    while (chars.length < 12) chars.push(pick(all));
+    for (let i = chars.length - 1; i > 0; i--) { const j = rnd(i + 1); [chars[i], chars[j]] = [chars[j], chars[i]]; }
+    return chars.join('');
+}
+let DEFAULT_COMPANY_PASSWORD = generateTempPassword(); // تُجدَّد عند كل محاولة حفظ
 
 // =========================================================================
 // 1.5 مكوّن قائمة قابلة للبحث (Searchable Combobox) — نفس منطق شاشة "ربط الموظفين"
@@ -636,6 +649,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         const vatIncluded = document.getElementById('companyVatIncluded').checked;
 
         // كلمة مرور موحّدة لكل حسابات مسؤولي الشركات الجديدة؛ تُجبر على تغييرها عند أول دخول
+        DEFAULT_COMPANY_PASSWORD = generateTempPassword();
         const password = DEFAULT_COMPANY_PASSWORD;
 
         const submitBtn = form.querySelector('.btn-submit');
@@ -809,9 +823,10 @@ document.addEventListener('DOMContentLoaded', async function() {
 
             const successMsg = isLinkingExisting
                 ? 'تم إضافة الشركة بنجاح وربطها بحساب الدخول المختار! جاري التحويل...'
-                : `تم إضافة الشركة بنجاح! كلمة المرور الافتراضية لمسؤول الشركة: ${DEFAULT_COMPANY_PASSWORD} — سيُطلب منه تغييرها عند أول تسجيل دخول. جاري التحويل...`;
+                : `تم إضافة الشركة بنجاح! كلمة المرور المؤقتة لمسؤول الشركة: ${DEFAULT_COMPANY_PASSWORD} — انسخها الآن (لن تظهر مرة أخرى)، وسيُطلب منه تغييرها عند أول تسجيل دخول. جاري التحويل...`;
 
             showFormAlert(successMsg, 'success');
+            if (!isLinkingExisting) alert(successMsg); // تنبيه يلزم تأكيده حتى لا تضيع كلمة المرور المؤقتة
             setTimeout(() => {
                 window.location.href = Routes.url('companies');
             }, 2200);

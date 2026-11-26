@@ -55,7 +55,7 @@ function renderDocumentNote(key) {
     }
 
     if (url) {
-        el.innerHTML = `<span data-icon="paperclip" class="icon-inline"></span> الملف الحالي: <a href="${url}" target="_blank" rel="noopener">عرض الملف</a> <button type="button" class="action-icon-btn" data-icon="trash" title="حذف الملف الحالي" onclick="markCompanyDocumentForRemoval('${key}')" style="color:#ef4444; cursor:pointer; background:none; border:none; margin-inline-start:6px; vertical-align:middle;"></button>`;
+        el.innerHTML = `<span data-icon="paperclip" class="icon-inline"></span> الملف الحالي: <a href="#" data-doc-url="${StorageDocs.attr(url)}">عرض الملف</a> <button type="button" class="action-icon-btn" data-icon="trash" title="حذف الملف الحالي" onclick="markCompanyDocumentForRemoval('${key}')" style="color:#ef4444; cursor:pointer; background:none; border:none; margin-inline-start:6px; vertical-align:middle;"></button>`;
         applyIconPlaceholders(el);
     } else {
         el.innerHTML = 'لا يوجد ملف مرفوع حالياً.';
